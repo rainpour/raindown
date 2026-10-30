@@ -3,8 +3,8 @@
 require_relative 'events'
 require_relative 'text'
 require_relative 'title'
-require_relative 'menu_overlay'
-require_relative 'search_overlay'
+require_relative 'project_box'
+require_relative 'search_box'
 
 module Raindown
   module TUI
@@ -59,10 +59,10 @@ module Raindown
 
       private
 
-      # The project menu or the search, drawn over the lines while it's open.
+      # The project menu or Teleport, drawn over the lines while it's open.
       def overlaid(lines)
-        return MenuOverlay.new(navigator, width:, column: display_width(name)).apply(lines) if navigator.menu
-        return SearchOverlay.new(navigator, width:).apply(lines) if navigator.searching?
+        return ProjectBox.new(navigator, width:, column: display_width(name)).apply(lines) if navigator.menu
+        return SearchBox.new(navigator, width:).apply(lines) if navigator.teleporting?
 
         lines
       end
@@ -133,5 +133,6 @@ end
 require_relative 'renderers/list_renderer'
 require_relative 'renderers/outline_renderer'
 require_relative 'renderers/dashboard_renderer'
+require_relative 'blueprints/blueprints_renderer'
 require_relative 'renderers/endpoint_renderer'
 require_relative 'feelings/feelings_renderer'

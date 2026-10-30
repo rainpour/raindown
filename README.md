@@ -29,13 +29,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 <{ Commits: limit=5 }>
 
 ```
-Total    -574 ▕██████████████│███████████████▉ +648
-───────────────────────────────────────────────────
-513ed05   -10               ▕│██▏               +85
-6e33b0b   -41               █│█▏                +44
-0bdc9d1   -42               █│▋                 +23
-b40b0ba   -53              ▕█│█▋                +68
-02a25a8  -428     ▐██████████│██████████▌      +428
+Total    -217 ████│██████████████████████████▎ +1,524
+─────────────────────────────────────────────────────
+d79db93   -45    █│█████████████████████▏      +1,228
+8336ced   -11    ▕│▎                              +13
+b23b9e3  -110   ██│██▋                           +154
+513ed05   -10    ▕│█▌                             +85
+6e33b0b   -41    █│▊                              +44
 ```
 
 <{ :Commits }>
@@ -84,6 +84,14 @@ Code is highlighted with [Rouge](https://rouge.jneen.net), which knows over 200 
 | ------- | ------ | ---- | --- | ----- | ------ |
 | Feeling | frolic | numb | woe | dread | malice |
 | Score   | 1      | 0.5  | ⅓   | ⅙     | 0      |
+
+**Blueprints**, under Code feelings in the files once a project has some (or `b`), shows the mockups, diagrams, charts and tables drawn in [Claude Code](https://claude.com/claude-code)'s replies, newest first, then those drawn in the comments above the code's classes and methods, indented further than their prose, which describes them, one at a time. Each is traced to its code: ← and → move between the boxes drawn in one, in reading order, and ↑ and ↓ to the nearest box above or below, or click one, each showing the code it names in a box below, Code feelings' code box, its first 6 lines, or as much as fits with Enter or by clicking how many more lines there are, and Space, or clicking the box again, the next code it names, in the order it names it, which `e` opens, or the blueprint itself when the box names none. A blueprint bigger than the pane is on a canvas that follows the selected box, with `◀ ▶ ▲ ▼` at the edges where there's more, and scrolls with Shift and the arrows, or by dragging it with the mouse. The title above them, in the border, is the keywords they're filtered by: `f`, while the page is focused, or a click opens a filter like Teleport's, where they're typed, each a word in the blueprint or its kind, listing those that match, which ↑ and ↓ move between, to show another, Enter or a click keeps it, and Esc clears it. A blueprint is a code block marked with its kind, like `mockup`, or one with no language that's drawn with box-drawing lines or blocks, whose kind is worked out from what it's drawn with: a diagram when arrows join its parts, a chart when it's mostly blocks, a table when its lines cross, and otherwise a mockup. One line, or a first line opening a box that never closes, like a piece of a box quoted, isn't a blueprint. A box names code by a method, like `Watcher.listen`, a class, like `Workers`, whose first method it shows, or a method's name that only one method has. `raindown blueprints` saves those in Claude Code's last reply to the project's `.raindown/blueprints.md`, each under the time it was saved and its kind, with the paragraph above it in the reply, unless that's a list, a heading or another block, as its description, which the page shows above it, and the filter matches, as a Stop hook in Claude Code's settings:
+
+```json
+{ "hooks": { "Stop": [{ "hooks": [{ "type": "command", "command": "raindown blueprints", "async": true }] }] } }
+```
+
+The page shows a new blueprint as soon as it's saved, as the terminal UI watches the project's files.
 
 ### Directives
 

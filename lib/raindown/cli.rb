@@ -4,6 +4,7 @@ require 'fileutils'
 require 'trees'
 require_relative '../raindown'
 require_relative '../version'
+require_relative 'blueprints'
 require_relative 'rewriter'
 require_relative 'watcher/file_watcher'
 require_relative 'watcher/supervisor'
@@ -27,6 +28,8 @@ module Raindown
                             PATH is a file, or a directory (default: current directory) whose projects with a
                             .raindown folder are watched
         init [DIRECTORY]    Create a .raindown folder for the project's config and nodes (default: current directory)
+        blueprints            Save the blueprints in Claude Code's last reply to .raindown/blueprints.md, for the terminal
+                            UI's Blueprints page, as a Stop hook that's given the hook's JSON
 
       Options:
         --html [OUTPUT]     Render FILE to HTML once, writing to OUTPUT or else printing to stdout
@@ -79,6 +82,7 @@ module Raindown
 
       if argv.intersect?(%w[-v --version]) then puts(VERSION)
       elsif argv.first == 'init' && argv.size <= 2 then init(argv[1])
+      elsif argv == ['blueprints'] then Blueprints.save(JSON.parse($stdin.read))
       else return false
       end
 

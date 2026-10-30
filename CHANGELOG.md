@@ -13,6 +13,7 @@ Minor features that don't break backwards compatibility are released as patches.
 - Without a terminal, like in a script or a service, `raindown` says it needs one and watches instead
 - Code feelings' CSV columns are `timestamp`, `commit`, `checksum`, `location`, `method`, `temper` and `note`, renamed from `when` and `where`, and `timestamp` is the time in UTC, not just the date
 - The terminal UI's line between the panes is cornflower blue, like the title, and runs along a border beneath the title
+- The terminal UI has a Blueprints page, which `b` opens, of the mockups, diagrams, charts and tables drawn in Claude Code's replies, filtered by keywords with `f`, each traced to its code, its boxes selectable, with the arrows or a click, each showing the code it names below, and Space or another click the next it names, on a canvas that follows the selected box and scrolls with Shift and the arrows or a drag, and which `raindown blueprints` saves to `.raindown/blueprints.md` as a Claude Code Stop hook, along with the drawings in the comments above the code's classes and methods
 - The terminal UI watches its folder like `raindown watch`, writing back to each Markdown file as it's saved, and loading a project's nodes again when they change
 
 ## 0.7.0

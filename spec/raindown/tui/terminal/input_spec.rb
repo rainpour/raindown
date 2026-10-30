@@ -47,6 +47,9 @@ RSpec.describe Raindown::TUI::Input do
     let(:mouse) { Struct.new(:bstate, :x, :y) }
     let(:zones) { [[0, 0...5, :execute]] }
 
+    # Each example starts with the button let go, as the last one may have left it held.
+    before { described_class.mouse_event(mouse.new(Curses::BUTTON1_RELEASED, 0, 0), []) }
+
     it 'clicks with the left button, and does nothing when scrolling' do
       expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 0), zones)).to eq(:execute)
       expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_CLICKED, 2, 0), zones)).to eq(:execute)
@@ -60,6 +63,37 @@ RSpec.describe Raindown::TUI::Input do
       moved = Curses::REPORT_MOUSE_POSITION
       expect(described_class.mouse_event(mouse.new(moved, 2, 0), zones)).to eq(Raindown::TUI::Hover.new(target: :execute))
       expect(described_class.mouse_event(mouse.new(moved, 2, 1), zones)).to eq(Raindown::TUI::Hover.new(target: nil))
+    end
+
+    it "drags by how far the mouse moves while the terminal says its button's held, and hovers when it isn't" do
+      held = Curses::REPORT_MOUSE_POSITION | Curses::BUTTON1_PRESSED
+      described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 0), zones)
+
+      expect(described_class.mouse_event(mouse.new(held, 6, 3), zones)).to eq(Raindown::TUI::Drag.new(columns: 4, rows: 3))
+      expect(described_class.mouse_event(mouse.new(held, 5, 3), zones)).to eq(Raindown::TUI::Drag.new(columns: -1, rows: 0))
+      expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_RELEASED, 5, 3), zones)).to be_nil
+      expect(described_class.mouse_event(mouse.new(Curses::REPORT_MOUSE_POSITION, 2, 0), zones))
+        .to eq(Raindown::TUI::Hover.new(target: :execute))
+    end
+
+    it 'drags with plain moves after a press, until the release, then hovers again' do
+      moved = Curses::REPORT_MOUSE_POSITION
+      described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 0), zones)
+
+      expect(described_class.mouse_event(mouse.new(moved, 4, 1), zones)).to eq(Raindown::TUI::Drag.new(columns: 2, rows: 1))
+      expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_RELEASED, 4, 1), zones)).to be_nil
+      expect(described_class.mouse_event(mouse.new(moved, 2, 0), zones)).to eq(Raindown::TUI::Hover.new(target: :execute))
+    end
+
+    it 'drags with older ncurses, which reports each move with the button held as a release, until one where it is' do
+      released = Curses::BUTTON1_RELEASED
+      described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 0), zones)
+
+      expect(described_class.mouse_event(mouse.new(released, 5, 1), zones)).to eq(Raindown::TUI::Drag.new(columns: 3, rows: 1))
+      expect(described_class.mouse_event(mouse.new(released, 3, 1), zones)).to eq(Raindown::TUI::Drag.new(columns: -2, rows: 0))
+      expect(described_class.mouse_event(mouse.new(released, 3, 1), zones)).to be_nil
+      expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 0), zones)).to eq(:execute)
+      expect(described_class.mouse_event(mouse.new(released, 2, 0), zones)).to be_nil
     end
   end
 end

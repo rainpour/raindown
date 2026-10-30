@@ -4,7 +4,7 @@ require 'zlib'
 
 require_relative '../renderers/renderer'
 require_relative 'bins'
-require_relative 'code_box'
+require_relative 'feelings_code_box'
 require_relative 'magnifier'
 require_relative 'motion'
 require_relative 'celebration/scene'
@@ -26,7 +26,7 @@ module Raindown
     #    ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯
     class FeelingsRenderer < Renderer
       include Bins
-      include CodeBox
+      include FeelingsCodeBox
       include Magnifier
       include Motion
       include Waffle

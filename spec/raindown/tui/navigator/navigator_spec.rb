@@ -505,7 +505,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
   end
 
-  describe 'search' do
+  describe 'teleport' do
     subject(:navigator) { described_class.new(root: @root) }
 
     before do
@@ -519,7 +519,7 @@ RSpec.describe Raindown::TUI::Navigator do
     it 'opens with /, listing the pages as in the files, then each file with its headings and directives, until something is typed' do
       navigator.next_step(:search)
 
-      expect(navigator.searching?).to be(true)
+      expect(navigator.teleporting?).to be(true)
       expect(found(navigator).first(4)).to eq([['📊 Dashboard', ''], ['🎭 Feelings', ''], ['guides/setup.md', ''],
                                                ['# Install', 'guides/setup.md:1']])
     end
@@ -543,7 +543,7 @@ RSpec.describe Raindown::TUI::Navigator do
       type(navigator, 'setup notes')
       navigator.next_step(:enter)
 
-      expect([navigator.searching?, view_name(navigator), navigator.relative(navigator.path)]).to eq([false, 'OutlineView', 'notes.md'])
+      expect([navigator.teleporting?, view_name(navigator), navigator.relative(navigator.path)]).to eq([false, 'OutlineView', 'notes.md'])
       expect(navigator.view.rows[navigator.view.cursor].text).to eq('## Setup')
     end
 
@@ -552,7 +552,7 @@ RSpec.describe Raindown::TUI::Navigator do
       type(navigator, 'get api')
       expect(found(navigator).first).to eq(['GET api.example.com', 'notes.md:14'])
 
-      navigator.next_step(click(:search, 0))
+      navigator.next_step(click(:teleport, 0))
       expect([view_name(navigator), navigator.view.endpoint.line]).to eq(['EndpointView', 14])
     end
 
@@ -562,7 +562,7 @@ RSpec.describe Raindown::TUI::Navigator do
       expect(navigator.content(:nav).cursor).to eq(0)
 
       navigator.next_step(:escape)
-      expect(navigator.searching?).to be(false)
+      expect(navigator.teleporting?).to be(false)
     end
   end
 

@@ -283,12 +283,12 @@ RSpec.describe Raindown::TUI::Layout do
 
       # The box is the width less 4, between 2 columns either side.
       expect(lines[1..4].map { columns(it, from: 2, count: 56) }).to eq(
-        ['┌─ Teleport ───────────────────────────────────────────┐',
+        ['┌────────────────────── Teleport ──────────────────────┐',
          '│ / setup▏                                             │',
          '│ # Setup                            guides/setup.md:1 │',
          '│ guides/setup.md                                      │']
       )
-      expect(lines[3].map(&:event).compact.uniq.select { it.pane == :search }).to eq([click(:search, 0)])
+      expect(lines[3].map(&:event).compact.uniq.select { it.pane == :teleport }).to eq([click(:teleport, 0)])
       expect(lines[3].find { it.text.include?('# Setup') }.style).to eq(:selected)
       expect(text(lines).map { width(it) }).to all(eq(60))
     end

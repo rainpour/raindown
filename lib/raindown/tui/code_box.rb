@@ -1,17 +1,20 @@
 # frozen_string_literal: true
 
-require_relative '../highlighter'
+require_relative 'highlighter'
 
 module Raindown
   module TUI
-    # Code feelings' box below the grid: the selected method's code, highlighted, its first lines or, expanded, all that
-    # fit, then why it felt that way while that's typed, below a line:
+    # A box of a method's code, highlighted, its first lines or, expanded, all that fit, like Code feelings' below its
+    # grid, with why it felt that way while that's typed, below a line, or Blueprints' below a blueprint:
     #    ╭─ lib/text.rb:62 · Text#segments_between ──────────── changed 6× ─╮
     #    │ def segments_between(line, from, to)                              │
     #    │ [12 more lines]                                                   │
     #    ├───────────────────────────────────────────────────────────────────┤
     #    │ Why DREAD? > column maths, a character at a time▏                 │
     #    ╰───────────────────────────────────────────────────────────────────╯
+    # The renderer gives the method shown, as boxed_method, or nil, and box_title, box_note for the top's right, box_style,
+    # box_room, the most lines of code that fit expanded, box_parts, the lines it shows, and box_footer, any lines below them.
+    # Its view keeps what it shows, as ShownCode.
     module CodeBox
       # The most of a method's code that shows, until it's expanded, and the rows the grid keeps when it is.
       CODE_LINES = 6
@@ -21,24 +24,25 @@ module Raindown
 
       private
 
-      # The selected method's code in a box, then why it felt that way while that's typed, below a line.
+      # The method's code in a box, then the lines below it.
       def code_box
-        notes = []
-        notes = note_lines if view.typing?
-        code = code_lines(height - Bins::BIN_LINES - BOX_LINES - MIN_GRID_ROWS - notes.length)
-        [box_top(view.selected), *code, *blank_lines(code.length + notes.length), *notes, box_edge('╰', '╯')]
+        method = boxed_method
+        footer = box_footer
+        code = code_lines(box_parts(method), box_room - footer.length)
+        top = box_edge("╭─ #{box_title(method)} ", "#{box_note(method)}╮")
+        [top, *code, *blank_lines(code.length + footer.length), *footer, box_edge('╰', '╯')]
       end
 
-      # Blank lines after a short method's code and its note, so the box is always as tall as it gets until it's expanded,
-      # and the grid above stays still.
+      # Blank lines after a short method's code and its footer, so the box is always as tall as it gets until it's expanded,
+      # and what's above it stays still.
       def blank_lines(used) = Array.new([CODE_LINES + 1 - used, 0].max) { boxed([]) }
 
-      # The method's first lines, or all that fit in the room when it's expanded, highlighted and wrapped to fit the box,
-      # then how many more there are, clicked to show them, or a line to show fewer again.
-      def code_lines(room)
+      # The first lines of the parts, or all that fit in the room when it's expanded, wrapped to fit the box, then how
+      # many more there are, clicked to show them, or a line to show fewer again.
+      def code_lines(parts, room)
         shown = CODE_LINES
         shown = [room, CODE_LINES].max if view.expanded
-        lines = highlighted_code.map { wrapped(it) }
+        lines = parts.map { wrapped(it) }
         fitting = lines.take_while { (shown -= it.length) >= 0 }
         code = fitting.flatten(1).map { boxed(it) }
         return code if lines.sum(&:length) <= CODE_LINES
@@ -46,15 +50,11 @@ module Raindown
         [*code, more_line(lines.length - fitting.length)]
       end
 
-      def highlighted_code
-        view.highlighted(view.selected) { Highlighter.lines(dedented(view.selected.lines), filename: view.selected.path) }
-      end
-
       # The highlighted line's [text, style] parts in as many lines as it takes to fit the box, like a note's, those
       # after the first carrying on after an ellipsis.
       def wrapped(parts)
         room = width - 6
-        lead = [carried_lead(parts, room), :feelings]
+        lead = [carried_lead(parts, room), box_style]
         rest = room - display_width(lead[0])
         return [parts] if rest < 1
 
@@ -97,18 +97,8 @@ module Raindown
         boxed([[text, :button]], event: Click.new(pane:, index: view.cursor, action: :expand))
       end
 
-      # Why it felt that way, as it's typed, below a line, in as many lines as it takes.
-      def note_lines = [box_edge('├', '┤'), *hanging("Why #{view.noting.upcase}? > ", "#{view.note}▏").map { boxed([[it, :feelings]]) }]
-
-      # The text after the lead, wrapped to fit the box, with the lines after the first lined up under the text.
-      def hanging(lead, text)
-        indent = ' ' * display_width(lead)
-        lines = wrap(text, width - 6 - indent.length)
-        [lead, *Array.new(lines.length - 1, indent)].zip(lines).map(&:join)
-      end
-
-      # Where the method is, its name, and how many commits changed its file.
-      def box_top(method) = box_edge("╭─ #{where(method)} · #{method.label} ", " changed #{method.changes}× ─╮")
+      # The method's code highlighted, kept by the view while it's shown.
+      def highlighted(method) = view.highlighted(method) { Highlighter.lines(dedented(method.lines), filename: method.path) }
 
       # The lines without the indent they share, like a method's in its class.
       def dedented(lines)
@@ -120,7 +110,7 @@ module Raindown
 
       # A line of the box, a column in from each side of the pane, of [text, style] parts, like highlighted code's.
       def boxed(parts, event: nil)
-        padded([segment(' │ ', :feelings, width: 3), *code_segments(parts, width - 6, event:), segment(' │', :feelings, width: 2)])
+        padded([segment(' │ ', box_style, width: 3), *code_segments(parts, width - 6, event:), segment(' │', box_style, width: 2)])
       end
 
       # The box's top or bottom, with the left text cut short, rather than the corner, when there isn't room.
@@ -128,7 +118,25 @@ module Raindown
         room = width - 2 - display_width(right)
         left = "#{fit(left, room - 1)} " if display_width(left) > room
         fill = [room - display_width(left), 0].max
-        padded([segment(" #{left}#{'─' * fill}#{right}", :feelings, width: width - 1)])
+        padded([segment(" #{left}#{'─' * fill}#{right}", box_style, width: width - 1)])
+      end
+    end
+
+    # What a view keeps of the code its CodeBox shows: whether it's expanded, and its highlighting, from frame to frame
+    # while it's the one shown.
+    module ShownCode
+      attr_reader :expanded
+
+      def highlighted(method)
+        @highlighted = { method => yield } unless @highlighted&.key?(method)
+        @highlighted[method]
+      end
+
+      private
+
+      def toggle_expanded
+        @expanded = !@expanded
+        nil
       end
     end
   end

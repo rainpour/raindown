@@ -9,8 +9,10 @@ module Raindown
 
     # The mouse moving over what a click there would send, if anything, to show it, like a method's cells in bold.
     Hover = Data.define(:target)
+    # The mouse moved with its button held, by columns across and rows down, like to drag a blueprint's canvas.
+    Drag = Data.define(:columns, :rows)
 
-    # A character typed while typing, like in the search, which other keys' events would take, like "j" for :down.
+    # A character typed while typing, like in Teleport, which other keys' events would take, like "j" for :down.
     Type = Data.define(:text)
 
     # What the Screen does after an event, other than drawing again, or stopping for :quit.
