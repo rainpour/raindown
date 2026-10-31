@@ -62,6 +62,10 @@ raindown README.md --html site/index.html
 
 # Render Markdown from stdin without touching the file (for editor previews):
 cat draft.rd | raindown draft.rd --stdin
+
+# List the links that lead nowhere, and exit 1 if there are any, for CI:
+raindown --check
+raindown README.md --check
 ```
 
 With `--stdin`, FILE only decides whether bare directives are allowed (by its extension), so it doesn't need to exist yet, and the TOC and tables aren't written back to it.
@@ -75,6 +79,8 @@ With `--stdin`, FILE only decides whether bare directives are allowed (by its ex
 Below the files, after a blank line, is every endpoint in the project, by its request, like `GET httpbin.org/uuid`, with its method in colour: GET green, POST blue, DELETE red, PUT yellow and PATCH magenta. Enter or a click opens one beside the files, with its URL in a bar and a **Run** button, and its response below. `x`, or clicking **Run**, runs it, and Enter opens its directive in the outline. The charts are drawn from their data every few seconds, so editing a CSV file updates its chart without a save. Enter (or clicking a card's title) opens the chart's file in the outline, on its directive.
 
 **Teleport** with `/`: type part of a file, heading, directive or endpoint, and Raindown finds it in every file, matching the letters in order, so `stp` finds `## Setup`. Up and down choose between the matches, Enter or a click goes there, and Esc closes it.
+
+**Wormholes** are links that lead nowhere: to a file that isn't there, or to an `#anchor` no heading has, like `[setup](#setp)`, in the same file or in another, like `guide.md#install`. The outline marks each one with 🕳 under its heading, with why, like `🕳 #setp: no such heading`, and typing `wormhole` or `🕳` in Teleport lists them all. Enter on one opens Teleport with where it was meant to go typed in, and the files and headings nearest to it first, and the one you choose is where its link goes instead, like `#setup`. Anchors are the ids Raindown gives headings in the HTML, with `-1`, `-2` and so on for the same heading again, and headings a node wrote into the file, like a changelog's, count. Links to other sites and links in code are left alone. `raindown --check` lists them and exits 1 if there are any, for CI, and `<{ wormholes: }>` writes how many there are as a stat, like `3 wormholes`.
 
 Code is highlighted with [Rouge](https://rouge.jneen.net), which knows over 200 languages: a directive's body when it's expanded in the outline, with its code blocks in their own languages, an endpoint's response, in the language of its code block, and the code in Code feelings, by its file's name.
 
@@ -331,6 +337,8 @@ end
 ```
 
 Then `<{ Issues: }>` and `<{ :Issues }>` in a file write it there. An opening tag needs its colon, even without props.
+
+Raindown has a stat of its own, `<{ wormholes: }>`, which counts the project's [wormholes](#cli), the links that lead nowhere.
 
 ### Endpoints
 

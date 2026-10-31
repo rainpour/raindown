@@ -7,6 +7,11 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ## Unreleased
 
+### Added
+
+- Wormholes, links that lead nowhere: the terminal UI's outline marks them with 🕳, Teleport lists them, and Enter on one points its link at the heading or file you choose
+- `raindown --check` lists the wormholes and exits 1 if there are any, for CI, and `<{ wormholes: }>` is a stat of how many there are
+
 ### Changed
 
 - `raindown` opens the terminal UI, rather than `raindown tui`, and `raindown watch` watches, as `raindown` did. Both take `--bare` and `-x`
