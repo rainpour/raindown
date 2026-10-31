@@ -22,7 +22,7 @@ module Raindown
 
     # Steps a row or a view asks of the Navigator, which each takes on it, returning what the Screen does next: to open
     # a view right of the files, or a file in the outline at a directive, to edit a file at a line, to run an endpoint,
-    # to draw the page a feeling was noted down in, or to ask Claude Code to fix a method.
+    # to close a wormhole, to draw the page a feeling was noted down in, or to ask Claude Code to fix a method.
     OpenView = Data.define(:view) do
       def take(navigator) = navigator.open_view(view)
     end
@@ -37,6 +37,16 @@ module Raindown
 
     Execute = Data.define(:path, :line, :name) do
       def take(navigator) = navigator.run(path, line, name)
+    end
+
+    # Opens Teleport to find where a wormhole was meant to go, then Reroute points its link there.
+    CloseWormhole = Data.define(:wormhole) do
+      def take(navigator) = navigator.seek_exit(wormhole)
+    end
+
+    # The file, or the heading with the id in it, that a wormhole's link goes to instead.
+    Reroute = Data.define(:wormhole, :path, :id) do
+      def take(navigator) = navigator.close_wormhole(wormhole, path, id)
     end
 
     Felt = Data.define(:feeling) do

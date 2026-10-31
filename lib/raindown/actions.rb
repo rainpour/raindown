@@ -6,6 +6,7 @@ require_relative '../raindown'
 require_relative 'bare_directives'
 require_relative 'endpoint/endpoint_runner'
 require_relative 'rewriter'
+require_relative 'wormholes'
 
 module Raindown
   # What a tool can do to a file from its Document, like the terminal UI, without knowing how it's drawn.
@@ -35,6 +36,20 @@ module Raindown
       return false if rewritten == content
 
       File.write(path, rewritten)
+      true
+    end
+
+    # Points the wormhole's link at the target instead, like "#setup" or "guides/setup.md", so it leads somewhere.
+    # It's found in the file again, in case the file's changed since, and raises when it's not there anymore.
+    def close_wormhole(wormhole, target, root:)
+      wormhole = Wormholes.new(root).in_file(wormhole.path).find { it.span == wormhole.span && it.target == wormhole.target }
+      raise ArgumentError, 'That wormhole has changed since it was read' unless wormhole
+
+      content = File.read(wormhole.path, encoding: Encoding::UTF_8)
+      rewritten = Wormholes.close(content, wormhole, target)
+      return false if rewritten == content
+
+      File.write(wormhole.path, rewritten)
       true
     end
 

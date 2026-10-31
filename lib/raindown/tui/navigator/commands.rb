@@ -2,11 +2,12 @@
 
 require_relative '../../actions'
 require_relative '../../watcher/changes'
+require_relative '../../wormholes'
 
 module Raindown
   module TUI
-    # What a Navigator does to the open file: run an endpoint, open the editor, write back and read it again,
-    # and to a feeling about some code: draw the page it was noted down in, or ask Claude Code to fix the code.
+    # What a Navigator does to the open file: run an endpoint, open the editor, close a wormhole, write back and read it
+    # again, and to a feeling about some code: draw the page it was noted down in, or ask Claude Code to fix the code.
     # Each sets the status, so the Screen shows how it went, and returns what the Screen should do next, if anything.
     module Commands
       def run(file, line, name) = Wait.new(message: "Running #{name}...", task: -> { run_endpoint(file, line) })
@@ -15,6 +16,16 @@ module Raindown
       def edit_at(file, line)
         @edited = file
         Run.new(command: Actions.edit_command(file, line:))
+      end
+
+      # Points the wormhole's link at the file, or the heading with the id in it, chosen in Teleport, and reads the file again.
+      def close_wormhole(wormhole, file, id)
+        target = Wormholes.link(from: wormhole.path, to: file, id:)
+        @workers.for(wormhole.path).call(:close_wormhole, wormhole, target)
+        view.load
+        info("Closed the wormhole on line #{wormhole.line}, to #{target}")
+      rescue StandardError => e
+        error(e.message)
       end
 
       def felt(feeling) = info("Felt #{feeling.temper} about #{feeling.method.label}")

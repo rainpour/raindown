@@ -10,36 +10,43 @@ RSpec.describe Raindown::Document do
   def directives(markdown, bare: false) = described_class.parse(markdown, bare:).directives.map(&:to_h)
 
   describe '#headings' do
-    it 'reads the level, text and line of each heading' do
+    it 'reads the level, text, line and id of each heading' do
       expected = [
-        { level: 1, text: 'Notes', line: 1 }, { level: 2, text: 'Setup', line: 5 }, { level: 3, text: 'Deeper', line: 7 }
+        { level: 1, text: 'Notes', line: 1, id: 'notes' }, { level: 2, text: 'Setup', line: 5, id: 'setup' },
+        { level: 3, text: 'Deeper', line: 7, id: 'deeper' }
       ]
 
       expect(headings("# Notes\n\nText.\n\n## Setup\n\n### Deeper\n")).to eq(expected)
     end
 
     it 'counts lines from the top of the file, including front matter' do
-      expect(headings("---\ntitle: Notes\n---\n\n# {title}\n")).to eq([{ level: 1, text: '{title}', line: 5 }])
+      expect(headings("---\ntitle: Notes\n---\n\n# {title}\n")).to eq([{ level: 1, text: '{title}', line: 5, id: 'title' }])
     end
 
     it 'reads the text a reader sees, leaving out inline HTML tags' do
-      expect(headings("# Hello `code` *em* <b>tag</b>\n")).to eq([{ level: 1, text: 'Hello code em tag', line: 1 }])
+      expect(headings("# Hello `code` *em* <b>tag</b>\n")).to eq([{ level: 1, text: 'Hello code em tag', line: 1, id: 'hello-code-em-tag' }])
     end
 
     it 'reads headings underlined with = or -' do
-      expected = [{ level: 1, text: 'Title', line: 1 }, { level: 2, text: 'Section', line: 4 }]
+      expected = [{ level: 1, text: 'Title', line: 1, id: 'title' }, { level: 2, text: 'Section', line: 4, id: 'section' }]
 
       expect(headings("Title\n=====\n\nSection\n-------\n")).to eq(expected)
     end
 
     it 'leaves out lines in code blocks that look like headings' do
-      expect(headings("# Real\n\n```md\n# Not a heading\n```\n")).to eq([{ level: 1, text: 'Real', line: 1 }])
+      expect(headings("# Real\n\n```md\n# Not a heading\n```\n")).to eq([{ level: 1, text: 'Real', line: 1, id: 'real' }])
     end
 
     it 'reads headings that a directive wrote back into the file' do
       markdown = "# Notes\n\n<{ Changelog: }>\n\n## 1.0.0\n\n- Released\n\n<{ :Changelog }>\n"
 
       expect(headings(markdown).map { it[:text] }).to eq(['Notes', '1.0.0'])
+    end
+
+    it "gives a heading Commonmarker's id, with -1, -2 and so on for the same heading again, leaving out raw HTML headings" do
+      markdown = "# Setup\n\n<h2 id=\"raw\">Raw</h2>\n\n## Setup\n\n## Setup-1\n\n## Héllo *World*!\n"
+
+      expect(headings(markdown).map { it[:id] }).to eq(%w[setup setup-1 setup-1-1 héllo-world])
     end
 
     it 'is empty without headings' do

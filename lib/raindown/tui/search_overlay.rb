@@ -12,7 +12,7 @@ module Raindown
     #    │ ## Setup               guides/setup.md:3 │
     #    │ ## Steps                     notes.md:12 │
     #    └──────────────────────────────────────────┘
-    # Each place is clicked to open it.
+    # Each place is clicked to open it. While it's closing a wormhole, its title says which, like "Close 🕳 #setp".
     class SearchOverlay
       include Text
 
@@ -40,7 +40,14 @@ module Raindown
       def inner = @box_width - 4
 
       def box
-        [edge('┌─ Teleport ', '┐'), boxed(segment("/ #{@navigator.query}▏", :menu, width: inner)), *results, edge('└', '┘')]
+        [edge("┌─ #{title} ", '┐'), boxed(segment("/ #{@navigator.query}▏", :menu, width: inner)), *results, edge('└', '┘')]
+      end
+
+      # Teleport, or what it's closing, like "Close 🕳 #setp".
+      def title
+        return 'Teleport' unless @navigator.closing
+
+        "Close 🕳 #{@navigator.closing.target}"
       end
 
       def results

@@ -10,6 +10,7 @@ require_relative '../nodes'
 require_relative '../pages'
 require_relative '../projects'
 require_relative '../workers/workers'
+require_relative '../wormholes'
 require_relative '../stat'
 require_relative 'card'
 require_relative 'endpoint'
@@ -21,7 +22,7 @@ module Raindown
     # What the terminal UI asks of a project, answered in the project's Worker with its own nodes loaded,
     # so two projects' nodes of the same name stay apart. Answers are plain data, which a Worker sends back through a pipe.
     class Project
-      Outline = Data.define(:lines, :headings, :directives)
+      Outline = Data.define(:lines, :headings, :directives, :wormholes)
 
       attr_reader :root
 
@@ -43,10 +44,11 @@ module Raindown
         @load_errors << "#{File.basename(root)}/#{Nodes::FOLDER}: #{e.message}"
       end
 
-      # A file's lines, headings and directives.
+      # A file's lines, headings, directives and wormholes.
       def outline(path)
         document = Document.read(path, bare: @bare)
-        Outline.new(lines: File.readlines(path, chomp: true), headings: document.headings, directives: document.directives)
+        Outline.new(lines: File.readlines(path, chomp: true), headings: document.headings, directives: document.directives,
+                    wormholes: Wormholes.new(root).in_file(path))
       end
 
       # Every chart and stat in the project's files, or any node that draws a card, drawn from its data, and the files
@@ -73,6 +75,11 @@ module Raindown
 
       def write_back(path)
         Actions.write_back(path, bare: @bare, execute: @execute)
+      end
+
+      # Points the wormhole's link at the target instead, like "#setup".
+      def close_wormhole(wormhole, target)
+        Actions.close_wormhole(wormhole, target, root:)
       end
 
       # Runs the endpoint on the line, replacing its response.

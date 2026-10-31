@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'cgi/escape'
+
 module Raindown
   # Commonmarker gives each heading a unique id within what it renders, but a document's components render
   # on their own, so two can have a heading with the same id. Later ones get -1, -2 and so on, like Commonmarker.
@@ -7,6 +9,13 @@ module Raindown
     HEADING = %r{<h([1-6]) id="([^"]*)"(.*?)</h\1>}m
 
     module_function
+
+    # The ids Commonmarker gives a parsed document's headings, in their order, like a link's #anchor goes to. Raw HTML
+    # is left out, so headings written in it aren't counted.
+    def of(document)
+      html = document.to_html(options: { render: { unsafe: false } }, plugins: { syntax_highlighter: nil })
+      html.scan(HEADING).map { CGI.unescapeHTML(it[1]) }
+    end
 
     def unique(html)
       seen = Hash.new(0)

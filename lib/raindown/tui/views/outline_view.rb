@@ -6,12 +6,14 @@ require_relative 'list_view'
 require_relative '../highlighter'
 require_relative '../row'
 require_relative '../../workers/worker'
+require_relative '../../wormholes'
 
 module Raindown
   module TUI
     # The outline: a file's headings and directives, read by its project's Worker. Headings fold the section below them,
     # and a directive's body expands below it, like the lines a node wrote back or an endpoint's request and response.
-    # Both start folded away. It's read when it's opened, and it's a ListView, with its own cursor.
+    # Both start folded away. A link that leads nowhere is marked as a wormhole, 🕳, with why, under its heading like
+    # a directive, and Enter closes it. It's read when it's opened, and it's a ListView, with its own cursor.
     class OutlineView < ListView
       attr_reader :path, :error
 
@@ -35,6 +37,7 @@ module Raindown
         @lines = outline.lines
         @headings = outline.headings
         @directives = outline.directives
+        @wormholes = outline.wormholes
         @highlighted = {}
         @error = nil
       rescue Workers::Worker::Error, SystemCallError => e
@@ -57,10 +60,10 @@ module Raindown
         return [Row.new(text: error, depth: 0, kind: :error, target: 1)] if error
 
         sections.flat_map do |heading, items|
-          next items.flat_map { directive_rows(it, depth: 0) } unless heading
+          next items.flat_map { item_rows(it, depth: 0) } unless heading
 
           depth = heading.level - min_level + 1
-          [heading_row(heading), *(items.flat_map { directive_rows(it, depth:) } unless @folded.include?(heading.line))]
+          [heading_row(heading), *(items.flat_map { item_rows(it, depth:) } unless @folded.include?(heading.line))]
         end
       end
 
@@ -84,15 +87,14 @@ module Raindown
       end
 
       # Headings a directive wrote are part of its output, so they show when it's expanded rather than on their own.
+      # A wormhole shows on its own, even in a directive's output, after a heading or directive on its line.
       def items
         outputs = @directives.filter_map(&:output)
-        (@headings + @directives).sort_by(&:line)
-                                 .reject { |item| item.is_a?(Document::Heading) && outputs.any? { it.cover?(item.line) } }
+        items = (@headings + @directives + @wormholes).each_with_index.sort_by { |item, index| [item.line, index] }.map(&:first)
+        items.reject { |item| item.is_a?(Document::Heading) && outputs.any? { it.cover?(item.line) } }
       end
 
-      def min_level
-        @headings.map(&:level).min || 1
-      end
+      def min_level = @headings.map(&:level).min || 1
 
       def heading_row(heading)
         folded = @folded.include?(heading.line) ? ' …' : ''
@@ -100,17 +102,29 @@ module Raindown
                 target: heading, fold: -> { fold(heading) })
       end
 
-      def directive_rows(directive, depth:)
+      # A wormhole's row, or a directive's, with its body below it when it's expanded.
+      def item_rows(directive, depth:)
+        return [wormhole_row(directive, depth:)] if directive.is_a?(Wormholes::Wormhole)
+
         expanded = @expanded.include?(directive.line)
         row = Row.new(text: directive_text(directive), depth:, kind: :directive, target: directive,
                       buttons: buttons(directive, expanded:), **directive_action(directive))
         return [row] unless expanded
 
+        [row, *body_rows(directive, depth: depth + 1)]
+      end
+
+      def body_rows(directive, depth:)
         code = highlighted(directive)
-        [row, *directive.body.each_with_index.map do |number, index|
-          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number, open: Edit.new(path:, line: number),
+        directive.body.each_with_index.map do |number, index|
+          Row.new(text: @lines[number - 1].to_s, depth:, kind: :body, target: number, open: Edit.new(path:, line: number),
                   code: code[index])
-        end]
+        end
+      end
+
+      # Enter opens Teleport to the heading or file it was meant to go to, which its link then goes to.
+      def wormhole_row(wormhole, depth:)
+        Row.new(text: "🕳 #{wormhole.label}", depth:, kind: :wormhole, target: wormhole, open: CloseWormhole.new(wormhole:))
       end
 
       # The directive's body highlighted as Markdown, which highlights its code blocks in their languages, once a read.

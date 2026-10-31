@@ -14,7 +14,9 @@ module Raindown
   # Headings that a directive writes back below it are in the source too, while ones a node only renders as HTML aren't.
   # Lines count from 1, from the top of the file.
   class Document
-    Heading = Data.define(:level, :text, :line)
+    # The id is the one Commonmarker gives the heading, which a link's #anchor goes to, like setup, then setup-1 for a
+    # second Setup.
+    Heading = Data.define(:level, :text, :line, :id)
 
     # A content directive: a node, like toc: or a project's Changelog:, or an endpoint.
     # It spans line to end_line, its end tag, or the last line of a bare block.
@@ -42,6 +44,16 @@ module Raindown
       new(markdown: File.read(path, encoding: Encoding::UTF_8), bare: bare || BareDirectives.file?(path))
     end
 
+    # The text a reader sees in a heading or a link, leaving out inline HTML tags.
+    def self.text(element)
+      parts = []
+      element.walk do |node|
+        parts << node.string_content if TEXT_NODES.include?(node.type)
+        parts << ' ' if BREAK_NODES.include?(node.type)
+      end
+      parts.join.strip
+    end
+
     def initialize(markdown:, bare: false)
       @markdown = markdown
       @lines = markdown.lines
@@ -50,8 +62,8 @@ module Raindown
 
     # The headings in the order they appear, with their source text, like "Notes for {name}" before it's rendered.
     def headings
-      @headings ||= root.walk.select { |node| node.type == :heading }.map do |node|
-        Heading.new(level: node.header_level, text: text(node), line: node.source_position[:start_line])
+      @headings ||= root.walk.select { |node| node.type == :heading }.zip(HeadingIds.of(root)).map do |node, id|
+        Heading.new(level: node.header_level, text: Document.text(node), line: node.source_position[:start_line], id:)
       end
     end
 
@@ -70,15 +82,6 @@ module Raindown
 
     def root
       @root ||= Commonmarker.parse(@markdown, options: MARKDOWN_OPTIONS)
-    end
-
-    def text(heading)
-      parts = []
-      heading.walk do |node|
-        parts << node.string_content if TEXT_NODES.include?(node.type)
-        parts << ' ' if BREAK_NODES.include?(node.type)
-      end
-      parts.join.strip
     end
 
     def node_directives

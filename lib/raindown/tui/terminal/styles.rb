@@ -89,9 +89,10 @@ module Raindown
         )
       end
 
+      # Wormholes in the outline are red, like errors, but not bold, so they don't shout.
       def colored
         in_text_color.merge(
-          title: pair(:title) | Curses::A_BOLD, directive: pair(:directive), error: pair(:error) | Curses::A_BOLD,
+          title: pair(:title) | Curses::A_BOLD, directive: pair(:directive), error: pair(:error) | Curses::A_BOLD, wormhole: pair(:error),
           button: pair(:button) | Curses::A_BOLD, **selections, **emphasis, **dividers, **code_tokens, **bright, **files,
           **unfocused
         )
