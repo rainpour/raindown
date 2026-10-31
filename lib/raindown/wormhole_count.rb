@@ -15,10 +15,13 @@ module Raindown
       @count = Wormholes.new(root(metadata)).all.length
     end
 
-    def label
-      return '1 wormhole' if @count == 1
+    # Like "1 wormhole" or "3 wormholes".
+    def self.label(count)
+      return '1 wormhole' if count == 1
 
-      "#{@count} wormholes"
+      "#{count} wormholes"
     end
+
+    def label = self.class.label(@count)
   end
 end

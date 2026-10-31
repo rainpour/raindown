@@ -160,6 +160,33 @@ RSpec.describe Raindown::CLI do
       end
     end
 
+    describe '--check' do
+      it 'lists the wormholes in a file or a folder, from the current folder, and exits 1 for CI' do
+        File.write(path, "# Title\n\n[Setup](#setup) [Guide](guide.md)\n")
+        File.write(File.join(@dir, 'other.md'), "[Title](sample.md#title)\n")
+        expected = "sample.md:3: [Setup](#setup) leads nowhere, no such heading\n" \
+                   "sample.md:3: [Guide](guide.md) leads nowhere, no such file\n\n2 wormholes\n"
+
+        Dir.chdir(@dir) do
+          expect { described_class.check_wormholes('sample.md') }
+            .to raise_error(SystemExit) { expect(it.status).to eq(1) }.and output(expected).to_stderr
+          expect { described_class.check_wormholes('.') }.to raise_error(SystemExit).and output(expected).to_stderr
+        end
+      end
+
+      it 'checks the path, or the current directory, rather than opening it' do
+        allow(described_class).to receive(:check_wormholes)
+        [[path, '--check'], ['--check']].each { described_class.run(it) }
+
+        expect(described_class).to have_received(:check_wormholes).with(path)
+        expect(described_class).to have_received(:check_wormholes).with('.')
+      end
+
+      it 'says there are none, without exiting' do
+        expect { described_class.check_wormholes(path) }.to output("No wormholes\n").to_stdout
+      end
+    end
+
     describe 'tui' do
       before do
         require 'raindown/tui'

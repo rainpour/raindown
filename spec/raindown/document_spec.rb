@@ -24,7 +24,8 @@ RSpec.describe Raindown::Document do
     end
 
     it 'reads the text a reader sees, leaving out inline HTML tags' do
-      expect(headings("# Hello `code` *em* <b>tag</b>\n")).to eq([{ level: 1, text: 'Hello code em tag', line: 1, id: 'hello-code-em-tag' }])
+      expect(headings("# Hello `code` *em* <b>tag</b>\n"))
+        .to eq([{ level: 1, text: 'Hello code em tag', line: 1, id: 'hello-code-em-tag' }])
     end
 
     it 'reads headings underlined with = or -' do

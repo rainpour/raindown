@@ -2,6 +2,7 @@
 
 require 'raindown/actions'
 require 'raindown/document'
+require 'raindown/wormholes'
 require 'tmpdir'
 
 RSpec.describe Raindown::Actions do
@@ -55,6 +56,17 @@ RSpec.describe Raindown::Actions do
 
       expect { described_class.execute(path, Raindown::Document.read(path).directives.first) }
         .to raise_error(described_class::NotAnEndpoint, "toc on line 1 isn't an endpoint")
+    end
+  end
+
+  describe '.close_wormhole' do
+    it "points the wormhole's link at the target, and raises when the link has changed since" do
+      path = write('notes.md', "# Notes\n\n## Setup\n\nSee [setup](#setp).\n")
+      wormhole = Raindown::Wormholes.new(@dir).in_file(path).first
+
+      expect(described_class.close_wormhole(wormhole, '#setup', root: @dir)).to be(true)
+      expect(File.read(path)).to eq("# Notes\n\n## Setup\n\nSee [setup](#setup).\n")
+      expect { described_class.close_wormhole(wormhole, '#setup', root: @dir) }.to raise_error(ArgumentError, /has changed/)
     end
   end
 

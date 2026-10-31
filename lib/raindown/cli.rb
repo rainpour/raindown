@@ -5,6 +5,7 @@ require 'trees'
 require_relative '../raindown'
 require_relative '../version'
 require_relative 'rewriter'
+require_relative 'wormholes'
 require_relative 'watcher/file_watcher'
 require_relative 'watcher/supervisor'
 
@@ -33,6 +34,8 @@ module Raindown
         --stdin             Render Markdown from stdin to HTML once, without formatting FILE, which only needs
                             its extension (to allow bare directives) and can be unsaved. Add --html OUTPUT to write a file
         --bare              Allow bare directives like :toc in Markdown files
+        --check             List the links in PATH's Markdown files that lead nowhere, its wormholes, and exit 1 if
+                            there are any, for CI
         -x, --execute       Run endpoint curl snippets that have no output yet, as files are written back
         -h, --help          Show this message
         -v, --version       Show the version
@@ -51,9 +54,14 @@ module Raindown
     YAML
 
     # A path opens the terminal UI, or after "watch" it's watched, and with --html or --stdin it's rendered. The flags
-    # are keyword arguments, in any order, like -x for x:, and --html is the OUTPUT when it's given one.
-    line(':path') do |path, html: nil, stdin: false, bare: false, execute: false, x: false| # rubocop:disable Metrics/ParameterLists -- each keyword is a flag
-      execute { open_path(path, html:, stdin:, bare:, execute: execute || x) }
+    # are keyword arguments, in any order, like -x for x:, and --html is the OUTPUT when it's given one. --check looks for
+    # wormholes instead.
+    line(':path') do |path, html: nil, stdin: false, bare: false, execute: false, x: false, check: false| # rubocop:disable Metrics/ParameterLists -- each keyword is a flag
+      execute do
+        next check_wormholes(path) if check
+
+        open_path(path, html:, stdin:, bare:, execute: execute || x)
+      end
     end
 
     line('watch :path') do |path, bare: false, execute: false, x: false|
@@ -104,6 +112,17 @@ module Raindown
       puts 'Put your own nodes in the same folder. See https://raindown.dev/docs/nodes'
     end
 
+    # Lists the wormholes in a file, or in every Markdown file in a directory, and exits 1 when there are any, for CI:
+    #   notes.md:3: [setup](#setp) leads nowhere, no such heading
+    def self.check_wormholes(path)
+      ensure_exists(path)
+      wormholes = wormholes_in(path)
+      return puts('No wormholes') if wormholes.empty?
+
+      lines = wormholes.map { "#{shown(it.path)}:#{it.line}: [#{it.text}](#{it.target}) leads nowhere, #{it.why}" }
+      abort([*lines, '', WormholeCount.label(wormholes.length)].join("\n"))
+    end
+
     # The terminal UI loads curses, so it's only required when it starts. Without a terminal, the path's watched instead.
     def self.tui(path, bare: false, execute: false)
       abort("File not found: #{path}") unless File.exist?(path)
@@ -148,6 +167,20 @@ module Raindown
 
         Nodes.load(path)
         Watcher::FileWatcher.new(path:, bare:, execute:).start
+      end
+
+      # Each file's wormholes, found from its project's root, for links that start with /, or else the folder's.
+      def wormholes_in(path)
+        return Projects.files(path, nested: true).flat_map { wormholes_of(it, base: path) } if File.directory?(path)
+
+        wormholes_of(path, base: File.dirname(path))
+      end
+
+      def wormholes_of(file, base:) = Wormholes.new(Projects.root(file) || base).in_file(file)
+
+      # A path from the current folder, when it's in it, like notes.md.
+      def shown(path)
+        path.delete_prefix(File.join(Dir.pwd, ''))
       end
 
       def write(output, html)
