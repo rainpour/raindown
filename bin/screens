@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Opens the terminal UI on one of the screens raindown.dev shows, ready for a screenshot, in this repo:
+#   bin/screens outline | dashboard | endpoints | feelings | blueprints
+# Code feelings opens with a method hovered, so its digits are magnified, until the mouse moves over the window.
+require_relative '../lib/raindown/tui'
+require_relative '../lib/raindown/tui/terminal/screen'
+require 'io/console'
+require 'rouge'
+
+ROOT = File.expand_path('..', __dir__)
+
+# Hovers over a method, once the grid's drawn at the terminal's size, which picks its batch of methods.
+def hover_a_method(navigator, size: IO.console&.winsize || [34, 120])
+  Raindown::TUI::Layout.new(navigator, width: size.last, height: size.first).lines
+  target = Raindown::TUI::Click.new(pane: :main, index: biggest_unfelt(navigator.view), action: :focus)
+  navigator.next_step(Raindown::TUI::Hover.new(target:))
+end
+
+# The biggest method in the middle of the grid that isn't felt yet, nor selected, which are never magnified, so it shows
+# a run of big digits.
+def biggest_unfelt(view)
+  methods = view.code_methods
+  middle = (methods.length / 4...methods.length * 3 / 4).reject { |index| index == view.cursor || view.batch.felt?(methods[index]) }
+  middle.max_by { methods[it].size }
+end
+
+SCREENS = {
+  'outline' => ->(navigator) { navigator.open_at(File.join(ROOT, 'README.md'), nil) },
+  'dashboard' => ->(navigator) { navigator.open_view(navigator.dashboard) },
+  # The first endpoint in the files, opened with its response.
+  'endpoints' => lambda do |navigator|
+    endpoint = navigator.content(:nav).rows.index { it.kind == :endpoint }
+    navigator.next_step(Raindown::TUI::Click.new(pane: :nav, index: endpoint, action: :enter))
+  end,
+  'feelings' => lambda do |navigator|
+    navigator.open_view(navigator.feelings)
+    hover_a_method(navigator)
+  end,
+  'blueprints' => lambda do |navigator|
+    navigator.open_view(navigator.blueprints)
+    view = navigator.view
+    # The diagram of how Raindown works, on its TUI box, which traces to its code.
+    view.cursor = view.blueprints.index { it.words.include?('Watcher.listen') && it.words.include?('Rewriter') } || 0
+  end
+}.freeze
+
+open = SCREENS.fetch(ARGV.first.to_s) { abort("Usage: bin/screens #{SCREENS.keys.join(' | ')}") }
+workers = Raindown::TUI::Project.workers(root: ROOT)
+begin
+  navigator = Raindown::TUI::Navigator.new(root: ROOT, workers:)
+  open.call(navigator)
+  Raindown::TUI::Screen.new(navigator).run
+ensure
+  workers.stop
+end
