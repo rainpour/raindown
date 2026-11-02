@@ -1,8 +1,7 @@
 ## 2026-10-30T07:59:19Z · diagram
 
 ```diagram
-                                    raindown CLI
-                                (Trees, flags as keywords)
+                                      Raindown CLI
                                            │
         ┌──────────────────────────────────┼──────────────────────────────────┐
         │                                  │                                  │
