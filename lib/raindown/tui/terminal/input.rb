@@ -34,7 +34,7 @@ module Raindown
         Curses.stdscr.timeout = timeout
         key = Curses.stdscr.getch
         return :tick if key.nil?
-        return mouse(zones) if key == Curses::KEY_MOUSE
+        return mouse(zones) if MOUSE && key == Curses::KEY_MOUSE
 
         Curses.stdscr.clear if key == Curses::KEY_RESIZE
         key_event(key, typing:)
@@ -60,22 +60,27 @@ module Raindown
         TYPING_KEYS.fetch(key) { Type.new(text: key) if key.is_a?(String) && key.match?(/\A[[:print:]]\z/) }
       end
 
+      # Windows' curses has no mouse, so the curses gem leaves out its constants and the mouse does nothing there.
+      MOUSE = Curses.respond_to?(:mousemask)
+
       # The mouse buttons that click, which are the left button's. Scrolling does nothing, and since older ncurses,
       # like macOS's, has no button for scrolling down, it can't be mistaken for a click.
-      CLICKS = Curses::BUTTON1_PRESSED | Curses::BUTTON1_CLICKED
+      CLICKS = MOUSE && Curses::BUTTON1_PRESSED | Curses::BUTTON1_CLICKED
 
       # Letting go of the button, which older ncurses, like macOS's, also reports for each move while it's held, as it
       # doesn't know the moves terminals send then.
-      RELEASE = Curses::BUTTON1_RELEASED
+      RELEASE = MOUSE && Curses::BUTTON1_RELEASED
 
       # Moving the mouse, which terminals report once they're asked to, with any motion tracking.
-      MOTION = Curses::REPORT_MOUSE_POSITION
+      MOTION = MOUSE && Curses::REPORT_MOUSE_POSITION
       ANY_MOTION = "\e[?1003h"
       NO_MOTION = "\e[?1003l"
 
       # The terminal sends the app its mouse events, clicks and moves, so scrolling doesn't scroll the terminal either.
       # ncurses only asks some terminals to report every move, so it's asked directly too, until untrack_mouse.
       def track_mouse
+        return unless MOUSE
+
         Curses.mousemask(CLICKS | RELEASE | MOTION)
         Curses.mouseinterval(0)
         $stdout.write(ANY_MOTION)
@@ -83,6 +88,8 @@ module Raindown
       end
 
       def untrack_mouse
+        return unless MOUSE
+
         $stdout.write(NO_MOTION)
         $stdout.flush
       end
