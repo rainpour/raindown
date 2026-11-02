@@ -39,6 +39,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'lownode'
   spec.add_dependency 'plugs'
   spec.add_dependency 'rouge', '~> 5.1'
-  spec.add_dependency 'trees', '>= 0.3.5'
+  spec.add_dependency 'trees', '>= 0.4.0'
   spec.add_dependency 'unicode-display_width', '~> 3.1'
 end
