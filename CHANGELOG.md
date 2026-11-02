@@ -7,18 +7,17 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ## Unreleased
 
+### Added
+
+- HTML comment support for hidden directives (`<!-- toc: -->` and `<!-- :toc -->`)
+- Blueprints!
+
 ### Changed
 
-- How a content directive is written says what it does: bare, like `toc:`, it writes back and shows in bold in the HTML; in HTML comments, `<!-- toc: -->` and `<!-- :toc -->`, it writes back and stays hidden, in the HTML and on GitHub; in `<{ }>` it only renders into the HTML, writing nothing, so blocks in `<{ }>` that wrote back before need putting in comments to keep writing back
-- Template directives, like `if:`, `for:` and `list:`, are only written in `<{ }>`, never bare
-- A comment block's output is written straight between its tags, without blank lines around it
+- Template directives, like `if:`, `for:` and `list:`, are only written in `<{ }>` (never bare)
 - `hide_directives` is gone from `config.yml`, as comment directives are always hidden
-- `raindown` opens the terminal UI, rather than `raindown tui`, and `raindown watch` watches, as `raindown` did. Both take `--bare` and `-x`
-- Without a terminal, like in a script or a service, `raindown` says it needs one and watches instead
-- Code feelings' CSV columns are `timestamp`, `commit`, `checksum`, `location`, `method`, `temper` and `note`, renamed from `when` and `where`, and `timestamp` is the time in UTC, not just the date
-- The terminal UI's line between the panes is cornflower blue, like the title, and runs along a border beneath the title
-- The terminal UI has a Blueprints page, which `b` opens, of the mockups, diagrams, charts and tables drawn in Claude Code's replies, filtered by keywords with `f`, each traced to its code, its boxes selectable, with the arrows or a click, each showing the code it names below, and Space or another click the next it names, on a canvas that follows the selected box and scrolls with Shift and the arrows or a drag, and which `raindown blueprints` saves to `.raindown/blueprints.md` as a Claude Code Stop hook, along with the drawings in the comments above the code's classes and methods
-- The terminal UI watches its folder like `raindown watch`, writing back to each Markdown file as it's saved, and loading a project's nodes again when they change
+- `raindown` opens the terminal UI, rather than `raindown tui`, and `raindown watch` watches
+- The terminal UI watches its folder like `raindown watch`, writing back to each Markdown file as it's save
 
 ## 0.7.0
 
