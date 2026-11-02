@@ -18,8 +18,8 @@ RSpec.describe Raindown::TUI::Navigator do
 
   let(:curl) { "```sh\ncurl https://api.example.com\n```\n" }
   let(:notes) do
-    "# Notes\n\n<{ toc: }>\n\n- [Notes](#notes)\n- [Setup](#setup)\n\n<{ :toc }>\n\n## Setup\n\nText.\n\n" \
-      "<{ endpoint: }>\n\n#{curl}\n```json\n{}\n```\n<{ :endpoint }>\n\n# Usage\n"
+    "# Notes\n\n<!-- toc: -->\n\n- [Notes](#notes)\n- [Setup](#setup)\n\n<!-- :toc -->\n\n## Setup\n\nText.\n\n" \
+      "<!-- endpoint: -->\n\n#{curl}\n```json\n{}\n```\n<!-- :endpoint -->\n\n# Usage\n"
   end
 
   def write(name, content = "# #{name}\n")
@@ -118,7 +118,7 @@ RSpec.describe Raindown::TUI::Navigator do
         ['```sh', 'curl https://api.example.com', '```', '', '```json', '{}', '```', '# Usage']
       )
 
-      File.write(navigator.path, "<{ endpoint: }>\n#{curl}<{ :endpoint }>\n")
+      File.write(navigator.path, "<!-- endpoint: -->\n#{curl}<!-- :endpoint -->\n")
       navigator.next_step(:reload)
       navigator.next_step(:up)
       navigator.next_step(:enter)
@@ -161,7 +161,7 @@ RSpec.describe Raindown::TUI::Navigator do
 
       expect(navigator.next_step(:edit)).to eq(Raindown::TUI::Run.new(command: Raindown::Actions.edit_command(navigator.path, line: 10)))
 
-      File.write(navigator.path, "# Notes\n\n<{ toc: }>\n<{ :toc }>\n\n## Added\n")
+      File.write(navigator.path, "# Notes\n\n<!-- toc: -->\n<!-- :toc -->\n\n## Added\n")
       navigator.ran
       expect(File.read(navigator.path)).to include('- [Added](#added)')
       expect(navigator.status).to eq([:info, 'Updated notes.md'])
@@ -176,10 +176,10 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'shows an error in the file in place of the outline' do
-      File.write(navigator.path, "<{ toc: }>\n")
+      File.write(navigator.path, "<!-- toc: -->\n")
       navigator.next_step(:reload)
 
-      expect(navigator.view.rows.map { [it.kind, it.text] }).to eq([[:error, '<{ toc: }> on line 1 needs <{ :toc }>']])
+      expect(navigator.view.rows.map { [it.kind, it.text] }).to eq([[:error, '<!-- toc: --> on line 1 needs <!-- :toc -->']])
     end
   end
 
@@ -188,7 +188,7 @@ RSpec.describe Raindown::TUI::Navigator do
     let(:saves) { Struct.new(:paths) { def take = paths.slice!(0..) }.new([]) }
 
     it 'writes back a Markdown file saved anywhere in the folder on the next tick, like when it is watched' do
-      other = write('guides/other.md', "# Other\n\n<{ toc: }>\n<{ :toc }>\n\n## Added\n")
+      other = write('guides/other.md', "# Other\n\n<!-- toc: -->\n<!-- :toc -->\n\n## Added\n")
       navigator = described_class.new(root: @root, path: write('notes.md'), saves:)
       saves.paths << other
       navigator.next_step(:tick)
@@ -201,7 +201,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'says it is writing back while it does, when endpoints run as files are written back, like with -x' do
-      other = write('guides/other.md', "# Other\n\n<{ toc: }>\n<{ :toc }>\n\n## Added\n")
+      other = write('guides/other.md', "# Other\n\n<!-- toc: -->\n<!-- :toc -->\n\n## Added\n")
       navigator = described_class.new(root: @root, path: write('notes.md'), saves:, runs_endpoints: true)
       saves.paths << other
       wait = navigator.next_step(:tick)
@@ -241,7 +241,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it "open a dashboard's chart, wherever it's clicked" do
-      write('stats.md', "# Stats\n\n<{ chart: '1 2 3' }>\n<{ :chart }>\n")
+      write('stats.md', "# Stats\n\n<!-- chart: '1 2 3' -->\n<!-- :chart -->\n")
       navigator = described_class.new(root: @root)
 
       navigator.next_step(click(:main, 0))
@@ -293,7 +293,7 @@ RSpec.describe Raindown::TUI::Navigator do
     subject(:navigator) { described_class.new(root: @root, path: write('notes.md', notes)) }
 
     before do
-      write('stats.md', "# Stats\n\n## Downloads\n\n<{ chart: '1 2 3' }>\n<{ :chart }>\n")
+      write('stats.md', "# Stats\n\n## Downloads\n\n<!-- chart: '1 2 3' -->\n<!-- :chart -->\n")
       navigator.next_step(:dashboard)
     end
 
@@ -329,7 +329,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'goes back to the files with left from the first card in a row, and otherwise moves along the cards' do
-      write('more.md', "<{ chart: '3 2 1' }>\n<{ :chart }>\n")
+      write('more.md', "<!-- chart: '3 2 1' -->\n<!-- :chart -->\n")
       navigator.next_step(:reload)
       navigator.next_step(:right)
       navigator.dashboard.rows(59)
@@ -366,8 +366,8 @@ RSpec.describe Raindown::TUI::Navigator do
     subject(:navigator) { described_class.new(root: @root) }
 
     before do
-      write('notes.md', "<{ chart: '1 2 3' }>\n<{ :chart }>\n")
-      write('guides/setup.md', "<{ chart: '3 2 1' }>\n<{ :chart }>\n")
+      write('notes.md', "<!-- chart: '1 2 3' -->\n<!-- :chart -->\n")
+      write('guides/setup.md', "<!-- chart: '3 2 1' -->\n<!-- :chart -->\n")
       FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown'))
     end
 
@@ -434,8 +434,8 @@ RSpec.describe Raindown::TUI::Navigator do
 
     before do
       write('a.md', "# A\n")
-      post = "<{ endpoint: }>\n```sh\ncurl -X POST https://api.example.com/users\n```\n<{ :endpoint }>\n"
-      write('api.md', "# API\n\n<{ endpoint: }>\n#{curl}<{ :endpoint }>\n\n#{post}")
+      post = "<!-- endpoint: -->\n```sh\ncurl -X POST https://api.example.com/users\n```\n<!-- :endpoint -->\n"
+      write('api.md', "# API\n\n<!-- endpoint: -->\n#{curl}<!-- :endpoint -->\n\n#{post}")
     end
 
     def endpoints(navigator) = navigator.content(:nav).rows.select { it.kind == :endpoint }.map { it.target.text }
@@ -494,7 +494,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'narrows to the project chosen in the menu, and shows its own' do
-      write('guides/more.md', "<{ endpoint: }>\n```sh\ncurl https://guides.example.com\n```\n<{ :endpoint }>\n")
+      write('guides/more.md', "<!-- endpoint: -->\n```sh\ncurl https://guides.example.com\n```\n<!-- :endpoint -->\n")
       FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown'))
       navigator = described_class.new(root: @root)
       expect(endpoints(navigator).length).to eq(3)
@@ -505,7 +505,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
   end
 
-  describe 'search' do
+  describe 'teleport' do
     subject(:navigator) { described_class.new(root: @root) }
 
     before do
@@ -519,7 +519,7 @@ RSpec.describe Raindown::TUI::Navigator do
     it 'opens with /, listing the pages as in the files, then each file with its headings and directives, until something is typed' do
       navigator.next_step(:search)
 
-      expect(navigator.searching?).to be(true)
+      expect(navigator.teleporting?).to be(true)
       expect(found(navigator).first(4)).to eq([['📊 Dashboard', ''], ['🎭 Feelings', ''], ['guides/setup.md', ''],
                                                ['# Install', 'guides/setup.md:1']])
     end
@@ -543,7 +543,7 @@ RSpec.describe Raindown::TUI::Navigator do
       type(navigator, 'setup notes')
       navigator.next_step(:enter)
 
-      expect([navigator.searching?, view_name(navigator), navigator.relative(navigator.path)]).to eq([false, 'OutlineView', 'notes.md'])
+      expect([navigator.teleporting?, view_name(navigator), navigator.relative(navigator.path)]).to eq([false, 'OutlineView', 'notes.md'])
       expect(navigator.view.rows[navigator.view.cursor].text).to eq('## Setup')
     end
 
@@ -552,7 +552,7 @@ RSpec.describe Raindown::TUI::Navigator do
       type(navigator, 'get api')
       expect(found(navigator).first).to eq(['GET api.example.com', 'notes.md:14'])
 
-      navigator.next_step(click(:search, 0))
+      navigator.next_step(click(:teleport, 0))
       expect([view_name(navigator), navigator.view.endpoint.line]).to eq(['EndpointView', 14])
     end
 
@@ -562,7 +562,7 @@ RSpec.describe Raindown::TUI::Navigator do
       expect(navigator.content(:nav).cursor).to eq(0)
 
       navigator.next_step(:escape)
-      expect(navigator.searching?).to be(false)
+      expect(navigator.teleporting?).to be(false)
     end
   end
 

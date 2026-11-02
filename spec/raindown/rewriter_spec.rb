@@ -13,12 +13,12 @@ RSpec.describe Raindown::Rewriter do
 
   describe '.update' do
     it 'runs every rewriter over the file' do
-      File.write(@path, "# Title\n\n<{ toc: }>\n<{ :toc }>\n\n| a | b |\n|-|-|\n| ccc | d |\n")
+      File.write(@path, "# Title\n\n<!-- toc: -->\n<!-- :toc -->\n\n| a | b |\n|-|-|\n| ccc | d |\n")
 
       expect(described_class.update(path: @path)).to be(true)
 
       content = File.read(@path)
-      expect(content).to include("<{ toc: }>\n\n- [Title](#title)\n")
+      expect(content).to include("<!-- toc: -->\n- [Title](#title)\n<!-- :toc -->\n")
       expect(content).to include("| a   | b   |\n| --- | --- |\n| ccc | d   |\n")
     end
 

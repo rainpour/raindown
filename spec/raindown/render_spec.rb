@@ -124,13 +124,20 @@ RSpec.describe Raindown do
       expect(described_class.render(markdown: "---\nraindown: false\n---\n\n# Title\n\n:toc\n")).not_to include('Table of contents')
     end
 
-    it 'renders an endpoint as its code blocks, between its directive and end tag in bold' do
-      { '<{ endpoint: :x }>' => 'endpoint: :x', '<{ endpoint: }>' => 'endpoint:' }.each do |directive, text|
-        html = described_class.render(markdown: "#{directive}\n\n```sh\ncurl https://api.example.com\n```\n<{ :endpoint }>\n")
+    it 'renders an endpoint as its code blocks, leaving out its directive and end tag in delimiters or comments' do
+      [['<{ endpoint: :x }>', '<{ :endpoint }>'], ['<!-- endpoint: :x -->', '<!-- :endpoint -->']].each do |open, close|
+        html = described_class.render(markdown: "#{open}\n\n```sh\ncurl https://api.example.com\n```\n#{close}\n")
 
-        expect(html).to start_with("<p><strong>#{text}</strong></p>\n<pre").and end_with("</pre>\n<p><strong>:endpoint</strong></p>\n")
+        expect(html).to start_with('<pre').and end_with("</pre>\n")
+        expect(html).not_to include('endpoint')
         expect(text(html)).to include('curl https://api.example.com')
       end
+    end
+
+    it 'renders a bare endpoint between its directive and end tag in bold' do
+      html = described_class.render(markdown: "endpoint: :x\n\n```sh\ncurl https://api.example.com\n```\n", bare: true)
+
+      expect(html).to start_with("<p><strong>endpoint: :x</strong></p>\n").and include("<p><strong>:endpoint</strong></p>\n")
     end
 
     it 'renders node blocks with their HTML, or their Markdown when they have no HTML' do
@@ -141,13 +148,6 @@ RSpec.describe Raindown do
         .and include("<p><strong>SpecHeading: title=&#39;Hi&#39;</strong></p>\n<h2 id=\"hi\">Hi")
       expect(html).not_to include('old')
       expect(html).to include('<p>Text.</p>')
-    end
-
-    it 'renders directives as HTML comments with hide_directives' do
-      html = described_class.render(markdown: "<{ endpoint: }>\n\n```sh\ncurl x\n```\n<{ :endpoint }>\n", hide_directives: true)
-
-      expect(html).to start_with("<!-- endpoint: -->\n<pre").and end_with("</pre>\n<!-- :endpoint -->\n")
-      expect(html).not_to include('<strong>')
     end
 
     it 'raises when an endpoint is not closed' do
@@ -225,13 +225,10 @@ RSpec.describe Raindown do
       expect(render_file('notes.raindown', "# Title\n\n:toc\n")).to include('Table of contents')
     end
 
-    it 'renders bare for and if directives around the Markdown block below them' do
-      markdown = "---\ntags: [a, b]\ndraft: false\n---\n\nfor: tag in: tags\n- {tag}\n\nif: draft\nA draft.\n\nAfter.\n"
-      html = render_file('notes.rd', markdown)
+    it "leaves bare for and if as text, since template directives are only in Antlers' delimiters" do
+      html = render_file('notes.rd', "---\ndraft: false\n---\n\nif: draft\nA draft.\n")
 
-      expect(html).to include("<ul>\n<li>a</li>\n<li>b</li>\n</ul>")
-      expect(html).not_to include('A draft.')
-      expect(html).to include('<p>After.</p>')
+      expect(html).to include('if: draft')
     end
 
     it 'leaves bare directives as text in Markdown files' do

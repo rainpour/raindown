@@ -25,5 +25,5 @@ File.write('CHANGELOG.md', released)
 files = [path]
 files << 'CHANGELOG.md' unless released == changelog
 
-system('bundle', 'update', exception: true)
+system('bundle', 'update', '--all', exception: true)
 system('git', 'commit', '-m', "Release v#{bumped}", '--', *files, exception: true)

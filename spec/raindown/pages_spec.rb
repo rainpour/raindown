@@ -54,14 +54,12 @@ RSpec.describe Raindown::Pages do
       expect(page.missing).to be_nil
     end
 
-    it 'renders content with the render options, and bare directives in Raindown files' do
+    it 'renders content with bare directives in Raindown files, in bold' do
       write('docs/_basics/_3-toc.rd', "---\ntitle: TOC\n---\n\n# TOC\n\n:toc\n")
-      hiding = described_class.new(metadata: pages_metadata, root: @root, render_options: { hide_directives: true })
-      shown = pages.list(folder: 'basics').find { it.title == 'TOC' }.content
-      hidden = hiding.list(folder: 'basics').find { it.title == 'TOC' }.content
 
-      expect(shown).to include('<p><strong>:toc</strong></p>', 'Table of contents')
-      expect(hidden).to include('<!-- :toc -->', 'Table of contents')
+      toc = pages.list(folder: 'basics').find { it.title == 'TOC' }
+
+      expect(toc.content).to include('<p><strong>:toc</strong></p>', 'Table of contents')
     end
 
     it "renders content with the project's config, unless the render options say otherwise" do
@@ -106,7 +104,7 @@ RSpec.describe Raindown::Pages do
 
   it 'gives files: and list: their metadata from the CLI' do
     write('docs/_basics/_1-a.md', "---\ntitle: A\n---\n")
-    write('index.rd', "files: folder: 'basics'\n\nlist: page folder: 'basics'\n## {page.title}\n")
+    write('index.rd', "files: folder: 'basics'\n\n<{ list: page folder: 'basics' }>\n## {page.title}\n<{ :list }>\n")
     path = File.join(@root, 'index.rd')
 
     Raindown::CLI.run([path, '--html', File.join(@root, 'index.html')])

@@ -1,27 +1,26 @@
 # frozen_string_literal: true
 
 require_relative 'code_blocks'
+require_relative 'directives'
 require_relative 'front_matter'
 
 module Raindown
-  # Raindown files (.rd/.raindown) can write a directive like <{ if: draft }> as a bare if: draft on its own line.
-  # Markdown files opt in with "raindown: true" in their front matter, or with the --bare flag.
-  # Nodes like toc: and files: are handled by NodeBlocks, before the rest.
+  # Raindown files (.rd/.raindown) can write a content directive, which writes its output back, bare on its own line,
+  # like endpoint: or toc:, which shows in bold in the HTML. Markdown files opt in with "raindown: true" in their front
+  # matter, or with the --bare flag. Nodes like toc: and files: are handled by NodeBlocks, before the rest.
+  # Template directives, like if: and for:, are always in Antlers' delimiters, so they're never bare.
   #
-  # Bare directives have no end tag. A bare block directive closes itself after the content it applies to,
-  # so where a block needs to wrap more than that, write it with delimiters and an end tag instead:
-  #   <{ if: draft }>
+  # Bare directives have no end tag. A bare endpoint closes itself after its curl snippet and response, so where it
+  # needs more than that, write it in comments with an end tag instead:
+  #   <!-- endpoint: -->
   #   ...
-  #   <{ :if }>
+  #   <!-- :endpoint -->
   module BareDirectives
     EXTENSIONS = %w[.rd .raindown].freeze
     # The block directives, and the method that finds the line their end tag goes after.
-    BLOCK_KEYWORDS = { 'endpoint:' => :after_endpoint, 'for:' => :after_block, 'if:' => :after_block,
-                       'list:' => :after_block }.freeze
+    BLOCK_KEYWORDS = { 'endpoint:' => :after_endpoint }.freeze
     # Four spaces of indent would make the line a Markdown code block.
     LINE = /\A( {0,3})((#{BLOCK_KEYWORDS.keys.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
-    # An end tag on its own line, like one a bare block directive above added, ends a block.
-    END_TAG = /\A {0,3}<\{\s*:[a-z][\w-]*\s*\}>[ \t]*$/
 
     module_function
 
@@ -69,34 +68,22 @@ module Raindown
       match = lines[index].match(LINE)
       return index unless match
 
-      lines[index] = wrap(lines[index])
+      lines[index] = "#{Directives.marker(match[2], shown: true)}\n#{wrap(lines[index])}"
       close_block(lines, index, indent: match[1], keyword: match[3])
       index
     end
 
+    # The end tag after the block, then the end tag in bold, as a bare directive's shown.
     def close_block(lines, index, indent:, keyword:)
       last = public_send(BLOCK_KEYWORDS[keyword], lines, index + 1) || index
       lines[last] = "#{lines[last]}\n" unless lines[last].end_with?("\n")
-      lines.insert(last + 1, "#{indent}<{ :#{keyword.delete_suffix(':')} }>\n")
+      name = keyword.delete_suffix(':')
+      lines.insert(last + 1, "#{indent}<{ :#{name} }>\n#{Directives.marker(":#{name}", shown: true)}\n")
     end
 
     # The last line of the curl snippet and response below an endpoint.
     def after_endpoint(lines, index)
       CodeBlocks.endpoint(lines, index).last&.fetch(:close)
-    end
-
-    # The last line of the Markdown block below, after any blank lines: up to the next blank line or end tag,
-    # with fenced code kept whole. Nil when there's nothing below.
-    def after_block(lines, index)
-      index = CodeBlocks.skip_blank_lines(lines, index)
-      last = nil
-
-      while index < lines.length && !lines[index].strip.empty? && !lines[index].match?(END_TAG)
-        last = CodeBlocks.at(lines, index)&.fetch(:close) || index
-        index = last + 1
-      end
-
-      last
     end
   end
 end

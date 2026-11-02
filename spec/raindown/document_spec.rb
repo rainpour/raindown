@@ -48,16 +48,18 @@ RSpec.describe Raindown::Document do
   end
 
   describe '#directives' do
-    it 'reads a delimited node, with the lines it wrote and not the blank lines around them' do
-      markdown = "# Notes\n\n<{ SpecReleases: limit=2 }>\n\n- **1.2.0** Bare\n- **1.1.0** Fetched\n\n<{ :SpecReleases }>\n"
+    it 'reads a node in comments, with the lines it wrote and not the blank lines around them' do
+      markdown = "# Notes\n\n<!-- SpecReleases: limit=2 -->\n\n- **1.2.0** Bare\n- **1.1.0** Fetched\n\n<!-- :SpecReleases -->\n"
 
       expect(directives(markdown))
         .to eq([{ name: 'SpecReleases', args: 'limit=2', line: 3, end_line: 8, body: 5..6, output: 5..6, writes: true }])
     end
 
-    it 'has no output before a node writes any' do
-      expect(directives("<{ toc: }>\n<{ :toc }>\n"))
+    it "has no output before a node writes any, and a node in Antlers' delimiters never writes" do
+      expect(directives("<!-- toc: -->\n<!-- :toc -->\n"))
         .to eq([{ name: 'toc', args: '', line: 1, end_line: 2, body: nil, output: nil, writes: true }])
+      expect(directives("<{ toc: }>\n<{ :toc }>\n"))
+        .to eq([{ name: 'toc', args: '', line: 1, end_line: 2, body: nil, output: nil, writes: false }])
     end
 
     it 'reads self-closing nodes, which never write' do
@@ -78,7 +80,7 @@ RSpec.describe Raindown::Document do
 
     it 'reads an endpoint, whose body is its request and response, and whose output is only the response and its date' do
       markdown = <<~MARKDOWN
-        <{ endpoint: :x }>
+        <!-- endpoint: :x -->
 
         ```sh
         curl https://example.com
@@ -88,18 +90,20 @@ RSpec.describe Raindown::Document do
         { "id": 1 }
         ```
         <!-- raindown:fetched 2026-10-14 -->
-        <{ :endpoint }>
+        <!-- :endpoint -->
       MARKDOWN
 
       expect(directives(markdown))
         .to eq([{ name: 'endpoint', args: ':x', line: 1, end_line: 11, body: 3..10, output: 7..10, writes: true }])
     end
 
-    it 'reads an endpoint without a response yet, and a bare endpoint, which ends after its blocks' do
-      waiting = "<{ endpoint: }>\n```sh\ncurl https://example.com\n```\n<{ :endpoint }>\n"
+    it "reads an endpoint without a response yet, one in Antlers' delimiters, which never writes, and a bare endpoint" do
+      waiting = "<!-- endpoint: -->\n```sh\ncurl https://example.com\n```\n<!-- :endpoint -->\n"
+      rendered = "<{ endpoint: }>\n```sh\ncurl https://example.com\n```\n<{ :endpoint }>\n"
       bare = "endpoint: :x\n```sh\ncurl https://example.com\n```\n```json\n{}\n```\n\nText.\n"
 
       expect(directives(waiting)).to eq([{ name: 'endpoint', args: '', line: 1, end_line: 5, body: 2..4, output: nil, writes: true }])
+      expect(directives(rendered)).to eq([{ name: 'endpoint', args: '', line: 1, end_line: 5, body: 2..4, output: nil, writes: false }])
       expect(directives(bare, bare: true))
         .to eq([{ name: 'endpoint', args: ':x', line: 1, end_line: 7, body: 2..7, output: 5..7, writes: true }])
     end

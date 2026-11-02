@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../code_box'
 require_relative '../events'
 require_relative 'cell_moves'
 require_relative 'celebration/celebration'
@@ -17,6 +18,7 @@ module Raindown
     # editor, and X asks Claude Code to fix it, and either way it's read again after, to be felt again.
     class FeelingsView
       include CellMoves
+      include ShownCode
 
       # Best to worst, as CodeHealth scores them, so the keys rate the code.
       BINS = { bin1: 'frolic', bin2: 'numb', bin3: 'woe', bin4: 'dread', bin5: 'malice' }.freeze
@@ -28,7 +30,7 @@ module Raindown
 
       # The temper being noted, and the note typed so far, while it's asking why, whether the selected method's code
       # shows all that fits, until another's selected, and the rain then the waffle, once the batch is refined.
-      attr_reader :noting, :note, :cursor, :log, :expanded, :celebration
+      attr_reader :noting, :note, :cursor, :log, :celebration
 
       def initialize(root:)
         @root = root
@@ -78,12 +80,6 @@ module Raindown
 
       def selected = code_methods[@cursor]
 
-      # The method's highlighted code, kept from frame to frame while it's the one shown.
-      def highlighted(method)
-        @highlighted = { method => yield } unless @highlighted&.key?(method)
-        @highlighted[method]
-      end
-
       def cursor=(index)
         index = index.clamp(0, [code_methods.length - 1, 0].max)
         @expanded = false unless index == @cursor
@@ -119,7 +115,7 @@ module Raindown
         when :down then move_row(1)
         when :edit then Edit.new(path: selected.path, line: selected.line)
         when :execute then fix
-        when :enter, :toggle, :expand then (@expanded = !@expanded).then { nil }
+        when :enter, :toggle, :expand then toggle_expanded
         end
       end
 

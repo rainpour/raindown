@@ -7,12 +7,15 @@ require_relative '../layout'
 require_relative 'ncurses_shim'
 require_relative 'quiet'
 require_relative 'styles'
+require_relative 'terminal_title'
 
 module Raindown
   module TUI
     # Paints a Navigator's Layout with curses, and sends the Navigator the events of keys and clicks, read with Input.
     # Only this class draws on the terminal, so another library could draw the same Layout.
     class Screen
+      prepend TerminalTitle
+
       # How often, in milliseconds, the screen's drawn, and the open file checked for changes, while no key is pressed, by
       # the view's pace, from when the last frame started drawing: every half second while it's active, at 12 frames a
       # second while it's reactive, just faster than Code feelings' digits tremble, and at 20 during an animation.

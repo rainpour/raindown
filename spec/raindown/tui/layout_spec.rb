@@ -13,7 +13,7 @@ RSpec.describe Raindown::TUI::Layout do
       @root = File.join(File.realpath(dir), 'docs')
       FileUtils.mkdir_p(File.join(@root, 'guides'))
       File.write(File.join(@root, 'guides', 'setup.md'),
-                 "# Setup\n\n<{ endpoint: }>\n```sh\ncurl https://example.com\n```\n```json\n{}\n```\n<{ :endpoint }>\n")
+                 "# Setup\n\n<!-- endpoint: -->\n```sh\ncurl https://example.com\n```\n```json\n{}\n```\n<!-- :endpoint -->\n")
       File.write(File.join(@root, 'README.md'), "# Readme\n")
       example.run
     end
@@ -119,7 +119,8 @@ RSpec.describe Raindown::TUI::Layout do
 
   describe 'the dashboard' do
     before do
-      File.write(File.join(@root, 'stats.md'), "# Stats\n\n<{ chart: '1 2 3' }>\n<{ :chart }>\n\n<{ chart: '3 2 1' }>\n<{ :chart }>\n")
+      charts = "<!-- chart: '1 2 3' -->\n<!-- :chart -->\n\n<!-- chart: '3 2 1' -->\n<!-- :chart -->\n"
+      File.write(File.join(@root, 'stats.md'), "# Stats\n\n#{charts}")
     end
 
     let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
@@ -156,8 +157,8 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it "doesn't click the space below a card shorter than its row" do
-      columns = "<{ chart: '1 2 3' height: 3 format: 'columns' }>\n<{ :chart }>\n"
-      File.write(File.join(@root, 'stats.md'), "<{ chart: '1 2 3' }>\n<{ :chart }>\n\n#{columns}")
+      columns = "<!-- chart: '1 2 3' height: 3 format: 'columns' -->\n<!-- :chart -->\n"
+      File.write(File.join(@root, 'stats.md'), "<!-- chart: '1 2 3' -->\n<!-- :chart -->\n\n#{columns}")
       navigator.next_step(:reload)
       lines = described_class.new(navigator, width: 90, height: 13).lines
 
@@ -187,9 +188,9 @@ RSpec.describe Raindown::TUI::Layout do
 
     before do
       FileUtils.mkdir_p(File.join(@root, '.raindown'))
-      File.write(File.join(@root, 'stats.md'), "<{ chart: '1 2 3' }>\n<{ :chart }>\n")
+      File.write(File.join(@root, 'stats.md'), "<!-- chart: '1 2 3' -->\n<!-- :chart -->\n")
       FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown'))
-      File.write(File.join(@root, 'guides', 'more.md'), "# More\n\n<{ chart: '3 2 1' }>\n<{ :chart }>\n")
+      File.write(File.join(@root, 'guides', 'more.md'), "# More\n\n<!-- chart: '3 2 1' -->\n<!-- :chart -->\n")
     end
 
     def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
@@ -236,8 +237,8 @@ RSpec.describe Raindown::TUI::Layout do
     let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
 
     before do
-      File.write(File.join(@root, 'api.md'), "<{ endpoint: }>\n```sh\ncurl -X DELETE https://api.example.com/users/1\n```\n" \
-                                             "```json\n{}\n```\n<!-- raindown:fetched 2026-10-26 -->\n<{ :endpoint }>\n")
+      File.write(File.join(@root, 'api.md'), "<!-- endpoint: -->\n```sh\ncurl -X DELETE https://api.example.com/users/1\n```\n" \
+                                             "```json\n{}\n```\n<!-- raindown:fetched 2026-10-26 -->\n<!-- :endpoint -->\n")
     end
 
     def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
@@ -264,8 +265,8 @@ RSpec.describe Raindown::TUI::Layout do
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))
     end
     it 'highlights its response in the language of its code block' do
-      File.write(File.join(@root, 'api.md'), "<{ endpoint: }>\n```sh\ncurl https://api.example.com/users/1\n```\n" \
-                                             "```json\n{\"id\": 1}\n```\n<{ :endpoint }>\n")
+      File.write(File.join(@root, 'api.md'), "<!-- endpoint: -->\n```sh\ncurl https://api.example.com/users/1\n```\n" \
+                                             "```json\n{\"id\": 1}\n```\n<!-- :endpoint -->\n")
       navigator.next_step(:reload)
       navigator.next_step(click(:nav, navigator.content(:nav).rows.index { it.kind == :endpoint }))
       line = described_class.new(navigator, width: 90, height: 12).lines.find { |segments| segments.any? { it.text == '"id"' } }
@@ -283,12 +284,12 @@ RSpec.describe Raindown::TUI::Layout do
 
       # The box is the width less 4, between 2 columns either side.
       expect(lines[1..4].map { columns(it, from: 2, count: 56) }).to eq(
-        ['┌─ Teleport ───────────────────────────────────────────┐',
+        ['┌────────────────────── Teleport ──────────────────────┐',
          '│ / setup▏                                             │',
          '│ # Setup                            guides/setup.md:1 │',
          '│ guides/setup.md                                      │']
       )
-      expect(lines[3].map(&:event).compact.uniq.select { it.pane == :search }).to eq([click(:search, 0)])
+      expect(lines[3].map(&:event).compact.uniq.select { it.pane == :teleport }).to eq([click(:teleport, 0)])
       expect(lines[3].find { it.text.include?('# Setup') }.style).to eq(:selected)
       expect(text(lines).map { width(it) }).to all(eq(60))
     end

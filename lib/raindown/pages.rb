@@ -33,7 +33,7 @@ module Raindown
 
     attr_reader :root
 
-    # Render options, like hide_directives: true, are for rendering each listed file's content.
+    # Render options, like highlight_code: false, are for rendering each listed file's content.
     def initialize(metadata:, root:, render_options: {})
       @root = root
       @render_options = render_options

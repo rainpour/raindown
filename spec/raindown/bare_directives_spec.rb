@@ -10,29 +10,10 @@ RSpec.describe Raindown::BareDirectives do
       expect(described_class.expand(content)).to eq(content)
     end
 
-    it 'closes for, if and list after the Markdown block below them' do
-      expect(described_class.expand("if: draft\nThis is a draft.\nStill a draft.\n\nAfter.\n"))
-        .to eq("<{ if: draft }>\nThis is a draft.\nStill a draft.\n<{ :if }>\n\nAfter.\n")
-      expect(described_class.expand("for: tag in: tags\n\n- {tag}\n\nAfter.\n"))
-        .to eq("<{ for: tag in: tags }>\n\n- {tag}\n<{ :for }>\n\nAfter.\n")
-      expect(described_class.expand("list: page folder: 'notes'\n## {page.title}\n"))
-        .to eq("<{ list: page folder: 'notes' }>\n## {page.title}\n<{ :list }>\n")
-    end
+    it 'leaves for, if and list as text, since template directives are always in delimiters' do
+      content = "if: draft\nThis is a draft.\n\nfor: tag in: tags\n- {tag}\n"
 
-    it 'keeps fenced code with blank lines in a block whole' do
-      content = "if: draft\n```\na\n\nb\n```\n\nAfter.\n"
-
-      expect(described_class.expand(content)).to eq("<{ if: draft }>\n```\na\n\nb\n```\n<{ :if }>\n\nAfter.\n")
-    end
-
-    it 'closes nested bare blocks inside out' do
-      expect(described_class.expand("for: x in: xs\nif: x.ok\n- {x.name}\n\nAfter.\n"))
-        .to eq("<{ for: x in: xs }>\n<{ if: x.ok }>\n- {x.name}\n<{ :if }>\n<{ :for }>\n\nAfter.\n")
-    end
-
-    it 'closes a bare block inside a delimited one before its end tag' do
-      expect(described_class.expand("<{ for: x in: xs }>\nif: x.ok\n- {x.name}\n<{ :for }>\n"))
-        .to eq("<{ for: x in: xs }>\n<{ if: x.ok }>\n- {x.name}\n<{ :if }>\n<{ :for }>\n")
+      expect(described_class.expand(content)).to eq(content)
     end
 
     it 'leaves front matter alone' do
@@ -41,39 +22,41 @@ RSpec.describe Raindown::BareDirectives do
       expect(described_class.expand(content)).to eq(content)
     end
 
-    it 'closes block directives after the code blocks they hold' do
-      content = "endpoint: :x\n\n```sh\ncurl x\n```\n\n```json\n{}\n```\n\nAfter\n"
+    # A bare endpoint shows in bold, so it's between markers in bold, around the delimited endpoint that renders.
+    def bold(text) = "<!-- raindown:directive #{text} -->\n"
+    def curl = "```sh\ncurl x\n```\n"
+
+    it 'closes an endpoint after the code blocks it holds, in bold' do
+      content = "endpoint: :x\n\n#{curl}\n```json\n{}\n```\n\nAfter\n"
 
       expect(described_class.expand(content))
-        .to eq("<{ endpoint: :x }>\n\n```sh\ncurl x\n```\n\n```json\n{}\n```\n<{ :endpoint }>\n\nAfter\n")
+        .to eq("#{bold('endpoint: :x')}<{ endpoint: :x }>\n\n#{curl}\n```json\n{}\n```\n<{ :endpoint }>\n#{bold(':endpoint')}\nAfter\n")
     end
 
     it 'only closes around code blocks directly below' do
-      content = "endpoint:\n```sh\ncurl x\n```\nText\n```\nother\n```\n"
+      content = "endpoint:\n#{curl}Text\n```\nother\n```\n"
 
-      expect(described_class.expand(content)).to eq("<{ endpoint: }>\n```sh\ncurl x\n```\n<{ :endpoint }>\nText\n```\nother\n```\n")
+      expect(described_class.expand(content))
+        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n#{curl}<{ :endpoint }>\n#{bold(':endpoint')}Text\n```\nother\n```\n")
     end
 
     it 'closes an endpoint before another curl example' do
-      content = "endpoint: :x\n\n```sh\ncurl x\n```\n\n```sh\ncurl y\n```\n"
+      content = "endpoint: :x\n\n#{curl}\n```sh\ncurl y\n```\n"
 
-      expect(described_class.expand(content)).to eq("<{ endpoint: :x }>\n\n```sh\ncurl x\n```\n<{ :endpoint }>\n\n```sh\ncurl y\n```\n")
+      expect(described_class.expand(content))
+        .to eq("#{bold('endpoint: :x')}<{ endpoint: :x }>\n\n#{curl}<{ :endpoint }>\n#{bold(':endpoint')}\n```sh\ncurl y\n```\n")
     end
 
-    it 'closes block directives with nothing below them straight away' do
-      expect(described_class.expand("endpoint:\n\nText")).to eq("<{ endpoint: }>\n<{ :endpoint }>\n\nText")
-    end
-
-    it 'closes block directives at the end of the file' do
-      expect(described_class.expand("endpoint:\n```sh\ncurl x\n```")).to eq("<{ endpoint: }>\n```sh\ncurl x\n```\n<{ :endpoint }>\n")
+    it 'closes an endpoint with nothing below it straight away, or at the end of the file' do
+      expect(described_class.expand("endpoint:\n\nText"))
+        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n<{ :endpoint }>\n#{bold(':endpoint')}\nText")
+      expect(described_class.expand("endpoint:\n```sh\ncurl x\n```"))
+        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n#{curl}<{ :endpoint }>\n#{bold(':endpoint')}")
     end
 
     it 'keeps up to three spaces of indent' do
-      expect(described_class.expand("   if: draft  \n   Text.\n")).to eq("   <{ if: draft }>\n   Text.\n   <{ :if }>\n")
-    end
-
-    it 'expands a directive on the last line without a newline' do
-      expect(described_class.expand("Text.\n\nif: draft")).to eq("Text.\n\n<{ if: draft }>\n<{ :if }>\n")
+      expect(described_class.expand("   endpoint:  \n"))
+        .to eq("#{bold('endpoint:')}   <{ endpoint: }>\n   <{ :endpoint }>\n#{bold(':endpoint')}")
     end
 
     {

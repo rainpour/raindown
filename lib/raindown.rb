@@ -37,16 +37,16 @@ module Raindown
 
   module_function
 
-  # Directives show in bold and code is highlighted, unless the file's project changes them in .raindown/config.yml.
+  # Code is highlighted, unless the file's project changes it in .raindown/config.yml.
   def render_file(path:, metadata: NoMetadata, bare: false, **options)
     options = Config.render_options(path).merge(options)
     render(markdown: File.read(path, encoding: Encoding::UTF_8), metadata:, bare: bare || BareDirectives.file?(path), **options)
   end
 
   # Front matter keys are variables, like {title} or <{ title }>.
-  # Directives like "toc:" export to HTML as bold or comments depending on hide_directives config.
+  # Bare directives like "toc:" show in bold in the HTML, and the rest stay hidden, as comments.
   # Code blocks are highlighted, unless highlight_code is false for a site that highlights code in the browser.
-  def render(markdown:, metadata: NoMetadata, bare: false, hide_directives: false, highlight_code: true)
+  def render(markdown:, metadata: NoMetadata, bare: false, highlight_code: true)
     bare ||= BareDirectives.front_matter?(markdown)
 
     highlighting(highlight_code) do
@@ -55,7 +55,7 @@ module Raindown
         html = assembled(markdown:, metadata:, bare:)
         html = Nodes.render_placeholders(html, document: markdown, metadata:, bare:, html:)
 
-        Directives.render("#{html.chomp}\n", hide: hide_directives)
+        Directives.render("#{html.chomp}\n")
       end
     end
   end

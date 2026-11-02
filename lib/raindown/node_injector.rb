@@ -6,8 +6,8 @@ require_relative 'front_matter'
 require_relative 'node_blocks'
 
 module Raindown
-  # Writes each node block's Markdown below its directive, replacing what it wrote before.
-  # Self-closing nodes only render, so they're left alone.
+  # Writes each node block's Markdown below its directive, replacing what it wrote before, when it's in comments or
+  # bare. Ones in Antlers' delimiters, and self-closing ones, only render, so they're left alone.
   class NodeInjector
     class BlankLine < StandardError; end
 
@@ -25,7 +25,7 @@ module Raindown
     def call
       lines = @content.lines
       blocks = NodeBlocks.find(lines, front_matter: FrontMatter.parse(@content).first, bare: @bare)
-                         .reject { |block| block[:self_closing] }
+                         .select { |block| block[:writes] }
       return @content if blocks.empty?
 
       blocks.reverse_each { |block| lines[block[:open]..block[:last]] = block_lines(lines, block) }
@@ -42,19 +42,16 @@ module Raindown
       delimited(lines, block, written)
     end
 
-    # The directive, what the node wrote and the end tag, each separated by a blank line.
-    def delimited(lines, block, written)
-      result = [line(lines[block[:open]])]
-      result.push("\n", *written) unless written.empty?
-      result.push("\n", line(lines[block[:close]]))
-    end
+    # The directive, what the node wrote and the end tag, straight after each other, as a comment on its own line ends
+    # at its -->, so what's written below it, like a list, is its own block.
+    def delimited(lines, block, written) = [line(lines[block[:open]]), *written, line(lines[block[:close]])]
 
     # A bare block ends at the next blank line, so what it writes can't have one.
     def bare(written, block)
       return written unless written.any? { |line| line.strip.empty? }
 
       name = block[:node].class.name
-      raise BlankLine, "#{name} writes blank lines, so it needs <{ #{name}: }> and <{ :#{name} }> around it"
+      raise BlankLine, "#{name} writes blank lines, so it needs <!-- #{name}: --> and <!-- :#{name} --> around it"
     end
 
     def line(line)

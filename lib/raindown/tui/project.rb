@@ -61,11 +61,13 @@ module Raindown
         { cards: drawn, errors: @load_errors + @file_errors }
       end
 
-      # Every endpoint in the project's files, by its request, leaving out the ones whose snippet can't be read.
+      # Every endpoint in the project's files that writes its response back, so it can run, by its request, leaving out
+      # the ones whose snippet can't be read.
       def endpoints
         Projects.files(root).flat_map do |path|
           lines = File.readlines(path, encoding: Encoding::UTF_8)
-          Document.read(path, bare: @bare).directives.select(&:endpoint?).filter_map { |directive| endpoint(path, lines, directive) }
+          runnable = Document.read(path, bare: @bare).directives.select { it.endpoint? && it.writes }
+          runnable.filter_map { |directive| endpoint(path, lines, directive) }
         rescue StandardError
           []
         end
@@ -115,7 +117,7 @@ module Raindown
 
       def chart(block, path:, lines:, headings:)
         line = block[:open] + 1
-        directive = lines[block[:open]].strip.delete_prefix('<{').delete_suffix('}>').strip
+        directive = Directives.text(lines[block[:open]])
 
         { path:, line:, heading: headings.select { it.line < line }.last&.text, directive:, node: block[:node] }
       end

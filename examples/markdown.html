@@ -1,6 +1,6 @@
 <h1 id="raindown-example">Raindown Example<a href="#raindown-example" aria-label="Link to heading 'Raindown Example'" data-heading-content="Raindown Example" class="anchor"></a></h1>
-<p>Run <code>raindown examples/markdown.md</code> and edit this file to see <code>examples/markdown.html</code> update on save.</p>
-<p>This is a Markdown file (<code>.md</code>), so directives sit between <code>&lt;&#123;</code> and <code>&#125;&gt;</code>.</p>
+<p>Run <code>raindown examples/markdown.md</code> and edit this file to see Raindown write back to it on save, or add <code>--html examples/markdown.html</code> to render it.</p>
+<p>This is a Markdown file (<code>.md</code>) with <code>raindown: true</code> front matter, so its directives are written bare on their own line, like in a Raindown file.</p>
 <p><strong>toc:</strong></p>
 <div class="floating">
   <details id="toc" open>
@@ -17,13 +17,11 @@
   </details>
 </div>
 
-<p><strong>:toc</strong></p>
 <h2 id="directives">Directives<a href="#directives" aria-label="Link to heading 'Directives'" data-heading-content="Directives" class="anchor"></a></h2>
-<p>Raindown directives sit between <code>&lt;&#123;</code> and <code>&#125;&gt;</code>. The table of contents above comes from:</p>
-<pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">&lt;&#123; toc: &#125;&gt;
-</span><span style="color:#c0c5ce;">&lt;&#123; :toc &#125;&gt;
+<p>A directive on its own line needs no delimiters. The table of contents above comes from:</p>
+<pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">toc:
 </span></code></pre>
-<p>It writes a list of every heading into this file between the two, kept in sync as you edit, and renders a table of contents in the HTML. Use <code>&lt;&#123; :toc &#125;&gt;</code> for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it.</p>
+<p>It writes a list of every heading into this file below it, kept in sync as you edit, and renders a table of contents in the HTML. Use <code>:toc</code> for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it.</p>
 <h2 id="charts">Charts<a href="#charts" aria-label="Link to heading 'Charts'" data-heading-content="Charts" class="anchor"></a></h2>
 <p>A <code>chart:</code> directive draws its data in block characters, and writes the chart below it, redrawn whenever the file is rendered. Labeled data like <code>data/downloads.csv</code> draws as bars:</p>
 <p><strong>chart: &#39;data/downloads.csv&#39; width: 30</strong></p>
@@ -33,12 +31,10 @@
 </span><span style="color:#c0c5ce;">Sep  ███████████████████████▏       2,210
 </span><span style="color:#c0c5ce;">Oct  ██████████████████████████████ 2,870
 </span></code></pre>
-<p><strong>:chart</strong></p>
 <p>Numbers alone draw as a sparkline:</p>
 <p><strong>chart: &#39;3 5 2 8 6 9 4 7&#39;</strong></p>
 <pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">▂▄▁▇▅█▃▆
 </span></code></pre>
-<p><strong>:chart</strong></p>
 <h3 id="commits">Commits<a href="#commits" aria-label="Link to heading 'Commits'" data-heading-content="Commits" class="anchor"></a></h3>
 <p><code>minus:</code> charts a column against the values, like the lines each commit deleted against the lines it added:</p>
 <p><strong>chart: &#39;data/commits.csv&#39; minus: &#39;deleted&#39; width: 30</strong></p>
@@ -48,18 +44,17 @@
 </span><span style="color:#c0c5ce;">1cd92fb   -5  ▕│████████████████████████████▏ +717
 </span><span style="color:#c0c5ce;">69ce897  -47 ██│█████▊                        +146
 </span></code></pre>
-<p><strong>:chart</strong></p>
 <h2 id="endpoints">Endpoints<a href="#endpoints" aria-label="Link to heading 'Endpoints'" data-heading-content="Endpoints" class="anchor"></a></h2>
 <p>An <code>endpoint:</code> directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.</p>
 <p><strong>endpoint: :x</strong></p>
 <pre lang="sh" style="background-color:#2b303b;"><code><span style="color:#8fa1b3;">curl</span><span style="color:#c0c5ce;"> https://httpbin.org/uuid
 </span></code></pre>
 <pre lang="json" style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">&#123;
-</span><span style="color:#c0c5ce;">  &quot;</span><span style="color:#a3be8c;">uuid</span><span style="color:#c0c5ce;">&quot;: &quot;</span><span style="color:#a3be8c;">1eefb9a5-442c-49cc-8bf8-63f55b6e5041</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#c0c5ce;">  &quot;</span><span style="color:#a3be8c;">uuid</span><span style="color:#c0c5ce;">&quot;: &quot;</span><span style="color:#a3be8c;">87fdc251-725f-4fc0-b740-eaaff56566bb</span><span style="color:#c0c5ce;">&quot;
 </span><span style="color:#c0c5ce;">&#125;
 </span></code></pre>
-<!-- raindown:fetched 2026-10-14 -->
 <p><strong>:endpoint</strong></p>
+<!-- raindown:fetched 2026-10-27 -->
 <h2 id="tables">Tables<a href="#tables" aria-label="Link to heading 'Tables'" data-heading-content="Tables" class="anchor"></a></h2>
 <p>Tables auto-expand their column widths on save to match the content.</p>
 <table>

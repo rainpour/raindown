@@ -6,7 +6,8 @@ require_relative '../raindown/fragments'
 
 module Raindown
   # Holds an endpoint's curl snippet and response, which render as the code blocks they are,
-  # between Directives markers for its directive and end tag, kept as a fragment.
+  # between hidden Directives markers for its directive and end tag, kept as a fragment. A bare endpoint has markers
+  # in bold around it too, from BareDirectives.
   class EndpointNode < Antlers::BranchNode
     DEF_KEY = :endpoint_def
     END_KEY = :endpoint_end
@@ -19,7 +20,7 @@ module Raindown
 
     def render(**)
       html = Raindown.commonmark(super)
-      Fragments.add("#{Directives.marker(@directive)}\n#{html}#{Directives.marker(':endpoint')}")
+      Fragments.add("#{Directives.marker(@directive, shown: false)}\n#{html}#{Directives.marker(':endpoint', shown: false)}")
     end
 
     class << self

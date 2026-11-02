@@ -9,7 +9,7 @@ module Raindown
     # Teleport: "/" opens a search of the Dashboard, Code feelings, every file, heading and directive in the files, and every endpoint,
     # matched as it's typed by letters in order, so "stp" finds "## Setup". Up and down move between the matches,
     # Enter or a click opens the one selected, and Esc closes it. Other keys and clicks do nothing while it's open.
-    module Search
+    module Teleport
       # The most matches it shows.
       LIMIT = 10
 
@@ -45,10 +45,13 @@ module Raindown
         end
       end
 
-      # What's typed, while the search is open, and the selected match.
+      # What's typed, while Teleport is open, and the selected match.
       attr_reader :query, :match
 
-      def searching? = !query.nil?
+      def teleporting? = !query.nil?
+
+      # The first match the box lists, as it lists them all.
+      def first_match = 0
 
       # The places that match what's typed, best first, then in the order they're in the files.
       def matches
@@ -58,18 +61,18 @@ module Raindown
 
       private
 
-      def open_search
+      def open_teleport
         @places = places
         @match = 0
         @query = ''
         nil
       end
 
-      def search_event(name)
+      def teleport_event(name)
         case name
         when :up, :down then move_match(name == :up ? -1 : 1)
         when :enter then teleport
-        when :escape then close_search
+        when :escape then close_teleport
         when :backspace then type_query(query[0...-1])
         end
       end
@@ -87,11 +90,11 @@ module Raindown
 
       def teleport
         place = matches[@match]
-        close_search
+        close_teleport
         place&.open&.take(self)
       end
 
-      def close_search
+      def close_teleport
         @query = nil
         nil
       end

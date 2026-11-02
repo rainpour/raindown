@@ -13,12 +13,14 @@ module Raindown
       KEYS = {
         Curses::KEY_UP => :up, 'k' => :up, Curses::KEY_DOWN => :down, 'j' => :down,
         Curses::KEY_LEFT => :left, 'h' => :left, Curses::KEY_RIGHT => :right, 'l' => :right,
+        Curses::KEY_SLEFT => :scroll_left, Curses::KEY_SRIGHT => :scroll_right, Curses::KEY_SR => :scroll_up,
+        Curses::KEY_SF => :scroll_down,
         "\t" => :tab, Curses::KEY_BTAB => :tab, "\r" => :enter, "\n" => :enter, Curses::KEY_ENTER => :enter,
         ' ' => :toggle, 'x' => :execute, 'e' => :edit, 'w' => :write_back, 'r' => :reload, 'd' => :dashboard,
-        'p' => :projects, 'f' => :feelings, "\x14" => :celebrate, '/' => :search,
+        'p' => :projects, 'f' => :feelings, 'b' => :blueprints, "\x14" => :celebrate, '/' => :search,
         '1' => :bin1, '2' => :bin2, '3' => :bin3, '4' => :bin4, '5' => :bin5, "\e" => :escape, 'q' => :quit
       }.freeze
-      # While typing, like in the search, printable characters are typed, and only these keys do anything else.
+      # While typing, like in Teleport, printable characters are typed, and only these keys do anything else.
       TYPING_KEYS = {
         Curses::KEY_UP => :up, Curses::KEY_DOWN => :down, "\r" => :enter, "\n" => :enter, Curses::KEY_ENTER => :enter,
         "\e" => :escape, Curses::KEY_BACKSPACE => :backspace, "\x7F" => :backspace, "\b" => :backspace
@@ -62,6 +64,10 @@ module Raindown
       # like macOS's, has no button for scrolling down, it can't be mistaken for a click.
       CLICKS = Curses::BUTTON1_PRESSED | Curses::BUTTON1_CLICKED
 
+      # Letting go of the button, which older ncurses, like macOS's, also reports for each move while it's held, as it
+      # doesn't know the moves terminals send then.
+      RELEASE = Curses::BUTTON1_RELEASED
+
       # Moving the mouse, which terminals report once they're asked to, with any motion tracking.
       MOTION = Curses::REPORT_MOUSE_POSITION
       ANY_MOTION = "\e[?1003h"
@@ -70,7 +76,7 @@ module Raindown
       # The terminal sends the app its mouse events, clicks and moves, so scrolling doesn't scroll the terminal either.
       # ncurses only asks some terminals to report every move, so it's asked directly too, until untrack_mouse.
       def track_mouse
-        Curses.mousemask(CLICKS | MOTION)
+        Curses.mousemask(CLICKS | RELEASE | MOTION)
         Curses.mouseinterval(0)
         $stdout.write(ANY_MOTION)
         $stdout.flush
@@ -81,12 +87,38 @@ module Raindown
         $stdout.flush
       end
 
-      # A click sends the event of what's under it, and moving the mouse a Hover of it.
+      # A click sends the event of what's under it, and moving the mouse a Hover of it, or a Drag by how far it's moved
+      # since the last event while the button's held. Terminals and ncurses versions report that in their own ways: a
+      # move the button's held for, a move after a press, until the release, or with older ncurses and some terminals,
+      # a release somewhere else than the last event, for each move. A release where the mouse already is, which ends a
+      # click or a drag, does nothing.
       def mouse_event(event, zones)
+        from = @last
+        @last = [event.x, event.y]
+        held = hold(event.bstate)
+        return drag(from, event) if from && dragged?(event, held:, moved: from != @last)
+        return if event.bstate.anybits?(RELEASE)
+
         target = click(zones, column: event.x, row: event.y)
         return target if event.bstate.anybits?(CLICKS)
 
         Hover.new(target:) if event.bstate.anybits?(MOTION)
+      end
+
+      # Whether the button was held before this event, which holds it from a press until a release.
+      def hold(bstate)
+        held = @held
+        @held = bstate.anybits?(CLICKS) || (held && !bstate.anybits?(RELEASE))
+        held
+      end
+
+      def drag(from, event) = Drag.new(columns: event.x - from[0], rows: event.y - from[1])
+
+      def dragged?(event, held:, moved:)
+        bstate = event.bstate
+        return held || bstate.anybits?(Curses::BUTTON1_PRESSED) if bstate.anybits?(MOTION)
+
+        moved && bstate.anybits?(RELEASE)
       end
 
       # Where each of a Layout's segments with an event is on the screen, as [row, columns, event].

@@ -6,11 +6,12 @@ require_relative '../code_blocks'
 require_relative 'curl'
 
 module Raindown
-  # Runs the curl block under an endpoint directive and writes the response in the code block below it,
+  # Runs the curl block under an endpoint directive in a comment, or a bare one, and writes the response in the code
+  # block below it,
   # followed by the date it was fetched.
   # Only runs when that block is missing or empty, and the directive has :x/:execute or --execute is passed.
   # Or with only: and a directive's line index, runs just that endpoint, replacing any response it has.
-  #   <{ endpoint: :x }>
+  #   <!-- endpoint: :x -->
   #   ```sh
   #   curl https://api.example.com
   #   ```
@@ -18,9 +19,14 @@ module Raindown
   #   { "id": 1 }
   #   ```
   #   <!-- raindown:fetched 2026-10-14 -->
-  #   <{ :endpoint }>
+  #   <!-- :endpoint -->
+  # One in Antlers' delimiters, <{ endpoint: }>, only renders, so it's never run.
   class EndpointRunner
+    # An endpoint's directive in Antlers' delimiters, which only renders, or in a comment, which writes its response back,
+    # and the end tag of either.
     DIRECTIVE = /\A {0,3}<\{\s*endpoint:(.*?)\}>[ \t]*$/
+    COMMENT = /\A {0,3}<!--\s*endpoint:(.*?)-->[ \t]*$/
+    END_TAG = /\A {0,3}(?:<\{\s*:endpoint\s*\}>|<!--\s*:endpoint\s*-->)[ \t]*$/
     EXECUTE_ARGS = %w[:x :execute].freeze
     # The date a response was fetched, on the line after it.
     FETCHED = /\A {0,3}<!-- raindown:fetched [^\n]*? -->[ \t]*$/
@@ -54,9 +60,11 @@ module Raindown
 
     private
 
+    # The arguments of an endpoint that writes back: in a comment, or bare.
     def directive_args(line)
-      line = BareDirectives.wrap(line) || line if @bare
-      line[DIRECTIVE, 1]&.split
+      args = line[COMMENT, 1]
+      args ||= BareDirectives.wrap(line)&.[](DIRECTIVE, 1) if @bare
+      args&.split
     end
 
     # Returns the index of the last line it handled.

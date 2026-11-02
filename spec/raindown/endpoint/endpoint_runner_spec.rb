@@ -17,65 +17,66 @@ RSpec.describe Raindown::EndpointRunner do
   end
 
   it 'writes the response below the curl block when the directive has :x' do
-    expect(rewrite("<{ endpoint: :x }>\n\n#{curl}\nAfter.\n")).to eq("<{ endpoint: :x }>\n\n#{curl}\n#{response}\nAfter.\n")
+    expect(rewrite("<!-- endpoint: :x -->\n\n#{curl}\nAfter.\n")).to eq("<!-- endpoint: :x -->\n\n#{curl}\n#{response}\nAfter.\n")
   end
 
   it 'writes the response inside the closing tag' do
-    expect(rewrite("<{ endpoint: :x }>\n#{curl}<{ :endpoint }>\n")).to eq("<{ endpoint: :x }>\n#{curl}\n#{response}<{ :endpoint }>\n")
+    expect(rewrite("<!-- endpoint: :x -->\n#{curl}<!-- :endpoint -->\n"))
+      .to eq("<!-- endpoint: :x -->\n#{curl}\n#{response}<!-- :endpoint -->\n")
   end
 
   it 'runs when the next block is another curl example' do
     other = "```sh\ncurl https://api.example.com/other\n```\n"
 
-    expect(rewrite("<{ endpoint: :x }>\n\n#{curl}\n#{other}")).to eq("<{ endpoint: :x }>\n\n#{curl}\n#{response}\n#{other}")
+    expect(rewrite("<!-- endpoint: :x -->\n\n#{curl}\n#{other}")).to eq("<!-- endpoint: :x -->\n\n#{curl}\n#{response}\n#{other}")
   end
 
   it 'accepts :execute' do
-    expect(rewrite("<{ endpoint: :execute }>\n\n#{curl}")).to eq("<{ endpoint: :execute }>\n\n#{curl}\n#{response}")
+    expect(rewrite("<!-- endpoint: :execute -->\n\n#{curl}")).to eq("<!-- endpoint: :execute -->\n\n#{curl}\n#{response}")
   end
 
   it 'does not run without :x' do
-    content = "<{ endpoint: }>\n\n#{curl}"
+    content = "<!-- endpoint: -->\n\n#{curl}"
 
     expect(rewrite(content)).to eq(content)
     expect(Raindown::Curl).not_to have_received(:run)
   end
 
   it 'runs every endpoint when executing' do
-    expect(rewrite("<{ endpoint: }>\n\n#{curl}", execute: true)).to eq("<{ endpoint: }>\n\n#{curl}\n#{response}")
+    expect(rewrite("<!-- endpoint: -->\n\n#{curl}", execute: true)).to eq("<!-- endpoint: -->\n\n#{curl}\n#{response}")
   end
 
   it 'fills an empty output block' do
-    expect(rewrite("<{ endpoint: :x }>\n\n#{curl}\n```\n```\n")).to eq("<{ endpoint: :x }>\n\n#{curl}\n#{response}")
+    expect(rewrite("<!-- endpoint: :x -->\n\n#{curl}\n```\n```\n")).to eq("<!-- endpoint: :x -->\n\n#{curl}\n#{response}")
   end
 
   it 'replaces the fetched date when an emptied block is fetched again' do
-    content = "<{ endpoint: :x }>\n\n#{curl}\n```json\n```\n<!-- raindown:fetched 2025-01-01 -->\n\nAfter.\n"
+    content = "<!-- endpoint: :x -->\n\n#{curl}\n```json\n```\n<!-- raindown:fetched 2025-01-01 -->\n\nAfter.\n"
 
-    expect(rewrite(content)).to eq("<{ endpoint: :x }>\n\n#{curl}\n#{response}\nAfter.\n")
+    expect(rewrite(content)).to eq("<!-- endpoint: :x -->\n\n#{curl}\n#{response}\nAfter.\n")
   end
 
   it 'leaves existing output alone' do
-    content = "<{ endpoint: :x }>\n\n#{curl}\n```json\n{}\n```\n"
+    content = "<!-- endpoint: :x -->\n\n#{curl}\n```json\n{}\n```\n"
 
     expect(rewrite(content, execute: true)).to eq(content)
     expect(Raindown::Curl).not_to have_received(:run)
   end
 
   it 'ignores directives in code' do
-    content = "````md\n<{ endpoint: :x }>\n\n#{curl}````\n"
+    content = "````md\n<!-- endpoint: :x -->\n\n#{curl}````\n"
 
     expect(rewrite(content)).to eq(content)
   end
 
   it 'ignores a directive without a curl block below it' do
-    content = "<{ endpoint: :x }>\n\n```sh\nls\n```\n"
+    content = "<!-- endpoint: :x -->\n\n```sh\nls\n```\n"
 
     expect(rewrite(content)).to eq(content)
   end
 
   it 'runs every endpoint in the file' do
-    content = rewrite("<{ endpoint: :x }>\n\n#{curl}\n<{ endpoint: :x }>\n\n#{curl}")
+    content = rewrite("<!-- endpoint: :x -->\n\n#{curl}\n<!-- endpoint: :x -->\n\n#{curl}")
 
     expect(content.scan('```json').length).to eq(2)
   end
@@ -88,25 +89,26 @@ RSpec.describe Raindown::EndpointRunner do
   it 'fences the response with more backticks than it contains' do
     allow(Raindown::Curl).to receive(:run).and_return(["```\ncode\n```", 'text'])
 
-    expect(rewrite("<{ endpoint: :x }>\n\n#{curl}")).to end_with("\n````text\n```\ncode\n```\n````\n#{fetched}")
+    expect(rewrite("<!-- endpoint: :x -->\n\n#{curl}")).to end_with("\n````text\n```\ncode\n```\n````\n#{fetched}")
   end
 
   it 'warns and leaves the file alone when curl fails' do
     allow(Raindown::Curl).to receive(:run).and_raise(Raindown::Curl::Error, 'curl: (6) Could not resolve host')
-    content = "<{ endpoint: :x }>\n\n#{curl}"
+    content = "<!-- endpoint: :x -->\n\n#{curl}"
 
     expect { expect(rewrite(content)).to eq(content) }.to output(/Endpoint failed: curl: \(6\)/).to_stderr
   end
 
   describe 'only:' do
-    let(:content) { "<{ endpoint: }>\n\n#{curl}\n```json\n{}\n```\n#{fetched}\n<{ endpoint: :x }>\n\n#{curl}" }
+    let(:content) { "<!-- endpoint: -->\n\n#{curl}\n```json\n{}\n```\n#{fetched}\n<!-- endpoint: :x -->\n\n#{curl}" }
 
     it 'runs just the endpoint on that line, replacing its response, even without :x' do
       allow(Date).to receive(:today).and_return(Date.new(2026, 10, 20))
 
       rewritten = described_class.new(content:, only: 0).rewrite
 
-      expect(rewritten).to start_with("<{ endpoint: }>\n\n#{curl}\n```json\n{\n  \"id\": 1\n}\n```\n<!-- raindown:fetched 2026-10-20 -->\n")
+      expect(rewritten)
+        .to start_with("<!-- endpoint: -->\n\n#{curl}\n```json\n{\n  \"id\": 1\n}\n```\n<!-- raindown:fetched 2026-10-20 -->\n")
       expect(rewritten.scan('```json').length).to eq(1)
     end
 

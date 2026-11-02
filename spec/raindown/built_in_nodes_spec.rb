@@ -10,15 +10,13 @@ RSpec.describe 'Raindown built-in nodes' do
 
   describe Raindown::TOC do
     it 'writes a list of links to the headings into a toc: block' do
-      expect(rewrite("# Title\n\n<{ toc: }>\n<{ :toc }>\n\n## Section\n")).to eq(<<~MARKDOWN)
+      expect(rewrite("# Title\n\n<!-- toc: -->\n<!-- :toc -->\n\n## Section\n")).to eq(<<~MARKDOWN)
         # Title
 
-        <{ toc: }>
-
+        <!-- toc: -->
         - [Title](#title)
           - [Section](#section)
-
-        <{ :toc }>
+        <!-- :toc -->
 
         ## Section
       MARKDOWN
@@ -60,7 +58,7 @@ RSpec.describe 'Raindown built-in nodes' do
     end
 
     it 'renders a link to each file, by title or else by path' do
-      html = Raindown.render(markdown: "<{ files: folder: 'notes' }>\n<{ :files }>\n", metadata:)
+      html = Raindown.render(markdown: "<!-- files: folder: 'notes' -->\n<!-- :files -->\n", metadata:)
 
       expect(html).to include('<li><a href="/notes/1">notes 1</a></li>', '<li><a href="/notes/2">/notes/2</a></li>')
     end

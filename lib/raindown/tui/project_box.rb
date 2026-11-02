@@ -11,7 +11,7 @@ module Raindown
     #                 │ ~/dev/raindown       │
     #                 └──────────────────────┘
     # Each item is clicked to choose it.
-    class MenuOverlay
+    class ProjectBox
       include Text
 
       def initialize(navigator, width:, column:)
