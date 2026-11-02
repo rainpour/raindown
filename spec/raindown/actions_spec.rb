@@ -20,7 +20,7 @@ RSpec.describe Raindown::Actions do
 
   describe '.write_back' do
     it 'writes back the whole file, and is false when nothing changed' do
-      path = write('notes.md', "# Notes\n\n<{ toc: }>\n<{ :toc }>\n")
+      path = write('notes.md', "# Notes\n\n<!-- toc: -->\n<!-- :toc -->\n")
 
       expect(described_class.write_back(path)).to be(true)
       expect(File.read(path)).to include('- [Notes](#notes)')
@@ -35,7 +35,7 @@ RSpec.describe Raindown::Actions do
     end
 
     it "runs the endpoint and replaces its response, leaving the file's other endpoints alone" do
-      path = write('api.md', "<{ endpoint: }>\n\n#{curl}\n```json\n{}\n```\n\n<{ endpoint: }>\n\n#{curl}\n```json\n{}\n```\n")
+      path = write('api.md', "<!-- endpoint: -->\n\n#{curl}\n```json\n{}\n```\n\n<!-- endpoint: -->\n\n#{curl}\n```json\n{}\n```\n")
       second = Raindown::Document.read(path).directives.last
 
       expect(described_class.execute(path, second)).to be(true)

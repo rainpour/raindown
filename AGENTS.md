@@ -1,26 +1,28 @@
 # Agents
 
-Raindown is a superset of Markdown. Its directives sit between `<{` and `}>`, and some of them write their output into the file. Read this before editing any Markdown here, like `README.md`, or the code that renders it.
+Raindown is a superset of Markdown. How a directive is written says whether it writes its output into the file: bare, like `toc:`, or in HTML comments, like `<!-- toc: -->`, it does, and in `<{ }>` it never does, only rendering into the HTML. Read this before editing any Markdown here, like `README.md`, or the code that renders it.
 
 ## Directives write their own output
 
-Content directives, like `toc:`, `files:`, `chart:`, `endpoint:` and the project's own nodes in `.raindown/`, like `CodeDebt:`, write their output into the Markdown below them, up to their end tag:
+Content directives in comments, like `toc:`, `files:`, `chart:`, `endpoint:` and the project's own nodes in `.raindown/`, like `CodeDebt:`, write their output into the Markdown below them, up to their end tag:
 
 ```md
-<{ CodeHealth: }>
+<!-- CodeHealth: -->
 ...written by Raindown...
-<{ :CodeHealth }>
+<!-- :CodeHealth -->
 ```
 
-- **Don't edit what's between a content directive and its end tag.** The next time the file is rendered, Raindown writes it again, and your edit is lost.
-- **Edit the directive's input instead**, like `<{ files: folder: 'notes' }>`, or the node or data it reads, like a CSV file for a chart, then render the file again.
+- **Don't edit what's between a directive in comments, or a bare one, and its end.** The next time the file is rendered, Raindown writes it again, and your edit is lost.
+- **Edit the directive's input instead**, like `<!-- files: folder: 'notes' -->`, or the node or data it reads, like a CSV file for a chart, then render the file again.
 - An endpoint's response is the exception: empty its code block to fetch it again.
 
 Raindown also lines up the columns of Markdown tables when it writes a file back, so don't worry about aligning them.
 
 Template directives, like `if:`, `for:`, `list:` and variables like `{title}`, don't write anything. The Markdown around them is yours to edit.
 
-In `.rd` and `.raindown` files, and Markdown files with `raindown: true` in their front matter, directives can be bare, on their own line without `<{ }>`, like `:toc`.
+In `.rd` and `.raindown` files, and Markdown files with `raindown: true` in their front matter, content directives can be bare, on their own line, like `toc:`, writing up to the next blank line, and `:toc` only renders.
+
+A content directive in `<{ }>`, like `<{ toc: }>` … `<{ :toc }>` or `<{ :toc }>`, only renders into the HTML, so it writes nothing, and what's between its tags is yours.
 
 ## Rendering a file again
 

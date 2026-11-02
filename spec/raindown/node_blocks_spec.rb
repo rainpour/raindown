@@ -10,9 +10,13 @@ RSpec.describe Raindown::NodeBlocks do
   end
 
   describe '.find' do
-    it 'finds a delimited block up to its end tag' do
+    it "finds a block in Antlers' delimiters, which only renders, or in comments, which writes, up to its end tag" do
       expect(find("<{ SpecReleases: limit=2 }>\n\n- old\n\n<{ :SpecReleases }>\n"))
-        .to eq([{ open: 0, close: 4, last: 4, node: SpecReleases }])
+        .to eq([{ open: 0, close: 4, last: 4, writes: false, node: SpecReleases }])
+      expect(find("<!-- SpecReleases: limit=2 -->\n\n- old\n\n<!-- :SpecReleases -->\n"))
+        .to eq([{ open: 0, close: 4, last: 4, writes: true, node: SpecReleases }])
+      expect { find("<!-- SpecReleases: -->\n<{ :SpecReleases }>\n") }
+        .to raise_error(described_class::MissingEndTag, /line 1 needs <!-- :SpecReleases -->/)
     end
 
     it 'raises when a delimited block has no end tag' do
@@ -22,8 +26,8 @@ RSpec.describe Raindown::NodeBlocks do
 
     it 'ends a bare block at the next blank line, with fenced code kept whole' do
       expect(find("SpecReleases: limit=2\n- a\n```\nb\n\nc\n```\n\nText.\n", bare: true))
-        .to eq([{ open: 0, close: nil, last: 6, node: SpecReleases }])
-      expect(find("SpecReleases:\n\nText.\n", bare: true)).to eq([{ open: 0, close: nil, last: 0, node: SpecReleases }])
+        .to eq([{ open: 0, close: nil, last: 6, writes: true, node: SpecReleases }])
+      expect(find("SpecReleases:\n\nText.\n", bare: true)).to eq([{ open: 0, close: nil, last: 0, writes: true, node: SpecReleases }])
     end
 
     it 'only reads bare blocks when asked' do
@@ -83,12 +87,12 @@ RSpec.describe Raindown::NodeBlocks do
   end
 
   describe '.to_rendered' do
-    it 'swaps a node with HTML for a placeholder, and one without for its Markdown, with directive markers' do
+    it 'swaps a node with HTML for a placeholder, and one without for its Markdown, between markers, in bold when bare' do
       markdown = "<{ SpecReleases: limit=1 }>\n- old\n<{ :SpecReleases }>\n\nSpecHeading: title='Hi'\n"
       rendered = described_class.to_rendered(markdown, bare: true)
 
-      expect(rendered).to match(/\A<!-- raindown:directive SpecReleases: limit=1 -->\n<!-- raindown:node \d+ -->\n/)
-        .and include("<!-- raindown:directive :SpecReleases -->\n\n")
+      expect(rendered).to match(/\A<!-- raindown:hidden SpecReleases: limit=1 -->\n<!-- raindown:node \d+ -->\n/)
+        .and include("<!-- raindown:hidden :SpecReleases -->\n\n")
         .and end_with("<!-- raindown:directive SpecHeading: title='Hi' -->\n## Hi\n")
     end
   end

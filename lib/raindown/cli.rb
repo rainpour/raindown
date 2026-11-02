@@ -46,9 +46,6 @@ module Raindown
     CONFIG = <<~YAML
       # Raindown project settings. See https://raindown.dev/docs/config
       #
-      # Show directives as HTML comments rather than in bold:
-      # hide_directives: true
-      #
       # Leave code blocks unhighlighted, so the browser can highlight them instead:
       # highlight_code: false
     YAML

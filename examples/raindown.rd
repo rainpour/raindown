@@ -21,7 +21,7 @@ In a `.rd` file a directive on its own line needs no delimiters. The table of co
 toc:
 ```
 
-It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use `:toc` for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. `<{ toc: }>` works too with a `<{ :toc }>` end tag, and is the only form `.md` files understand.
+It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use `:toc` for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. `<!-- toc: -->` with a `<!-- :toc -->` end tag works too, hidden in the HTML, and is how other `.md` files write it.
 
 ## Charts
 

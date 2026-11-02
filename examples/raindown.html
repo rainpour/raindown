@@ -1,5 +1,5 @@
 <h1 id="raindown-example">Raindown Example<a href="#raindown-example" aria-label="Link to heading 'Raindown Example'" data-heading-content="Raindown Example" class="anchor"></a></h1>
-<p>Run <code>raindown examples/raindown.rd</code> and edit this file to see <code>examples/raindown.html</code> update on save.</p>
+<p>Run <code>raindown examples/raindown.rd</code> and edit this file to see Raindown write back to it on save, or add <code>--html examples/raindown.html</code> to render it.</p>
 <p>This is a Raindown file (<code>.rd</code>), so directives can be written bare on their own line.</p>
 <p><strong>toc:</strong></p>
 <div class="floating">
@@ -21,7 +21,7 @@
 <p>In a <code>.rd</code> file a directive on its own line needs no delimiters. The table of contents above comes from:</p>
 <pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">toc:
 </span></code></pre>
-<p>It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use <code>:toc</code> for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. <code>&lt;&#123; toc: &#125;&gt;</code> works too with a <code>&lt;&#123; :toc &#125;&gt;</code> end tag, and is the only form <code>.md</code> files understand.</p>
+<p>It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use <code>:toc</code> for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. <code>&lt;!-- toc: --&gt;</code> with a <code>&lt;!-- :toc --&gt;</code> end tag works too, hidden in the HTML, and is how other <code>.md</code> files write it.</p>
 <h2 id="charts">Charts<a href="#charts" aria-label="Link to heading 'Charts'" data-heading-content="Charts" class="anchor"></a></h2>
 <p>A <code>chart:</code> directive draws its data in block characters, and writes the chart below it, redrawn whenever the file is rendered. Labeled data like <code>data/downloads.csv</code> draws as bars:</p>
 <p><strong>chart: &#39;data/downloads.csv&#39; width: 30</strong></p>
@@ -50,11 +50,11 @@
 <pre lang="sh" style="background-color:#2b303b;"><code><span style="color:#8fa1b3;">curl</span><span style="color:#c0c5ce;"> https://httpbin.org/uuid
 </span></code></pre>
 <pre lang="json" style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">&#123;
-</span><span style="color:#c0c5ce;">  &quot;</span><span style="color:#a3be8c;">uuid</span><span style="color:#c0c5ce;">&quot;: &quot;</span><span style="color:#a3be8c;">1eefb9a5-442c-49cc-8bf8-63f55b6e5041</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#c0c5ce;">  &quot;</span><span style="color:#a3be8c;">uuid</span><span style="color:#c0c5ce;">&quot;: &quot;</span><span style="color:#a3be8c;">3ca20551-9df0-4f92-8710-8e8df2ab9e85</span><span style="color:#c0c5ce;">&quot;
 </span><span style="color:#c0c5ce;">&#125;
 </span></code></pre>
 <p><strong>:endpoint</strong></p>
-<!-- raindown:fetched 2026-10-14 -->
+<!-- raindown:fetched 2026-10-26 -->
 <h2 id="tables">Tables<a href="#tables" aria-label="Link to heading 'Tables'" data-heading-content="Tables" class="anchor"></a></h2>
 <p>Tables auto-expand their column widths on save to match the content.</p>
 <table>

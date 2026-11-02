@@ -29,6 +29,7 @@ module Raindown
     # Runs one endpoint's request and writes its response, replacing any response it had.
     def execute(path, directive)
       raise NotAnEndpoint, "#{directive.name} on line #{directive.line} isn't an endpoint" unless directive.endpoint?
+      raise NotAnEndpoint, "The endpoint on line #{directive.line} only renders, so put it in comments to run it" unless directive.writes
 
       content = File.read(path, encoding: Encoding::UTF_8)
       rewritten = EndpointRunner.new(content:, bare: BareDirectives.enabled?(path:, content:), only: directive.line - 1).rewrite

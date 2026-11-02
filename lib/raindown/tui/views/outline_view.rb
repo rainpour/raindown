@@ -128,12 +128,13 @@ module Raindown
       def buttons(directive, expanded:)
         buttons = []
         buttons << [expanded ? '[-]' : "[+#{directive.body.size}]", :toggle] if directive.body
-        buttons << ['[Run]', :execute] if directive.endpoint?
+        buttons << ['[Run]', :execute] if directive.endpoint? && directive.writes
         buttons
       end
 
+      # A self-closing directive, like <{ :toc }>, by its name after a colon, and the rest by theirs before one.
       def directive_text(directive)
-        return ":#{directive.name}" unless directive.writes
+        return ":#{directive.name}" if !directive.writes && directive.line == directive.end_line
 
         [directive.name, ':', (" #{directive.args}" unless directive.args.empty?)].join
       end

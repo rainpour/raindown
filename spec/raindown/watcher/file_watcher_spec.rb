@@ -30,7 +30,7 @@ RSpec.describe Raindown::Watcher::FileWatcher do
     end
 
     it 'writes back to the file before watching, without writing HTML' do
-      File.write(path, "# Title\n\n<{ toc: }>\n<{ :toc }>\n")
+      File.write(path, "# Title\n\n<!-- toc: -->\n<!-- :toc -->\n")
 
       expect { watcher.start }.to output(/Watching/).to_stdout
       expect(File.read(path)).to include('- [Title](#title)')
@@ -38,7 +38,7 @@ RSpec.describe Raindown::Watcher::FileWatcher do
     end
 
     it 'updates the Markdown TOC on save, and stops at the save that update makes' do
-      File.write(path, "# Title\n\n<{ toc: }>\n<{ :toc }>\n")
+      File.write(path, "# Title\n\n<!-- toc: -->\n<!-- :toc -->\n")
       expect { watcher.start }.to output.to_stdout
       File.write(path, "#{File.read(path)}\n## Added\n")
 
@@ -49,11 +49,11 @@ RSpec.describe Raindown::Watcher::FileWatcher do
     end
 
     it 'shows an error in the file and keeps watching' do
-      File.write(path, "# Title\n\n<{ toc: }>\n")
+      File.write(path, "# Title\n\n<!-- toc: -->\n")
 
-      expect { watcher.start }.to output(/needs <\{ :toc \}>/).to_stderr.and output(/Watching/).to_stdout
+      expect { watcher.start }.to output(/needs <!-- :toc -->/).to_stderr.and output(/Watching/).to_stdout
 
-      File.write(path, "# Fixed\n\n<{ toc: }>\n<{ :toc }>\n")
+      File.write(path, "# Fixed\n\n<!-- toc: -->\n<!-- :toc -->\n")
       expect { on_change.first.call([path], [], []) }.to output(/Updated/).to_stdout
       expect(File.read(path)).to include('- [Fixed](#fixed)')
     end

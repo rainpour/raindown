@@ -10,20 +10,21 @@ require_relative 'variables'
 
 module Raindown
   # Finds node blocks in a file's lines: a node's directive and the Markdown it wrote below it.
-  # With delimiters the block ends with the node's end tag, and without them at the next blank line:
-  #   <{ Changelog: limit=3 }>          Changelog: limit=3
-  #                                     - **1.2.0** Bare directives
+  # In comments the block ends with the node's end tag, and bare at the next blank line, and both write back:
+  #   <!-- Changelog: limit=3 -->        Changelog: limit=3
+  #                                      - **1.2.0** Bare directives
   #   - **1.2.0** Bare directives
   #
-  #   <{ :Changelog }>
-  # A self-closing <{ :Changelog }> or bare :Changelog that doesn't end a block renders the node without writing it.
-  # toc: and files: are Raindown's own nodes. A name only starts a block when it's a loaded node,
-  # so other text like "Note:" is left alone.
+  #   <!-- :Changelog -->
+  # In Antlers' delimiters, <{ Changelog: }> to <{ :Changelog }>, or a self-closing <{ :Changelog }> or bare
+  # :Changelog, it renders the node without writing it. toc: and files: are Raindown's own nodes. A name only starts
+  # a block when it's a loaded node, so other text like "Note:" is left alone.
   module NodeBlocks
     class MissingEndTag < StandardError; end
 
     NAME = "(?:#{Nodes::BUILT_INS.keys.join('|')}|[A-Z]\\w*(?:::[A-Z]\\w*)*)".freeze
     OPEN = /\A( {0,3})<\{\s*(#{NAME}):(?:\s+(.*?))?\s*\}>[ \t]*$/
+    COMMENT_OPEN = /\A( {0,3})<!--\s*(#{NAME}):(?:\s+(.*?))?\s*-->[ \t]*$/
     BARE_OPEN = /\A( {0,3})(#{NAME}):(?:[ \t]+(.*?))?[ \t]*$/
     SELF_CLOSING = /\A( {0,3})<\{\s*:(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
     BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
@@ -35,8 +36,9 @@ module Raindown
 
     module_function
 
-    # Each block outside code and front matter as { open:, close:, last:, node: }, where close is nil for a bare block.
-    # A self-closing node is a block of one line with self_closing: true.
+    # Each block outside code and front matter as { open:, close:, last:, writes:, node: }, where close is nil for a
+    # bare block, and writes is whether its output's written into the file. A self-closing node is a block of one line
+    # with self_closing: true.
     def find(lines, front_matter: {}, bare: false)
       variables = Variables.new(front_matter)
 
@@ -99,15 +101,17 @@ module Raindown
 
       span = { name: found[2], class: klass, args: found[3].to_s }
       case pattern
-      when :open then end_tag(lines, index, found[2]).then { |close| { open: index, close:, last: close, **span } }
-      when :bare_open then { **bare_block(lines, index), **span }
-      else { open: index, close: nil, last: index, self_closing: true, **span }
+      when :open, :comment_open
+        end_tag(lines, index, found[2], comment: pattern == :comment_open)
+          .then { |close| { open: index, close:, last: close, writes: pattern == :comment_open, **span } }
+      when :bare_open then { **bare_block(lines, index), writes: true, **span }
+      else { open: index, close: nil, last: index, writes: false, self_closing: true, **span }
       end
     end
 
     # The directive on the line and which kind it is, or nil.
     def directive(line, bare:)
-      patterns = { open: OPEN, self_closing: SELF_CLOSING }
+      patterns = { open: OPEN, comment_open: COMMENT_OPEN, self_closing: SELF_CLOSING }
       patterns.merge!(bare_open: BARE_OPEN, bare_self_closing: BARE_SELF_CLOSING) if bare
 
       patterns.each do |pattern, regexp|
@@ -126,10 +130,12 @@ module Raindown
       { open:, close: nil, last: }
     end
 
-    def end_tag(lines, open, name)
-      tag = /\A {0,3}<\{\s*:#{Regexp.escape(name)}\s*\}>[ \t]*$/
+    # The end tag written the same way as the directive: in a comment, or in Antlers' delimiters.
+    def end_tag(lines, open, name, comment:)
+      first, last = comment ? Directives::COMMENT : Directives::DELIMITERS
+      tag = /\A {0,3}#{Regexp.escape(first)}\s*:#{Regexp.escape(name)}\s*#{Regexp.escape(last)}[ \t]*$/
       close = (open + 1...lines.length).find { |index| lines[index].match?(tag) }
-      raise MissingEndTag, "<{ #{name}: }> on line #{open + 1} needs <{ :#{name} }>" unless close
+      raise MissingEndTag, "#{first} #{name}: #{last} on line #{open + 1} needs #{first} :#{name} #{last}" unless close
 
       close
     end

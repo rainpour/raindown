@@ -4,6 +4,7 @@ require 'antlers'
 require_relative '../elements'
 require_relative 'bare_directives'
 require_relative 'code'
+require_relative 'code_blocks'
 require_relative 'front_matter'
 
 module Raindown
@@ -16,16 +17,33 @@ module Raindown
     BLOCK_DIRECTIVES = %w[for if list].freeze
     # A for, if or list directive alone on its line, which leaves no line behind, so a loop's list items stay together.
     BLOCK_LINE = /^[ \t]*(<\{\s*:?(?:#{BLOCK_DIRECTIVES.join('|')})\b[^}]*\}>)[ \t]*\n/
+    # An endpoint's directive or end tag in a comment, which renders as it would in Antlers' delimiters.
+    ENDPOINT_COMMENT = /\A( {0,3})<!--\s*(endpoint:.*?|:endpoint)\s*-->/
 
     module_function
 
     def render(markdown, variables:, metadata: {}, bare: false)
       markdown = BareDirectives.expand(markdown) if bare
+      markdown = delimited_endpoints(markdown) if markdown.include?('<!--')
       return markdown unless markdown.include?('{')
 
       markdown = Code.hide_braces(markdown.dup.force_encoding('UTF-8'))
       body = FrontMatter.parse(markdown).last
       "#{markdown.delete_suffix(body)}#{render_body(body, variables, metadata)}"
+    end
+
+    # The endpoints in comments in Antlers' delimiters, which the template pass renders, leaving code as it is.
+    def delimited_endpoints(markdown)
+      lines = markdown.lines
+      index = 0
+
+      while index < lines.length
+        code = CodeBlocks.at(lines, index)
+        lines[index] = lines[index].sub(ENDPOINT_COMMENT) { "#{::Regexp.last_match(1)}<{ #{::Regexp.last_match(2)} }>" } unless code
+        index = code ? code[:close] + 1 : index + 1
+      end
+
+      lines.join
     end
 
     def render_body(body, variables, metadata)

@@ -4,41 +4,35 @@
 
 Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
-<{ CodeDebt: }>
-
+<!-- CodeDebt: -->
 ```
     █▀█   ▀▀█
 ▀▀▀ █ █    ▀█
     ▀▀▀ ▀ ▀▀▀
 0 fixes
 ```
+<!-- :CodeDebt -->
 
-<{ :CodeDebt }>
-
-<{ CodeHealth: }>
-
+<!-- CodeHealth: -->
 ```
 █▀█   █ █ █▀█
 █ █   ▀▀█ █▀█
 ▀▀▀ ▀   ▀ ▀▀▀
 11 felt
 ```
+<!-- :CodeHealth -->
 
-<{ :CodeHealth }>
-
-<{ Commits: limit=5 }>
-
+<!-- Commits: limit=5 -->
 ```
-Total    -217 ████│██████████████████████████▎ +1,524
+Total    -304 ████│██████████████████████████▎ +2,093
 ─────────────────────────────────────────────────────
-d79db93   -45    █│█████████████████████▏      +1,228
-8336ced   -11    ▕│▎                              +13
-b23b9e3  -110   ██│██▋                           +154
-513ed05   -10    ▕│█▌                             +85
-6e33b0b   -41    █│▊                              +44
+7c9bc52  -132   ▐█│██████████████████████▌     +1,797
+8336ced   -11    ▕│▏                              +13
+b23b9e3  -110   ▐█│█▉                            +154
+513ed05   -10    ▕│█▏                             +85
+6e33b0b   -41    ▐│▌                              +44
 ```
-
-<{ :Commits }>
+<!-- :Commits -->
 
 ## CLI
 
@@ -95,15 +89,16 @@ The page shows a new blueprint as soon as it's saved, as the terminal UI watches
 
 ### Directives
 
-Directives sit between `<{` and `}>`, and come in two kinds:
+How a directive is written says what it does: bare and comment directives write their output into the file, and `<{ }>` directives only render into the HTML:
 
-|                       | Template directives                                 | Content directives                                                    |
-| --------------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
-| Examples              | `for:`, `if:`, `list:` and variables like `{title}` | `toc:`, `:toc`, `files:`, `chart:`, `endpoint:` and your own nodes    |
-| What they do          | Shape how the Markdown around them renders          | Bring content into the page, written into the file, the HTML, or both |
-| Who writes the output | You, as a template                                  | Raindown or your node, from your input                                |
-| Where they sit        | Often inside paragraphs, tables and lists           | On their own lines, between blocks                                    |
-| In the HTML           | Invisible, since the input is a template            | In bold, or as comments with `hide_directives`                        |
+| Written as                          | Write-back | HTML: directive | HTML: output  | GitHub preview: directive | GitHub preview: output |
+| ----------------------------------- | ---------- | --------------- | ------------- | ------------------------- | ---------------------- |
+| Bare `name:`                        | Yes        | Bold            | Markdown/HTML | Raw text `name:`          | Rendered Markdown      |
+| `<!-- name: -->` … `<!-- :name -->` | Yes        | Hidden          | Markdown/HTML | Hidden                    | Rendered Markdown      |
+| `<{ name: }>` … `<{ :name }>`       | No         | Hidden          | Markdown/HTML | Raw text `<{ name: }>`    | Raw text `<{ name: }>` |
+
+1. Bare directives work in [Raindown files](#raindown-files) (`.rd`) and in Markdown files (`.md`) with `raindown: true` front matter or `--bare` via the CLI.
+2. All directive types can output HTML or Markdown that is rendered to HTML, it's up to you to enabled it per component. See (Nodes)[#nodes]
 
 #### Template directives
 
@@ -111,11 +106,11 @@ Shape how the Markdown around them renders, like Liquid or Jinja: [variables](#v
 
 #### Content directives
 
-Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [files](#files-and-lists) with `files:`, [charts](#charts) with `chart:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks, and show in bold in the HTML, so you can see where a page's content comes from, unless you [hide them](#config).
+Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [files](#files-and-lists) with `files:`, [charts](#charts) with `chart:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they only render into the HTML, and write nothing into the file.
 
 ### Raindown files
 
-Raindown is a superset of Markdown. Give a file the `.rd` or `.raindown` extension and a directive on its own line no longer needs delimiters:
+Raindown is a superset of Markdown. Give a file the `.rd` or `.raindown` extension and a content directive on its own line no longer needs delimiters:
 
 ```
 # Notes
@@ -123,14 +118,7 @@ Raindown is a superset of Markdown. Give a file the `.rd` or `.raindown` extensi
 :toc
 ```
 
-Bare directives have no end tags. A block directive like `if:` or `for:` applies to the Markdown block below it, up to the next blank line:
-
-```
-if: draft
-This is a draft.
-```
-
-When a block needs to hold more than that, like several paragraphs, write it with delimiters and an end tag, which works in `.md` and `.rd`:
+Bare directives write back, and have no end tags, so a bare block, like `toc:`, holds the Markdown straight below it, up to the next blank line. When its output needs blank lines, put it in comments with an end tag instead, which works in `.md` and `.rd`. Template directives, like `if:` and `for:`, are never bare, and always sit in `<{ }>`:
 
 ```
 <{ if: draft }>
@@ -165,18 +153,16 @@ raindown watch README.md --bare
 
 `<{ :toc }>` renders a table of contents of the file's headings in the HTML.
 
-A `<{ toc: }>` block does that too, and also writes the table of contents into the Markdown below it as a list of links, updated whenever the file is rendered. That way people and agents reading the file see it as well:
+A `<!-- toc: -->` block does that too, and also writes the table of contents into the Markdown below it as a list of links, updated whenever the file is rendered. That way people and agents reading the file see it as well, and on GitHub only the list shows:
 
 ```md
-<{ toc: }>
-
+<!-- toc: -->
 - [Notes](#notes)
   - [Setup](#setup)
-
-<{ :toc }>
+<!-- :toc -->
 ```
 
-The block needs `<{ :toc }>` after it. In a [Raindown file](#raindown-files) it can be a bare `toc:` with the list straight below it, and `:toc` on its own is always the HTML table of contents.
+The block needs `<!-- :toc -->` after it. In a [Raindown file](#raindown-files) it can be a bare `toc:` with the list straight below it, and `:toc` on its own is always the HTML table of contents.
 
 `toc:` and `:toc` are a [node](#nodes), so a project can change them with its own `TOC` node, like `class TOC < Raindown::TOC`.
 
@@ -185,12 +171,10 @@ The block needs `<{ :toc }>` after it. In a [Raindown file](#raindown-files) it 
 A `files:` block writes a link to each file in a folder, by its title, into the Markdown, and renders them as a list in the HTML:
 
 ```md
-<{ files: folder: 'notes' }>
-
+<!-- files: folder: 'notes' -->
 - [Getting started](docs/_notes/_1-getting-started.md)
 - [Setup](docs/_notes/_2-setup.md)
-
-<{ :files }>
+<!-- :files -->
 ```
 
 The files come from the [metadata](#metadata) of your project's Markdown files. `files:` is a [node](#nodes) too, so a project can list files its own way with a `Files` node that overrides `replace` or adds `render`, like `class Files < Raindown::Files`, where `files(metadata:)` gives each file's front matter, `path` and `content`.
@@ -267,16 +251,14 @@ Variables, loops and conditions render before the Markdown does, like Liquid in 
 A `chart:` block draws its data as a chart in block characters, and writes it into the Markdown below it as a code block, redrawn whenever the file is rendered:
 
 ````md
-<{ chart: 'data/downloads.csv' }>
-
+<!-- chart: 'data/downloads.csv' -->
 ```
 Jan  ██████████████████████▌                  1,240
 Feb  ███████████████████████████████████▉     1,980
 Mar  ████████████████████████████████████████ 2,210
 Apr  ███████████████▊                           870
 ```
-
-<{ :chart }>
+<!-- :chart -->
 ````
 
 Its data can be a CSV, TSV, JSON or YAML file relative to the project, numbers like `chart: '3 5 -2 8'`, or a [variable](#variables) like `chart: stats`. A variable can hold either of those, or data of its own like a list of numbers or a hash of labels and values. A table's labels come from its first column and its values from the first column of numbers after it, or name them with `label:` and `value:`, like `value: 'sales'`.
@@ -338,14 +320,14 @@ class Issues < Raindown::Stat
 end
 ```
 
-Then `<{ Issues: }>` and `<{ :Issues }>` in a file write it there. An opening tag needs its colon, even without props.
+Then `<!-- Issues: -->` and `<!-- :Issues -->` in a file write it there. An opening tag needs its colon, even without props.
 
 ### Endpoints
 
 Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched:
 
 ````md
-<{ endpoint: :x }>
+<!-- endpoint: :x -->
 
 ```sh
 curl https://httpbin.org/uuid
@@ -357,10 +339,10 @@ curl https://httpbin.org/uuid
 }
 ```
 <!-- raindown:fetched 2026-10-14 -->
-<{ :endpoint }>
+<!-- :endpoint -->
 ````
 
-In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare, which ends after the curl snippet and response, so there's no `<{ :endpoint }>`.
+In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare, which ends after the curl snippet and response, so there's no `<!-- :endpoint -->`. In `<{ endpoint: }>` it only renders, so it never runs.
 
 The request only runs when the response block is missing or empty, and either the directive has `:x` (or `:execute`) or you pass `-x` (or `--execute`):
 
@@ -397,12 +379,10 @@ end
 A node block names the node and its props, and Raindown writes the node's Markdown into it whenever the file is rendered:
 
 ```md
-<{ Changelog: limit=3 }>
-
+<!-- Changelog: limit=3 -->
 - **1.2.0** Bare directives close themselves
 - **1.1.0** Track fetched dates
-
-<{ :Changelog }>
+<!-- :Changelog -->
 ```
 
 In a [Raindown file](#raindown-files) it can also use bare syntax, with the Markdown straight below it up to the next blank line (a bare node block can't write blank new lines):
@@ -413,20 +393,11 @@ Changelog: limit=3
 - **1.1.0** Track fetched dates
 ```
 
-Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file, as does a `<{ Changelog: }>` block. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
 
 ### Config
 
 A project can keep settings in `config.yml` in its [`.raindown`](#nodes) folder.
-
-[Content directives](#directives) like `toc:`, `files:`, a node's or an endpoint's show in bold in the HTML, so you can see where a page's content comes from. Hide them as HTML comments with:
-
-```yaml
-# .raindown/config.yml
-hide_directives: true
-```
-
-Template directives are always invisible in the HTML.
 
 Code blocks are highlighted in the HTML. For a site that highlights code in the browser instead, like with [Prism](https://prismjs.com), turn it off and each code block gets a language class, like `<pre><code class="language-ruby">`:
 

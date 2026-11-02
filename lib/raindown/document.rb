@@ -20,7 +20,8 @@ module Raindown
     # It spans line to end_line, its end tag, or the last line of a bare block.
     # Body is the lines inside it, between it and its end tag, like an endpoint's request and response.
     # Output is the lines Raindown writes back, like a node's Markdown or an endpoint's response, and is nil
-    # when nothing's written yet. A self-closing directive like <{ :toc }> only renders, so it never writes.
+    # when nothing's written yet. One in Antlers' delimiters, like <{ toc: }> or <{ :toc }>, only renders, so it never
+    # writes.
     Directive = Data.define(:name, :args, :line, :end_line, :body, :output, :writes) do
       def endpoint? = name == 'endpoint'
     end
@@ -28,8 +29,7 @@ module Raindown
     # Inline nodes whose text a reader sees, like code spans, as opposed to inline HTML tags.
     TEXT_NODES = %i[text code].freeze
     BREAK_NODES = %i[softbreak linebreak].freeze
-    ENDPOINT_END_TAG = /\A {0,3}<\{\s*:endpoint\s*\}>[ \t]*$/
-    END_TAG = /\A {0,3}<\{\s*:[\w:]+\s*\}>[ \t]*$/
+    END_TAG = /\A {0,3}(?:<\{\s*:[\w:]+\s*\}>|<!--\s*:[\w:]+\s*-->)[ \t]*$/
 
     def self.parse(markdown, bare: false)
       new(markdown:, bare:)
@@ -84,7 +84,7 @@ module Raindown
     def node_directives
       NodeBlocks.spans(@lines, bare: @bare).map do |span|
         output = trimmed(span[:open] + 1, span[:close] ? span[:close] - 1 : span[:last])
-        directive(span[:name], span[:args], span[:open]..span[:last], output:, writes: !span[:self_closing])
+        directive(span[:name], span[:args], span[:open]..span[:last], output:, writes: span[:writes])
       end
     end
 
@@ -95,8 +95,8 @@ module Raindown
       while index < @lines.length
         if (code = CodeBlocks.at(@lines, index))
           index = code[:close]
-        elsif (args = endpoint_args(@lines[index]))
-          directives << endpoint(index, args)
+        elsif (found = endpoint_args(@lines[index]))
+          directives << endpoint(index, *found)
           index = directives.last.end_line - 1
         end
 
@@ -106,20 +106,25 @@ module Raindown
       directives
     end
 
+    # The endpoint's arguments, in any of the ways it can be written, and whether it writes its response back, which
+    # it does unless it's in Antlers' delimiters, or nil when the line isn't an endpoint.
     def endpoint_args(line)
-      line = BareDirectives.wrap(line) || line if @bare
-      line[EndpointRunner::DIRECTIVE, 1]&.strip
+      return [line[EndpointRunner::DIRECTIVE, 1].strip, false] if line.match?(EndpointRunner::DIRECTIVE)
+      return [line[EndpointRunner::COMMENT, 1].strip, true] if line.match?(EndpointRunner::COMMENT)
+
+      bare = BareDirectives.wrap(line)&.[](EndpointRunner::DIRECTIVE, 1) if @bare
+      [bare.strip, true] if bare
     end
 
     # The response and the date it was fetched are the output, while the curl snippet above them is the author's.
-    def endpoint(open, args)
+    def endpoint(open, args, writes)
       curl, response = CodeBlocks.endpoint(@lines, open + 1)
       output = response && (response[:open]..(fetched?(response[:close] + 1) ? response[:close] + 1 : response[:close]))
       last = output&.end || curl&.fetch(:close) || open
       # A bare endpoint, which isn't delimited, ends after its blocks.
-      last = end_tag(after: last) || last if @lines[open].match?(EndpointRunner::DIRECTIVE)
+      last = end_tag(after: last) || last unless Directives.bare?(@lines[open])
 
-      directive('endpoint', args, open..last, output:, writes: true)
+      directive('endpoint', args, open..last, output:, writes:)
     end
 
     def fetched?(index)
@@ -129,7 +134,7 @@ module Raindown
     # The end tag after the endpoint's blocks, with only blank lines between.
     def end_tag(after:)
       index = CodeBlocks.skip_blank_lines(@lines, after + 1)
-      index if @lines[index]&.match?(ENDPOINT_END_TAG)
+      index if @lines[index]&.match?(EndpointRunner::END_TAG)
     end
 
     # Lines from first to last with the blank lines around them left out, or nil when there are none.

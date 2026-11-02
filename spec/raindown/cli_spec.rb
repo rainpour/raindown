@@ -56,7 +56,7 @@ RSpec.describe Raindown::CLI do
 
     context 'with --html' do
       it 'renders to stdout without watching' do
-        File.write(path, "# Title\n\n<{ toc: }>\n<{ :toc }>\n\n## Section\n")
+        File.write(path, "# Title\n\n<!-- toc: -->\n<!-- :toc -->\n\n## Section\n")
 
         expect { described_class.run([path, '--html']) }.to output(/Table of contents/).to_stdout
         expect(File.read(path)).to include('- [Section](#section)')
@@ -116,14 +116,14 @@ RSpec.describe Raindown::CLI do
     end
 
     it 'shows an error in the file as one line' do
-      File.write(path, "# Title\n\n<{ toc: }>\n")
+      File.write(path, "# Title\n\n<!-- toc: -->\n")
 
       expect { described_class.run([path, '--html']) }
-        .to raise_error(SystemExit).and output("raindown: #{path}: <{ toc: }> on line 3 needs <{ :toc }>\n").to_stderr
+        .to raise_error(SystemExit).and output("raindown: #{path}: <!-- toc: --> on line 3 needs <!-- :toc -->\n").to_stderr
     end
 
     it 'shows where an error happened with RAINDOWN_DEBUG' do
-      File.write(path, "# Title\n\n<{ toc: }>\n")
+      File.write(path, "# Title\n\n<!-- toc: -->\n")
       stub_const('ENV', ENV.to_h.merge('RAINDOWN_DEBUG' => '1'))
 
       expect { described_class.run([path, '--html']) }.to raise_error(Raindown::NodeBlocks::MissingEndTag)
@@ -141,7 +141,7 @@ RSpec.describe Raindown::CLI do
       it 'creates a .raindown folder with a config file in the current directory' do
         Dir.chdir(@dir) { expect { described_class.run(['init']) }.to output(/Created .*config\.yml/).to_stdout }
 
-        expect(File.read(config)).to include('# hide_directives: true')
+        expect(File.read(config)).to include('# highlight_code: false')
         expect(Raindown::Config.for(path)).to eq(Raindown::Config::DEFAULTS)
       end
 

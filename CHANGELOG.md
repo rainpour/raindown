@@ -9,6 +9,10 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ### Changed
 
+- How a content directive is written says what it does: bare, like `toc:`, it writes back and shows in bold in the HTML; in HTML comments, `<!-- toc: -->` and `<!-- :toc -->`, it writes back and stays hidden, in the HTML and on GitHub; in `<{ }>` it only renders into the HTML, writing nothing, so blocks in `<{ }>` that wrote back before need putting in comments to keep writing back
+- Template directives, like `if:`, `for:` and `list:`, are only written in `<{ }>`, never bare
+- A comment block's output is written straight between its tags, without blank lines around it
+- `hide_directives` is gone from `config.yml`, as comment directives are always hidden
 - `raindown` opens the terminal UI, rather than `raindown tui`, and `raindown watch` watches, as `raindown` did. Both take `--bare` and `-x`
 - Without a terminal, like in a script or a service, `raindown` says it needs one and watches instead
 - Code feelings' CSV columns are `timestamp`, `commit`, `checksum`, `location`, `method`, `temper` and `note`, renamed from `when` and `where`, and `timestamp` is the time in UTC, not just the date
