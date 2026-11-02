@@ -4,6 +4,7 @@ require 'date'
 require_relative '../bare_directives'
 require_relative '../code_blocks'
 require_relative 'curl'
+require_relative 'endpoint_variables'
 
 module Raindown
   # Runs the curl block under an endpoint directive in a comment, or a bare one, and writes the response in the code
@@ -20,6 +21,8 @@ module Raindown
   #   ```
   #   <!-- raindown:fetched 2026-10-14 -->
   #   <!-- :endpoint -->
+  # Its snippet's {placeholders} are filled from EndpointVariables, and with as: login, later snippets can use its
+  # response, like {login.token}.
   # One in Antlers' delimiters, <{ endpoint: }>, only renders, so it's never run.
   class EndpointRunner
     # An endpoint's directive in Antlers' delimiters, which only renders, or in a comment, which writes its response back,
@@ -32,11 +35,12 @@ module Raindown
     FETCHED = /\A {0,3}<!-- raindown:fetched [^\n]*? -->[ \t]*$/
 
     def self.rewrite(content:, path: nil, bare: false, execute: false, **)
-      new(content:, bare: BareDirectives.enabled?(path:, content:, bare:), execute:).rewrite
+      new(content:, path:, bare: BareDirectives.enabled?(path:, content:, bare:), execute:).rewrite
     end
 
-    def initialize(content:, bare: false, execute: false, only: nil)
+    def initialize(content:, path: nil, bare: false, execute: false, only: nil)
       @lines = content.lines
+      @variables = EndpointVariables.new(path:, content:)
       @bare = bare
       @execute = execute
       @only = only
@@ -71,9 +75,16 @@ module Raindown
     def fill(index, args, directive:)
       curl, output = CodeBlocks.endpoint(@lines, index)
       return index - 1 unless curl&.dig(:body)&.lstrip&.start_with?('curl')
-      return curl[:close] unless run?(args, output, directive)
+      return write_output(curl:, output:, name: response_name(args)) if run?(args, output, directive)
 
-      write_output(curl:, output:)
+      @variables.remember(response_name(args), output[:body]) if output
+      curl[:close]
+    end
+
+    # The name that as: gives the endpoint, for later snippets to use its response.
+    def response_name(args)
+      index = args.index('as:')
+      args[index + 1] if index
     end
 
     def run?(args, output, directive)
@@ -87,8 +98,10 @@ module Raindown
     end
 
     # Replaces the output block and the date it was fetched, or with no block, replaces nothing just after the curl block.
-    def write_output(curl:, output:)
-      block = [*output_block(*Curl.run(curl[:body])), fetched]
+    def write_output(curl:, output:, name:)
+      body, language = Curl.run(curl[:body], @variables)
+      @variables.remember(name, body)
+      block = [*output_block(body, language), fetched]
       block.unshift("\n") unless output
       start = output ? output[:open] : curl[:close] + 1
 

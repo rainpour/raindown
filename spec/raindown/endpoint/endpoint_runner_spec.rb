@@ -99,6 +99,29 @@ RSpec.describe Raindown::EndpointRunner do
     expect { expect(rewrite(content)).to eq(content) }.to output(/Endpoint failed: curl: \(6\)/).to_stderr
   end
 
+  it 'fills placeholders in the snippet from front matter' do
+    rewrite("---\nbase_url: https://a.io\n---\n<!-- endpoint: :x -->\n\n```sh\ncurl {base_url}/users\n```\n")
+
+    expect(Raindown::Curl).to have_received(:run) do |snippet, variables|
+      expect(Raindown::Curl.arguments(snippet, variables)).to eq(['https://a.io/users'])
+    end
+  end
+
+  it 'gives later snippets the response of an endpoint named with as:, whether it was run or already written' do
+    login = "<!-- endpoint: :x as: login -->\n\n```sh\ncurl https://a.io/login\n```\n"
+    users = "<!-- endpoint: :x -->\n\n```sh\ncurl -H 'Authorization: Bearer {login.id}' https://a.io/users\n```\n"
+    headers = []
+    allow(Raindown::Curl).to receive(:run) do |snippet, variables|
+      headers << Raindown::Curl.arguments(snippet, variables)[1]
+      ["{\n  \"id\": 1\n}", 'json']
+    end
+
+    rewrite("#{login}\n#{users}") # Runs both, the first without a header.
+    rewrite("#{login}\n```json\n{\"id\": 2}\n```\n\n#{users}")
+
+    expect(headers).to eq([nil, 'Authorization: Bearer 1', 'Authorization: Bearer 2'])
+  end
+
   describe 'only:' do
     let(:content) { "<!-- endpoint: -->\n\n#{curl}\n```json\n{}\n```\n#{fetched}\n<!-- endpoint: :x -->\n\n#{curl}" }
 

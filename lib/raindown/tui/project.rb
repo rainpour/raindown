@@ -15,6 +15,7 @@ require_relative 'card'
 require_relative 'endpoint'
 require_relative '../code_blocks'
 require_relative '../endpoint/curl'
+require_relative '../endpoint/endpoint_variables'
 
 module Raindown
   module TUI
@@ -89,7 +90,7 @@ module Raindown
 
       def endpoint(path, lines, directive)
         snippet = CodeBlocks.endpoint(lines, directive.line).first&.dig(:body)
-        request = Curl.request(snippet.to_s)
+        request = Curl.request(snippet.to_s, EndpointVariables.new(path:, content: lines.join))
         Endpoint.new(project: root, path:, line: directive.line, **request.to_h) if request
       end
 
