@@ -238,6 +238,10 @@ RSpec.describe Raindown do
       expect(html).to include('<p>:toc</p>')
     end
 
+    it 'renders bare directives in files with Windows line endings' do
+      expect(render_file('notes.rd', "# Title\r\n\r\n:toc\r\n")).to include('Table of contents')
+    end
+
     it 'renders bare directives in Markdown files when asked' do
       expect(render_file('notes.md', "# Title\n\n:toc\n", bare: true)).to include('Table of contents')
     end

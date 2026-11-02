@@ -39,7 +39,7 @@ module Raindown
     # they're allowed, like with --bare.
     # A project's own nodes are only directives once they're loaded, like with Nodes.load(path), the same as when the file renders.
     def self.read(path, bare: false)
-      new(markdown: File.read(path, encoding: Encoding::UTF_8), bare: bare || BareDirectives.file?(path))
+      new(markdown: Utils.read_markdown(path), bare: bare || BareDirectives.file?(path))
     end
 
     def initialize(markdown:, bare: false)

@@ -2,6 +2,7 @@
 
 require_relative 'front_matter'
 require_relative 'page'
+require_relative 'utils'
 
 module Raindown
   # The metadata of a project's Markdown files, which list: and files: list by tag.
@@ -62,7 +63,7 @@ module Raindown
     end
 
     def process(file_path:)
-      metadata = implicit_metadata(file_path:).merge(FrontMatter.parse(File.read(file_path, encoding: Encoding::UTF_8)).first)
+      metadata = implicit_metadata(file_path:).merge(FrontMatter.parse(Utils.read_markdown(file_path)).first)
       @metadata[file_path] = metadata
       metadata.each { |type, tag| Array(tag).each { |item| tag(type:, tag: item, file_path:) } }
     end

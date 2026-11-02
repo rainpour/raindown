@@ -3,6 +3,7 @@
 require_relative 'node_injector'
 require_relative 'endpoint/endpoint_runner'
 require_relative 'table_formatter'
+require_relative 'utils'
 
 module Raindown
   # Rewrites the generated parts of a Markdown file in place before it's rendered:
@@ -21,7 +22,7 @@ module Raindown
 
     # Returns true when the file changed.
     def update(path:, bare: false, execute: false, metadata: NoMetadata)
-      content = File.read(path, encoding: Encoding::UTF_8)
+      content = Utils.read_markdown(path)
       rewritten = rewrite(content:, path:, bare:, execute:, metadata:)
       return false if rewritten == content
 

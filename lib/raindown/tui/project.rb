@@ -65,7 +65,7 @@ module Raindown
       # the ones whose snippet can't be read.
       def endpoints
         Projects.files(root).flat_map do |path|
-          lines = File.readlines(path, encoding: Encoding::UTF_8)
+          lines = Utils.read_markdown(path).lines
           runnable = Document.read(path, bare: @bare).directives.select { it.endpoint? && it.writes }
           runnable.filter_map { |directive| endpoint(path, lines, directive) }
         rescue StandardError
@@ -94,7 +94,7 @@ module Raindown
       end
 
       def charts_in(path)
-        content = File.read(path, encoding: Encoding::UTF_8)
+        content = Utils.read_markdown(path)
         bare = @bare || BareDirectives.enabled?(path:, content:)
         lines = content.lines
         headings = Document.parse(content, bare:).headings

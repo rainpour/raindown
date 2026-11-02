@@ -15,6 +15,7 @@ require_relative 'raindown/heading_ids'
 require_relative 'raindown/node_blocks'
 require_relative 'raindown/pages'
 require_relative 'raindown/pre_renderer'
+require_relative 'raindown/utils'
 require_relative 'raindown/variables'
 
 module Raindown
@@ -40,7 +41,7 @@ module Raindown
   # Code is highlighted, unless the file's project changes it in .raindown/config.yml.
   def render_file(path:, metadata: NoMetadata, bare: false, **options)
     options = Config.render_options(path).merge(options)
-    render(markdown: File.read(path, encoding: Encoding::UTF_8), metadata:, bare: bare || BareDirectives.file?(path), **options)
+    render(markdown: Utils.read_markdown(path), metadata:, bare: bare || BareDirectives.file?(path), **options)
   end
 
   # Front matter keys are variables, like {title} or <{ title }>.

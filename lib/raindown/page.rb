@@ -17,7 +17,7 @@ module Raindown
     # It follows the file's project config, like render_file, unless the render options say otherwise.
     def content
       @content ||= begin
-        markdown = File.read(file_path, encoding: Encoding::UTF_8)
+        markdown = Utils.read_markdown(file_path)
 
         if FrontMatter.parse(markdown).last.strip.empty? then ''
         else Raindown.render(markdown:, bare: BareDirectives.file?(file_path), **Config.render_options(file_path).merge(@render_options))
