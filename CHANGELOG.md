@@ -12,8 +12,12 @@ Minor features that don't break backwards compatibility are released as patches.
 - `--html -` prints the HTML to stdout, like `--html`
 - Endpoint responses keep their status and time in their fetched comment, like `200 · 142 ms`
 - Endpoints check their responses with `status: 200` and a LowType `schema: Schema[id: Integer]`, and `--html` fails on failures
-- Named schemas, with `schema: 'User'` and indented fields below it, for endpoints like `schema: Array[User]`, and shared ones in `.raindown/schemas.rd`
+- Named schemas, with `schema: User` and indented fields below it, for endpoints like `schema: Array[User]`, and shared ones in `.raindown/schemas.rd`
 - Secrets in `.raindown/environments.local.yml`, which `raindown init` gitignores, and which responses and errors never write back
+
+### Changed
+
+- **Breaking:** in bare directives and ones in comments an unquoted word is text, like `files: folder: notes`, and only a word in braces is a variable, like `chart: {stats}`, while in `<{ }>` it's still a variable
 
 ## 0.10.0
 

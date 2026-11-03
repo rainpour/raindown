@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -119 ███████████│███████████████████▏ +210
+Total    -227 ▐██████│███████████████████████▋ +850
 ───────────────────────────────────────────────────
-e4b2d43    -1           ▕│█▋                    +18
-0a24319    -1           ▕│▏                      +1
-902518a   -14          ▕█│███▏                  +34
-06a5d98   -98   █████████│█████████████▉       +152
-a791ed4    -5           ▐│▌                      +5
+e49629b  -113    ▕███│██████████████████       +645
+e4b2d43    -1       ▕│▌                         +18
+0a24319    -1       ▕│▏                          +1
+902518a   -14       ▐│█                         +34
+06a5d98   -98     ███│████▎                    +152
 ```
 <!-- :Commits -->
 
@@ -128,7 +128,7 @@ It has two paragraphs.
 <{ :if }>
 ```
 
-Directives in prose or code are left as text.
+Bare directives, like ones in comments, read like prose, so an unquoted word is text, like `files: folder: notes`, and only a word in braces is a variable, like `chart: {stats}`. Directives in prose or code are left as text.
 
 Markdown files can opt in too, with `raindown: true` in their front matter:
 
@@ -268,7 +268,7 @@ Apr  ███████████████▊                           
 <!-- :chart -->
 ````
 
-Its data can be a CSV, TSV, JSON or YAML file relative to the project, numbers like `chart: '3 5 -2 8'`, or a [variable](#variables) like `chart: stats`. A variable can hold either of those, or data of its own like a list of numbers or a hash of labels and values. A table's labels come from its first column and its values from the first column of numbers after it, or name them with `label:` and `value:`, like `value: 'sales'`.
+Its data can be a CSV, TSV, JSON or YAML file relative to the project, numbers like `chart: '3 5 -2 8'`, or a [variable](#variables) in braces like `chart: {stats}`. A variable can hold either of those, or data of its own like a list of numbers or a hash of labels and values. A table's labels come from its first column and its values from the first column of numbers after it, or name them with `label:` and `value:`, like `value: 'sales'`.
 
 `format:` draws it as `'bars'`, `'columns'`, a `'line'` or a `'sparkline'` (`▂▄▁▇▅█▃`). Without it, labeled data draws as bars and numbers alone as a sparkline. Negative values go below the line, or left of it for bars:
 
@@ -422,17 +422,17 @@ A key whose type allows `nil` may be missing, and keys a schema doesn't name are
 For a bigger schema, name it with `schema:` and its fields below it, indented, then give its name to the endpoints below it. A key with no type holds the more indented fields under it:
 
 `````md
-<!-- schema: 'User'
+<!-- schema: User
   id: Integer
   email: String | nil
   address:
     city: String
 -->
 
-<!-- endpoint: schema: 'User' -->
+<!-- endpoint: schema: User -->
 `````
 
-A name can go inside a type too, like `schema: Array[User]`, and in schemas below it, like `author: User`. In a [Raindown file](#raindown-files), write `schema: 'User'` bare, with its fields ending at the first line that isn't indented, and it shows in bold with its fields below it. In comments it's left out of the HTML.
+The name can be quoted, like `'User'`, or not. A name can go inside a type too, like `schema: Array[User]`, and in schemas below it, like `author: User`. In a [Raindown file](#raindown-files), write `schema: User` bare, with its fields ending at the first line that isn't indented, and it shows in bold with its fields below it. In comments it's left out of the HTML.
 
 Schemas in `.raindown/schemas.rd`, written bare the same way, can be named by every file's endpoints, and a file's own schemas with the same name win.
 
@@ -483,7 +483,7 @@ Changelog: limit=3
 - **1.1.0** Track fetched dates
 ```
 
-Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file, as does a `<{ Changelog: }>` block. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. Bare or in comments, a word is text, like `folder: notes`, and a variable is in braces, like `{author.name}`, while in `<{ }>` a word is a variable. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file, as does a `<{ Changelog: }>` block. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
 
 #### JavaScript Components
 

@@ -15,14 +15,15 @@ RSpec.describe Raindown::SchemaBlock do
   end
 
   it 'reads bare fields up to the first line that is not indented, only when bare directives are allowed' do
-    markdown = "schema: \"User\"\n  name: String\n\nAfter.\n"
+    markdown = "schema: User\n  name: String\n\nAfter.\n"
 
     expect(schema_at(markdown, bare: true)).to have_attributes(name: 'User', last: 1)
     expect(schema_at(markdown)).to be_nil
   end
 
-  it "isn't a schema without a capitalized, quoted name or the comment's end" do
+  it "isn't a schema without a capitalized name or the comment's end" do
     expect(schema_at("<!-- schema: user\n  name: String\n-->\n")).to be_nil
+    expect(schema_at("<!-- schema: 'User\n  name: String\n-->\n")).to be_nil
     expect(schema_at("<!-- schema: 'User'\n  name: String\n")).to be_nil
   end
 

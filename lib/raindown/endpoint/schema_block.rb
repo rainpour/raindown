@@ -14,8 +14,9 @@ module Raindown
   # that isn't indented. An endpoint below it names it, like schema: 'User' or schema: Array[User], as can a schema.
   # Schemas in the project's .raindown/schemas.rd, written the same way, are named for every file's endpoints.
   class SchemaBlock < Data.define(:name, :fields, :last)
-    COMMENT = /\A {0,3}<!--\s*schema:\s*(['"])([A-Z]\w*)\1\s*$/
-    BARE = /\A {0,3}schema:\s*(['"])([A-Z]\w*)\1\s*$/
+    # The name is quoted or not, like 'User' or User.
+    COMMENT = /\A {0,3}<!--\s*schema:\s*(['"]?)([A-Z]\w*)\1\s*$/
+    BARE = /\A {0,3}schema:\s*(['"]?)([A-Z]\w*)\1\s*$/
     FIELD = /\A([ \t]*)(\S+:)[ \t]*(.*?)\s*\z/
     FILE = 'schemas.rd'
 

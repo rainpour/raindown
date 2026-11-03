@@ -28,6 +28,13 @@ RSpec.describe Raindown::Directives do
       expect(described_class.render(html)).to eq("<p><strong>A: x=&lt;b&gt;</strong></p>\n<p>Text.</p>")
     end
 
+    it "shows a directive's braces as it's written, hidden from Antlers like code's" do
+      marker = described_class.marker('chart: {stats}')
+
+      expect(marker).not_to include('{')
+      expect(described_class.render(Raindown.commonmark(marker))).to eq("<p><strong>chart: &#123;stats&#125;</strong></p>\n")
+    end
+
     it 'leaves hidden directives out, but keeps other comments' do
       hidden = "#{described_class.marker('<!-- A: -->')}\n<p>Text.</p>\n<!-- a note -->\n"
 

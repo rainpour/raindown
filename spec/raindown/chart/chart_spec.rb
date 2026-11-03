@@ -65,16 +65,16 @@ RSpec.describe Raindown::Chart do
     it 'reads the file a variable names' do
       file('downloads.csv', "month,downloads\nJan,2\n")
 
-      expect(rewrite("---\ndata:\n  downloads: downloads.csv\n---\n\nchart: data.downloads width: 2\n", metadata:))
-        .to include("chart: data.downloads width: 2\n```\nJan  ██ 2\n```\n")
+      expect(rewrite("---\ndata:\n  downloads: downloads.csv\n---\n\nchart: {data.downloads} width: 2\n", metadata:))
+        .to include("chart: {data.downloads} width: 2\n```\nJan  ██ 2\n```\n")
     end
   end
 
   it 'charts the data a variable has' do
-    content = "---\nstats:\n  ruby: 2\n  go: 1\ntrend: [1, 8]\n---\n\nchart: stats width: 2\n\nchart: trend\n"
+    content = "---\nstats:\n  ruby: 2\n  go: 1\ntrend: [1, 8]\n---\n\nchart: {stats} width: 2\n\nchart: {trend}\n"
 
-    expect(rewrite(content)).to include("chart: stats width: 2\n```\nruby  ██ 2\ngo    █  1\n```\n")
-      .and include("chart: trend\n```\n▁█\n```\n")
+    expect(rewrite(content)).to include("chart: {stats} width: 2\n```\nruby  ██ 2\ngo    █  1\n```\n")
+      .and include("chart: {trend}\n```\n▁█\n```\n")
   end
 
   it 'skips rows without a number' do

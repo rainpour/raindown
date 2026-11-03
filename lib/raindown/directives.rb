@@ -31,16 +31,20 @@ module Raindown
     # Whether the directive's line is bare, without delimiters, so it shows in bold.
     def bare?(line) = text(line) == line.strip
 
-    # A directive's line as a marker: in bold when it's shown, like a bare directive, or else hidden.
+    # A directive's line as a marker: in bold when it's shown, like a bare directive, or else hidden. Its braces are
+    # hidden from Antlers like code's, so a shown chart: {stats} shows as it's written.
     def marker(line, shown: bare?(line))
-      text = text(line).gsub('--', '- -')
+      text = text(line).gsub('--', '- -').gsub(/[{}]/, CODE_BRACES)
       return "<!-- raindown:hidden #{text} -->" unless shown
 
       "<!-- raindown:directive #{text} -->"
     end
 
+    # The braces' entities, like code's, are kept as they are.
     def render(html)
-      html.gsub(HIDDEN, '').gsub(MARKER) { "<p><strong>#{CGI.escapeHTML(::Regexp.last_match(1).to_s)}</strong></p>" }
+      html.gsub(HIDDEN, '').gsub(MARKER) do
+        "<p><strong>#{CGI.escapeHTML(::Regexp.last_match(1).to_s).gsub(/&amp;(#12[35];)/, '&\1')}</strong></p>"
+      end
     end
   end
 end

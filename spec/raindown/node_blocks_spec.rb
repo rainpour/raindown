@@ -42,6 +42,15 @@ RSpec.describe Raindown::NodeBlocks do
       expect(find("---\nSpecReleases: 1\n---\n\n```\n<{ SpecReleases: }>\n```\n", bare: true)).to eq([])
     end
 
+    it 'reads a variable in braces in a comment or bare, and without them in Antlers delimiters' do
+      markdown = "---\ncount: 1\n---\n<!-- SpecReleases: limit={count} -->\n<!-- :SpecReleases -->\n\n" \
+                 "SpecReleases: limit={count}\n\n<{ :SpecReleases limit=count }>\n"
+      allow(Raindown::Nodes).to receive(:instance).and_call_original
+      find(markdown, bare: true)
+
+      expect(Raindown::Nodes).to have_received(:instance).with(SpecReleases, { limit: 1 }).exactly(3).times
+    end
+
     it 'shares one instance between blocks with the same node and props' do
       lines = "SpecReleases: limit=2\n\nSpecReleases: limit=2\n\nSpecReleases: limit=1\n".lines
       nodes = described_class.find(lines, bare: true).map { |block| block[:node] }
@@ -57,6 +66,13 @@ RSpec.describe Raindown::NodeBlocks do
       props = described_class.props(%(a='x y' b="z" c=3 d=1.5 e=true f=author.name g=missing), variables)
 
       expect(props).to eq(a: 'x y', b: 'z', c: 3, d: 1.5, e: true, f: 'Mark', g: nil)
+    end
+
+    it 'reads a word as text, and only a word in braces as a variable, outside Antlers delimiters' do
+      variables = Raindown::Variables.new(author: { name: 'Mark' })
+      props = described_class.props("a=notes b='x y' c=3 d={author.name} e=author.name", variables, antlers: false)
+
+      expect(props).to eq(a: 'notes', b: 'x y', c: 3, d: 'Mark', e: 'author.name')
     end
 
     it 'reads nil, false, negative numbers and symbols as values' do
