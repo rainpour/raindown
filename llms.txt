@@ -67,7 +67,7 @@ Templates render before Markdown, like Liquid in Jekyll, so a loop's lines join 
 Files in the project are listed by their metadata: front matter keys, plus underscored folders in the path. `docs/_basics/_1-getting-started.md` has `folder: basics`, `order: 1` and `path: docs/_basics/_1-getting-started.md`. Several folder tags in one segment are separated with `&`, like `_1&_basics`. A front matter list like `tags: [ruby, intro]` tags the file with each item. Files sort by `order`. The project root is the folder holding the `.raindown` folder, or else the rendered file's folder.
 
 - `<{ files: folder: 'notes' }>` ... `<{ :files }>`: writes a link to each matching file, by title, into the Markdown and renders it as a list.
-- `[[Note]]`, `[[Note#Heading]]` and `[[Note|text]]` render as links to the file named Note, anywhere in the project. `<!-- backlinks: -->` ... `<!-- :backlinks -->` writes a link to each file whose wikilinks link to this one.
+- `[[Note]]`, `[[Note#Heading]]` and `[[Note|text]]` render as links to the file named Note, anywhere in the project.
 - `<{ list: page folder: 'notes' }>` ... `<{ :list }>`: repeats its template for each matching file, with the file bound to `page` (`{page.title}`). HTML only, nothing is written to the file.
 
 Filter values must be quoted: `files: tags: 'intro'`.
@@ -138,7 +138,7 @@ end
 - A leading value (like `'data.csv'` in `chart: 'data.csv'`) is passed as the positional argument to `initialize`; props are keyword arguments.
 - `replace` and `render` may accept the keywords `document:`, `metadata:` and `bare:`.
 - A capitalized `Name:` only starts a node block if a loaded LowNode by that name has `replace`, so prose like `Note:` is safe.
-- Built-in `toc:`, `files:`, `chart:` and `backlinks:` are nodes too, and can be overridden: `class TOC < Raindown::TOC`, `class Files < Raindown::Files`, `class Chart < Raindown::Chart`.
+- Built-in `toc:`, `files:` and `chart:` are nodes too, and can be overridden: `class TOC < Raindown::TOC`, `class Files < Raindown::Files`, `class Chart < Raindown::Chart`.
 
 ## Config
 
@@ -159,6 +159,7 @@ raindown watch FILE           # watch one file, writing back to it on save
 raindown FILE --html          # render to HTML once, to stdout
 raindown FILE --html out.html # render to HTML once, to a file
 cat FILE | raindown FILE --stdin   # render stdin to HTML, without rewriting FILE
+raindown server               # for editors: answer JSON requests a line on stdin, {"id","path","markdown","rewrite","bare"}, with {"id","output"} or {"id","error"}
 raindown FILE --bare          # allow bare directives in a .md file, also with raindown watch
 raindown FILE -x              # run endpoint snippets that have no response yet, also with raindown watch
 ```

@@ -10,7 +10,7 @@ Highlighting and live preview for [Raindown](https://github.com/raindeer-rb/rain
 
 Directives in code and comments aren't highlighted, matching what Raindown renders.
 
-The previews render the unsaved text with `raindown FILE --stdin`, so they update as you type and never change the file. The table of contents and table alignment are written to the file by `raindown FILE`, and endpoints only run there with `-x`.
+The previews render the unsaved text with `raindown server`, which keeps Raindown loaded so each render takes milliseconds, or with `raindown FILE --stdin` for a Raindown from before it, so they update as you type and never change the file. The built-in preview shows the last render while the next one's under way. The table of contents and table alignment are written to the file by `raindown FILE`, and endpoints only run there with `-x`.
 
 ## Requirements
 

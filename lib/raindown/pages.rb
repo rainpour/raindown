@@ -13,7 +13,6 @@ module Raindown
   #   folder: basics, order: 1, path: docs/_basics/_1-getting-started.md
   # Folder tags can share a folder name with "&", like docs/_1&_basics/getting-started.md.
   # An app can add its own metadata by subclassing and overriding implicit_metadata, like Raindeer's URL paths.
-  # Listed for a file, its current page is that file, like for backlinks:.
   class Pages
     EXTENSIONS = %w[md rd markdown raindown].freeze
     SEGMENTS = Regexp.union(['/', '&', '-'])
@@ -22,23 +21,22 @@ module Raindown
       # The Markdown files under a project's root, the folder with its .raindown folder or else the file's folder.
       def for(path)
         file_directory = File.dirname(File.expand_path(path))
-        load(root: Nodes.find_folder(file_directory)&.then { File.dirname(it) } || file_directory, current: path)
+        load(root: Nodes.find_folder(file_directory)&.then { File.dirname(it) } || file_directory)
       end
 
       # Lists the files under the root with Dirload, without loading them.
-      def load(root:, current: nil)
+      def load(root:)
         require 'dirload'
         file_types = Dirload.file_paths(absolute_path: root).group_by { Dirload.extension(file_path: it) }
-        new(metadata: Dirload::Metadata.new(loaded_paths: {}, missed_paths: [], file_types:), root:, current:)
+        new(metadata: Dirload::Metadata.new(loaded_paths: {}, missed_paths: [], file_types:), root:)
       end
     end
 
     attr_reader :root
 
     # Render options, like highlight_code: false, are for rendering each listed file's content.
-    def initialize(metadata:, root:, render_options: {}, current: nil)
+    def initialize(metadata:, root:, render_options: {})
       @root = root
-      @current = current && File.expand_path(current)
       @render_options = render_options
       @file_paths = metadata.file_types.values_at(*EXTENSIONS).flatten.compact
       @metadata = {}
@@ -52,12 +50,6 @@ module Raindown
     def list(**tags)
       file_paths = tags.empty? ? @file_paths : tagged(**tags)
       file_paths.sort_by { |file_path| sort_key(file_path) }.map { |file_path| listed_page(file_path) }
-    end
-
-    # The file it was listed for, or nil.
-    def current
-      file_path = @file_paths.find { File.expand_path(it) == @current } if @current
-      listed_page(file_path) if file_path
     end
 
     def tagged(**tags)

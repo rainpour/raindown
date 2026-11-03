@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const { plugin } = require('./markdown_it');
 const { Preview, VIEW_TYPE } = require('./preview');
+const raindown = require('./raindown');
 
 function activate(context) {
   const show = (column) => (uri) => {
@@ -29,6 +30,9 @@ function activate(context) {
   return { extendMarkdownIt: plugin };
 }
 
-function deactivate() {}
+// Raindown's server stops with VS Code's extension host.
+function deactivate() {
+  raindown.stop();
+}
 
 module.exports = { activate, deactivate };

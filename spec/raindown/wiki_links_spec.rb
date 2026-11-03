@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'raindown'
-require 'raindown/rewriter'
 require 'tmpdir'
 
 RSpec.describe Raindown::WikiLinks do
@@ -10,7 +9,7 @@ RSpec.describe Raindown::WikiLinks do
       @dir = dir
       FileUtils.mkdir_p(File.join(dir, '.raindown'))
       FileUtils.mkdir_p(File.join(dir, 'notes'))
-      File.write(File.join(dir, 'notes', 'Reading list.md'), "# Reading list\n\nbacklinks:\n")
+      File.write(File.join(dir, 'notes', 'Reading list.md'), "# Reading list\n")
       File.write(File.join(dir, 'today.md'), "---\ntitle: Today\n---\n\nSee [[reading list#To read]].\n")
       example.run
     end
@@ -30,17 +29,5 @@ RSpec.describe Raindown::WikiLinks do
     markdown = "---\nrelated: '[[Reading list]]'\n---\n\n[[Nowhere]] ![[Reading list]] `[[Reading list]]`\n"
 
     expect(to_markdown(markdown)).to eq(markdown)
-  end
-
-  it 'lists the files that link to a file as its backlinks, written into it' do
-    path = File.join(@dir, 'notes', 'Reading list.md')
-    Raindown::Rewriter.update(path:, bare: true, metadata: Raindown::Pages.for(path))
-
-    expect(File.read(path)).to eq("# Reading list\n\nbacklinks:\n- [Today](<today.md>)\n")
-  end
-
-  it 'knows the file pages were listed for' do
-    expect(Raindown::Pages.for(File.join(@dir, 'today.md')).current.title).to eq('Today')
-    expect(Raindown::NoMetadata.current).to be_nil
   end
 end

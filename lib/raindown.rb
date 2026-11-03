@@ -35,7 +35,6 @@ module Raindown
   # Stands in for an app's metadata when there isn't any, so list: and files: list nothing.
   module NoMetadata
     def self.list(**) = []
-    def self.current = nil
   end
 
   module_function

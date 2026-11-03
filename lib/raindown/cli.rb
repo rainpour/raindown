@@ -5,7 +5,9 @@ require 'trees'
 require_relative '../raindown'
 require_relative '../version'
 require_relative 'blueprints'
+require_relative 'editing'
 require_relative 'rewriter'
+require_relative 'server'
 require_relative 'watcher/file_watcher'
 require_relative 'watcher/supervisor'
 
@@ -28,6 +30,8 @@ module Raindown
                             PATH is a file, or a directory (default: current directory) whose projects with a
                             .raindown folder are watched
         init [DIRECTORY]    Create a .raindown folder for the project's config and nodes (default: current directory)
+        server              Keep Raindown loaded for an editor, answering a JSON request a line on stdin with its HTML,
+                            or its Markdown as it would be written back, like --stdin and --stdin --rewrite
         blueprints            Save the blueprints in Claude Code's last reply to .raindown/blueprints.md, for the terminal
                             UI's Blueprints page, as a Stop hook that's given the hook's JSON
 
@@ -36,6 +40,8 @@ module Raindown
                             if its endpoint responses fail their status: or schema: checks
         --stdin             Render Markdown from stdin to HTML once, without formatting FILE, which only needs
                             its extension (to allow bare directives) and can be unsaved. Add --html OUTPUT to write a file
+        --rewrite           With --stdin, print its Markdown as it would be written back to FILE, without writing
+                            FILE, for editors like Obsidian. Add -x to run its endpoints
         --bare              Allow bare directives like :toc in Markdown files
         -x, --execute       Run endpoint curl snippets that have no output yet, as files are written back
         --env NAME          Fill endpoint snippets from the NAME environment in .raindown/environments.yml and
@@ -55,9 +61,11 @@ module Raindown
 
     # A path opens the terminal UI, or after "watch" it's watched, and with --html or --stdin it's rendered. The flags
     # are keyword arguments, in any order, like -x for x:, and --html is the OUTPUT when it's given one.
-    line(':path') do |path, html: nil, stdin: false, bare: false, execute: false, x: false, env: nil| # rubocop:disable Metrics/ParameterLists -- each keyword is a flag
+    line(':path') do |path, html: nil, stdin: false, rewrite: false, bare: false, execute: false, x: false, env: nil| # rubocop:disable Metrics/ParameterLists -- each keyword is a flag
       execute do
         ENV['RAINDOWN_ENV'] = env if env
+        next rewrite_stdin(path, bare:, execute: execute || x) if stdin && rewrite
+
         open_path(path, html:, stdin:, bare:, execute: execute || x)
       end
     end
@@ -89,6 +97,7 @@ module Raindown
       if argv.intersect?(%w[-v --version]) then puts(VERSION)
       elsif argv.first == 'init' && argv.size <= 2 then init(argv[1])
       elsif argv == ['blueprints'] then Blueprints.save(JSON.parse($stdin.read))
+      elsif argv == ['server'] then serve
       else return false
       end
 
@@ -157,10 +166,16 @@ module Raindown
         exit 1
       end
 
+      # The Markdown from stdin written back as it would be to the file, and its failed endpoint checks, for an editor
+      # to apply to what it's editing.
+      def rewrite_stdin(path, bare:, execute:)
+        rewritten = Editing.rewrite_markdown($stdin.read, path:, bare:, execute:)
+        $stdout.write(rewritten[:output])
+        warn(*rewritten[:warnings])
+      end
+
       def render_stdin(path, output = nil, bare: false, **)
-        Nodes.load(path)
-        write(output, Raindown.render(markdown: $stdin.read, metadata: Pages.for(path), bare: bare || BareDirectives.file?(path),
-                                      **Config.render_options(path)))
+        write(output, Editing.render_markdown($stdin.read, path:, bare:))
       end
 
       # Watching only writes back to the files, while --html and --stdin render HTML.
@@ -170,6 +185,13 @@ module Raindown
 
         Nodes.load(path)
         Watcher::FileWatcher.new(path:, bare:, execute:).start
+      end
+
+      # The answers have stdout to themselves, so what nodes print goes to stderr.
+      def serve
+        output = $stdout.dup
+        $stdout.reopen($stderr)
+        Server.new(output:).start
       end
 
       def write(output, html)

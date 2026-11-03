@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -160 ▕█████│████████████████████████▉ +771
-───────────────────────────────────────────────────
-af37bfc   -10      ▐│█▏                         +34
-0645bd2   -35     ▕█│██▍                        +73
-e49629b  -113   ▐███│████████████████████▊     +645
-e4b2d43    -1      ▕│▋                          +18
-0a24319    -1      ▕│▏                           +1
+Total    -181 ▐███│██████████████████████████▌ +1,357
+─────────────────────────────────────────────────────
+eff8720    -7    ▕│████████▏                     +419
+8ccb3ae   -16    ▕│███▋                          +186
+af37bfc   -10    ▕│▋                              +34
+0645bd2   -35    ▐│█▍                             +73
+e49629b  -113  ▕██│████████████▋                 +645
 ```
 <!-- :Commits -->
 
@@ -187,19 +187,9 @@ To render the files with your own template instead, use a `list:` block. Its tem
 <{ :list }>
 ```
 
-### Wikilinks and backlinks
+### Wikilinks
 
 Like in [Obsidian](https://obsidian.md), `[[Reading list]]` links to the file named `Reading list.md`, wherever it is in the project, whatever its case. `[[Reading list#To read]]` links to a heading, `[[Reading list|books]]` changes the text, and `[[notes/Reading list]]` picks one of two files with the same name. They render as links, by the file's path like `files:`, while the file keeps them as you wrote them, so Obsidian still reads it. Ones that name no file, embeds like `![[photo.png]]`, and ones in code are left as they are.
-
-A `backlinks:` block writes a link to each file whose wikilinks link to this one:
-
-```md
-<!-- backlinks: -->
-- [Today](<journal/Today.md>)
-<!-- :backlinks -->
-```
-
-Obsidian shows backlinks in its sidebar, but these are written into the file, so they show on GitHub, in other editors and in the HTML too.
 
 ### Metadata
 
@@ -524,7 +514,7 @@ export class Changelog {
 }
 ```
 
-It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content. A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `files:`, `chart:` or `backlinks:`.
+It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content. A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `files:` or `chart:`.
 
 ### Config
 
@@ -539,7 +529,23 @@ highlight_code: false
 
 ### VS Code
 
-The [VS Code extension](vscode/) highlights syntax and previews Raindown files with `--stdin`, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.
+The [VS Code extension](vscode/) highlights syntax and previews Raindown files with the [editor server](#editor-server), or `--stdin` with a Raindown from before it, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.
+
+### Obsidian
+
+The [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) writes back to your notes as you save them, like `raindown watch`, with the [editor server](#editor-server), or `raindown NOTE --stdin --rewrite`, which prints the note as it would be written back without writing it. So tables of contents, components and `files:` fill in as you write, in plain Markdown that reads the same outside Obsidian. Endpoints only run from its **Run the endpoints in this note** command. If Raindown isn't installed, it offers to download the standalone binary.
+
+### Editor server
+
+Editors keep Raindown loaded with `raindown server`, so a render doesn't start Ruby again each time: the first takes about a second, and the ones after it a few milliseconds. It says it's ready, then answers one JSON request a line on stdin, in order, on stdout:
+
+```
+{"ready":true,"version":"0.10.0"}
+{"id":1,"path":"/notes/a.md","markdown":"# A\n\n<!-- toc: -->\n<!-- :toc -->\n","rewrite":true}
+{"id":1,"output":"# A\n\n<!-- toc: -->\n- [A](#a)\n<!-- :toc -->\n","warnings":[]}
+```
+
+With `"rewrite": true`, it answers like `--stdin --rewrite`, with `"execute": true` like `-x`, and otherwise with HTML, like `--stdin`. `"bare": true` is like `--bare`. An error is answered as `{"id":1,"error":"raindown: /notes/a.md: ..."}`. Each project renders in a process of its own, which starts again when a file in its `.raindown` folder changes, so its components, config and schemas are never stale. On Windows, which can't fork, start the server again after changing them.
 
 ### Standalone binaries
 

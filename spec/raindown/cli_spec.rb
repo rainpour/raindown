@@ -109,6 +109,14 @@ RSpec.describe Raindown::CLI do
           .to output(/Table of contents/).to_stdout
       end
 
+      it 'prints the Markdown from stdin as it would be written back with --rewrite, without writing the file' do
+        markdown = "# Title\n\n<!-- toc: -->\n<!-- :toc -->\n\n## Section\n"
+
+        expect { run_with_stdin(markdown, [path, '--stdin', '--rewrite']) }
+          .to output("# Title\n\n<!-- toc: -->\n- [Title](#title)\n  - [Section](#section)\n<!-- :toc -->\n\n## Section\n").to_stdout
+        expect(File.read(path)).to eq("# Title\n")
+      end
+
       it 'writes to the given output path' do
         run_with_stdin("# Title\n", [path, '--stdin', '--html', output_path])
 

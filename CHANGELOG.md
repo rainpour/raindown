@@ -9,7 +9,10 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ### Added
 
-- Obsidian's `[[wikilinks]]`, which render as links to the file they name, and `backlinks:`, which writes the files that link to this one
+- An [Obsidian plugin](https://github.com/rainpour/raindown-obsidian), which writes back to notes as they're saved, and offers to download Raindown if it isn't installed
+- `raindown server` keeps Raindown loaded for editors, answering a JSON request a line, so the Obsidian plugin and the VS Code extension render in milliseconds rather than starting Ruby each time
+- `raindown FILE --stdin --rewrite` prints the Markdown from stdin as it would be written back to FILE, for editors
+- Obsidian's `[[wikilinks]]`, which render as links to the file they name
 - `--html -` prints the HTML to stdout, like `--html`
 - Endpoint responses keep their status and time in their fetched comment, like `200 · 142 ms`
 - Endpoints check their responses with `status: 200` and a LowType `schema: Schema[id: Integer]`, and `--html` fails on failures
