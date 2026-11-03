@@ -14,7 +14,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
   # Drawn once, as it is when it opens, which picks the batch.
   let(:view) do
-    described_class.new(root: @root).tap do
+    described_class.new(projects: [@root]).tap do
       it.load
       it.cells(2, 2)
     end
@@ -116,7 +116,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
       view.cursor = it
       view.next_step(:bin2)
     end
-    restarted = described_class.new(root: @root).tap(&:load).tap { it.cells(2, 2) }
+    restarted = described_class.new(projects: [@root]).tap(&:load).tap { it.cells(2, 2) }
     expect([restarted.batch.files, restarted.batch.refined?, restarted.next_step?(:next)]).to eq([batch, true, false])
   end
 
@@ -158,5 +158,19 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
     view.next_step(:celebrate)
     expect(view.pace(over)).to eq(:animation)
+  end
+  it "narrows the methods to a project's, picking the batch again from them, and shows every project's again with nil" do
+    guides = File.join(@root, 'guides')
+    FileUtils.mkdir_p(File.join(guides, 'lib'))
+    File.write(File.join(guides, 'lib', 'page.rb'), "class Page\n  def title = 1\nend\n")
+    view.cells(2, 2)
+
+    view.project = guides
+    view.cells(2, 2)
+    expect(view.code_methods.map(&:label)).to eq(['Page#title'])
+
+    view.project = nil
+    view.cells(2, 2)
+    expect(view.code_methods.map(&:label)).to include('Square#area')
   end
 end

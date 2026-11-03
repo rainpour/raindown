@@ -240,4 +240,19 @@ RSpec.describe Raindown::TUI::BlueprintsView do
     navigator.next_step(:up)
     expect(view.box).to eq(0)
   end
+
+  it "lists every project's saved blueprints, newest first, narrowed to a project's when one's chosen" do
+    guides = File.join(@root, 'guides')
+    FileUtils.mkdir_p(File.join(guides, '.raindown'))
+    write('.raindown/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', '╭─ root ─╮'))
+    write('guides/.raindown/blueprints.md', blueprint('2026-10-30T02:00:00Z', 'mockup', '╭─ guides ─╮'))
+    view = Raindown::TUI::Navigator.new(root: @root).blueprints
+    view.load
+
+    expect(view.blueprints.map(&:lines)).to eq([['╭─ guides ─╮'], ['╭─ root ─╮']])
+    view.project = guides
+    expect([view.blueprints.map(&:lines), view.selected.path]).to eq([[['╭─ guides ─╮']], 'guides/.raindown/blueprints.md'])
+    view.project = nil
+    expect(view.blueprints.length).to eq(2)
+  end
 end

@@ -45,10 +45,10 @@ module Raindown
         @files = FileTree.new(root:, workers:)
         @endpoints = Endpoints.new(workers:)
         @dashboard = DashboardView.new(root:, workers:)
-        @feelings = FeelingsView.new(root:)
-        @blueprints = BlueprintsView.new(root:)
+        @feelings = FeelingsView.new(projects: Projects.outer_roots(workers.roots))
+        @blueprints = BlueprintsView.new(root:, projects: workers.roots)
         @nav = ListView.new { nav_rows }
-        first = Projects.files(root, nested: true).first
+        first = @files.files.first
         # The dashboard is the first page, unless a file is asked for, and "d" goes from it to the first file.
         @view = OutlineView.new(first, workers:) if first
         path ? open_at(path, nil) : open_view(dashboard)

@@ -41,9 +41,24 @@ module Raindown
 
       module_function
 
+      # Git log runs in a thread of its own while the methods are read, as it's as slow as reading them. Waiting on git's
+      # output frees the main thread to read, and the two meet when each method gets its file's changes, for its drift:
+      #   Thread                                  main thread
+      #   ┌──────────────────────────┐            ┌─────────────────────────┐
+      #   │ CodeMethods.file_changes │            │ CodeMethods.tagged      │
+      #   │ git log, in a subprocess │            │ or CodeMethods.indented │
+      #   └────────────┬─────────────┘            └────────────┬────────────┘
+      #                │ changes.value waits for it            │
+      #                └───────────────────┬───────────────────┘
+      #                                    │
+      #                                    ▼
+      #                         ┌──────────────────────┐
+      #                         │ CodeMethods.drifting │
+      #                         └──────────────────────┘
       def list(root)
-        changes = file_changes(root)
-        drifting((tagged(root) || indented(root)).map { it.with(changes: changes.fetch(it.path, 0)) })
+        changes = Thread.new { file_changes(root) }
+        methods = tagged(root) || indented(root)
+        drifting(methods.map { it.with(changes: changes.value.fetch(it.path, 0)) })
       end
 
       # Each method with its drift, from 0 for the lightest to 9 for the heaviest, where methods that weigh the same

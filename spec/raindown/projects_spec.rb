@@ -39,6 +39,14 @@ RSpec.describe Raindown::Projects do
     end
   end
 
+  describe '.outer_roots' do
+    it 'leaves out the roots inside another' do
+      roots = %w[docs docs/guides docsite].map { File.join(@dir, it) }
+
+      expect(described_class.outer_roots(roots)).to eq([roots[0], roots[2]])
+    end
+  end
+
   describe '.root' do
     it 'is the nearest project above a file' do
       docs = project('docs')
@@ -60,14 +68,6 @@ RSpec.describe Raindown::Projects do
       File.write(File.join(project('docs/guides'), 'e.md'), '')
 
       expect(described_class.files(root)).to eq([File.join(root, 'a.md'), File.join(root, 'sub', 'b.rd')])
-    end
-
-    it 'lists the files of the projects inside it when asked' do
-      root = project('docs')
-      File.write(File.join(root, 'a.md'), '')
-      File.write(File.join(project('docs/guides'), 'b.md'), '')
-
-      expect(described_class.files(root, nested: true)).to eq([File.join(root, 'a.md'), File.join(root, 'guides', 'b.md')])
     end
   end
 

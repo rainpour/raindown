@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'find'
+require_relative 'gitignore'
 require_relative 'nodes'
 require_relative 'pages'
 
@@ -18,16 +19,21 @@ module Raindown
     # The roots of the projects in a directory: the project the directory is in, if any, and every project below it.
     def roots(directory)
       directory = File.expand_path(directory)
-      roots = [root(directory)].compact
+      [root(directory), *project_folders(directory)].compact.uniq
+    end
 
-      Find.find(directory) do |path|
-        next unless File.directory?(path)
+    # The folders below a directory with a .raindown folder. Only folders are walked, leaving out ignored, linked and
+    # gitignored ones, so it stays quick in a big folder like ~/dev.
+    def project_folders(directory, gitignore = Gitignore.new(directory))
+      Dir.glob('*/', base: directory).flat_map do |folder|
+        path = File.join(directory, folder.chomp('/'))
+        next [] if ignored?(folder.chomp('/')) || File.symlink?(path) || gitignore.ignores?(path)
 
-        Find.prune if path != directory && ignored?(File.basename(path))
-        roots << path if File.directory?(File.join(path, Nodes::FOLDER))
+        inside = project_folders(path, Gitignore.new(path, gitignore))
+        next inside unless project?(path)
+
+        [path, *inside]
       end
-
-      roots.uniq
     end
 
     # The root of the project a file or directory is in, or nil when it isn't in one.
@@ -38,13 +44,13 @@ module Raindown
     end
 
     # The project's Markdown files, sorted, leaving out ignored folders. The projects inside it are left out too,
-    # since they have nodes of their own, unless they're asked for, like by the terminal UI, which lists them all.
-    def files(root, nested: false)
+    # since they have nodes of their own.
+    def files(root)
       files = []
 
       Find.find(root) do |path|
         if File.directory?(path)
-          Find.prune if path != root && (ignored?(File.basename(path)) || (!nested && project?(path)))
+          Find.prune if path != root && (ignored?(File.basename(path)) || project?(path))
         elsif markdown?(path, root:)
           files << path
         end
@@ -64,6 +70,11 @@ module Raindown
     # Whether a file is one of a project's own nodes, which load when its watcher starts.
     def node?(path, root:)
       File.expand_path(path).start_with?(File.join(root, Nodes::FOLDER, '')) && NODE_EXTENSIONS.include?(File.extname(path))
+    end
+
+    # The roots that aren't inside another of them, as a project's code includes the projects inside it.
+    def outer_roots(roots)
+      roots.reject { |root| roots.any? { root != it && root.start_with?(File.join(it, '')) } }
     end
 
     def project?(folder)

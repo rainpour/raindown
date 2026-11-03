@@ -39,6 +39,12 @@ RSpec.describe Raindown::Workers do
     expect(workers.for(File.join(@dir, 'plain.md')).root).to eq(@dir)
   end
 
+  it 'is the projects in the folder, leaving out the folder when it has them' do
+    project('raindeer', shout: 'Deer', sales: '1 2 3')
+
+    expect(workers.roots).to eq([File.join(@dir, 'raindeer')])
+  end
+
   context 'with fork', fork: true, if: Process.respond_to?(:fork) do
     let(:raindeer) { project('raindeer', shout: 'Deer to be different', sales: '1 2 3') }
     let(:raindown) { project('raindown', shout: 'Stay sane out there', sales: '3 2 1') }

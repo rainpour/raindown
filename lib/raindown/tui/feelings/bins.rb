@@ -18,7 +18,7 @@ module Raindown
 
       # The five bins, each a box with its number, its temper, and a bar of how many feelings it holds.
       def bins
-        counts = view.log.counts
+        counts = view.counts
         most = [counts.values.max, 1].max
         chosen = chosen_temper
         boxes = counts.each_with_index.map { |(temper, count), index| bin(index + 1, temper, count, most, chosen) }

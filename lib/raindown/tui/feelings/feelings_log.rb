@@ -81,9 +81,9 @@ module Raindown
       # How the method last felt, while its code's the same as when it was felt, or nil.
       def temper(method) = rows.reverse.find { felt_row?(it, method) }&.fetch(:temper)
 
-      # How many feelings there are of each temper, in the bins' order.
-      def counts
-        tally = rows.map { it[:temper] }.tally
+      # How many feelings there are of each temper, in the bins' order, of those within a folder, like a project, if one's given.
+      def counts(within: nil)
+        tally = rows.select { within.nil? || File.join(@root, path(it)).start_with?(File.join(within, '')) }.map { it[:temper] }.tally
         TEMPERS.to_h { [it, tally.fetch(it, 0)] }
       end
 
@@ -131,6 +131,34 @@ module Raindown
       rescue SystemCallError
         nil
       end
+    end
+
+    # The feelings about each project's code, in its own FeelingsLog, so in a folder of projects, like ~/dev, each project
+    # keeps its own feelings, and the folder isn't made a project.
+    class FeelingsLogs
+      def initialize(projects:)
+        @logs = projects.to_h { [it, FeelingsLog.new(root: it)] }
+      end
+
+      def add(feeling) = log_of(feeling.method).add(feeling)
+      def felt?(method) = log_of(method).felt?(method)
+      def temper(method) = log_of(method).temper(method)
+      def rows = @logs.values.flat_map(&:rows)
+
+      # Each project's feelings about methods that have changed, or gone, from its methods there are now, to its memories.
+      def move_stale_to_memories(methods)
+        by_log = methods.group_by { log_of(it) }
+        @logs.each_value { it.move_stale_to_memories(by_log.fetch(it, [])) }
+      end
+
+      def counts(within: nil)
+        empty = FeelingsLog::TEMPERS.to_h { [it, 0] }
+        @logs.values.map { it.counts(within:) }.reduce(empty) { |sum, counts| sum.merge(counts) { |_, felt, more| felt + more } }
+      end
+
+      private
+
+      def log_of(method) = @logs.find { |root, _| method.path.start_with?(File.join(root, '')) }&.last
     end
   end
 end

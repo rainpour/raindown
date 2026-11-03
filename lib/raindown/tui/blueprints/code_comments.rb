@@ -16,9 +16,10 @@ module Raindown
 
       module_function
 
-      # The blueprints in the comments of the project's code, by file, from the top of each.
-      def blueprints(root)
-        CodeMethods.files(root).flat_map { |path| in_file(path, path.delete_prefix(File.join(root, ''))) }
+      # The blueprints in the comments of the projects' code, by file from the root, from the top of each. In a folder of
+      # projects, like ~/dev, only the projects' code is read.
+      def blueprints(root, projects: [root])
+        projects.flat_map { CodeMethods.files(it) }.flat_map { |path| in_file(path, path.delete_prefix(File.join(root, ''))) }
       end
 
       def in_file(path, relative)

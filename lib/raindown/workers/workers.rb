@@ -25,7 +25,7 @@ module Raindown
     end
 
     # The folder's project and those inside it, found when they're first asked for, and again after a restart.
-    def roots = @roots ||= [root, *Projects.roots(root)].uniq.sort
+    def roots = @roots ||= Projects.roots(root).sort
 
     # A worker for each project, as they were found when the workers last started.
     def each(&)

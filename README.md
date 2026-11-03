@@ -18,19 +18,19 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 █▀█   █ █ █▀█
 █ █   ▀▀█ █▀█
 ▀▀▀ ▀   ▀ ▀▀▀
-11 felt
+10 felt
 ```
 <!-- :CodeHealth -->
 
 <!-- Commits: limit=5 -->
 ```
-Total    -16 ▕███████│██████████████████████▉ +51
-─────────────────────────────────────────────────
-48bd107   -8     ▐███│████████████████▏       +36
-5742c2b   -4       ██│████▉                   +11
-ad5e1d8   -1        ▐│▌                        +1
-d3292a0   -1        ▐│▌                        +1
-21ddbdf   -2        █│▉                        +2
+Total    -68 ████│██████████████████████████▏ +466
+──────────────────────────────────────────────────
+9144b1a  -38  ▕██│█████████                   +161
+22bd045   -2    ▕│▏                             +2
+4b1b82a  -16    █│██████████████▍             +256
+48bd107   -8    ▐│██                           +36
+5742c2b   -4    ▕│▋                            +11
 ```
 <!-- :Commits -->
 
@@ -60,11 +60,11 @@ cat draft.rd | raindown draft.rd --stdin
 
 With `--stdin`, FILE only decides whether bare directives are allowed (by its extension), so it doesn't need to exist yet, and the TOC and tables aren't written back to it.
 
-`raindown watch` on a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders and ones like `node_modules` and `build`. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
+`raindown watch` on a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders, ones like `node_modules` and `build`, and the folders your `.gitignore` files name. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
 
-`raindown` shows a project's Markdown files beside an outline of the open file's headings and directives. It opens on the Dashboard (below), or on the file you name, like `raindown README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Like `raindown watch`, it watches every file in the folder, and writes back to each Markdown file as it's saved, so there's no need for `raindown watch` running in another terminal too. A click does what Enter does where it's clicked, or presses the button clicked, like `[Run]`, unless that would leave the TUI for your editor, so a stray click only moves the cursor. Scrolling does nothing.
+`raindown` shows a project's Markdown files beside an outline of the open file's headings and directives. On a folder of projects, like `raindown ~/dev`, it shows only the projects' files, leaving out the Markdown outside them, and in a folder without a project the Dashboard says so, until `raindown init` makes one. It opens on the Dashboard (below), or on the file you name, like `raindown README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Like `raindown watch`, it watches every file in the folder, and writes back to each Markdown file as it's saved, so there's no need for `raindown watch` running in another terminal too. A click does what Enter does where it's clicked, or presses the button clicked, like `[Run]`, unless that would leave the TUI for your editor, so a stray click only moves the cursor. Scrolling does nothing.
 
-**Dashboard**, at the top of the files (or `d`), shows every chart and stat in the project beside them, each in a card under its file and heading. The projects inside it, marked 🌧 in the files, are shown too, each with its own nodes, and their charts are under their paths. Click the path in the header, or press `p`, to narrow the files and the Dashboard to one project.
+**Dashboard**, at the top of the files (or `d`), shows every chart and stat in the project beside them, each in a card under its file and heading. The projects inside it, marked 🌧 in the files, are shown too, each with its own nodes, and their charts are under their paths. Click the path in the header, or press `p`, to narrow the files, the Dashboard, Code feelings and Blueprints to one project.
 
 Below the files, after a blank line, is every endpoint in the project, by its request, like `GET httpbin.org/uuid`, with its method in colour: GET green, POST blue, DELETE red, PUT yellow and PATCH magenta. Enter or a click opens one beside the files, with its URL in a bar and a **Run** button, and its response below. `x`, or clicking **Run**, runs it, and Enter opens its directive in the outline. The charts are drawn from their data every few seconds, so editing a CSV file updates its chart without a save. Enter (or clicking a card's title) opens the chart's file in the outline, on its directive.
 
@@ -72,7 +72,7 @@ Below the files, after a blank line, is every endpoint in the project, by its re
 
 Code is highlighted with [Rouge](https://rouge.jneen.net), which knows over 200 languages: a directive's body when it's expanded in the outline, with its code blocks in their own languages, an endpoint's response, in the language of its code block, and the code in Code feelings, by its file's name.
 
-**Code feelings**, under the Dashboard in the files (or `f`), shows the project's functions and methods as clusters of digits in a grid, like the refiners' screens in Severance. Each week it shows a batch of files, as many as fill the screen, the first in a random order for the week, under its title, Weekly Batch, with how much of it is refined at the top right of the grid. Felt methods go blank, and once they're all felt, that's the week's work done. A screen too small for a grid of 15 columns by 5 rows, as one under 24 lines tall is, goes red until it's bigger. It finds them in any language with [Universal Ctags](https://ctags.io) when it's installed, or else by how the code's indented. Long methods, and ones whose files keep changing, drift. Move between them with the arrow keys to see each one's code, its first 6 lines, or as much as fits with Enter or by clicking how many more lines there are. Sort how it makes you feel with `1` to `5`, from best to worst: frolic, numb, woe, dread or malice. Woe, dread and malice ask why, which you type, then Enter, or Esc to leave it out. Either way, the cursor stays on the method, ready to fix. Each feeling goes into `.raindown/feelings.csv`, with the commit it was felt at and a checksum of the method's code. Feeling a method again replaces how it felt. Once its code changes, or it's gone, its feeling moves to `.raindown/memories.csv`, so `feelings.csv` only says how the code feels now, and the method comes back into the grid to be felt again. The code health at the top of this README is their average from 0 to 1, with each feeling's score below, labelled with how many feelings it's the average of. The code debt adds up how far each is from numb, from 1 for frolic to -1 for malice, so it's in debt below zero, labelled with how many fixes there have been, feelings that scored higher when their method was felt again after its code changed. Both are stats in `.raindown`. `e` opens the method in your editor, and `x` asks [Claude Code](https://claude.com/claude-code) to fix it, with how it felt, when the `claude` command is installed. Either way, the code is read again after, to be felt again.
+**Code feelings**, under the Dashboard in the files (or `f`), shows the project's functions and methods as clusters of digits in a grid, like the refiners' screens in Severance. Each week it shows a batch of files, as many as fill the screen, the first in a random order for the week, under its title, Weekly Batch, with how much of it is refined at the top right of the grid. Felt methods go blank, and once they're all felt, that's the week's work done. A screen too small for a grid of 15 columns by 5 rows, as one under 24 lines tall is, goes red until it's bigger. It finds them in any language with [Universal Ctags](https://ctags.io) when it's installed, or else by how the code's indented. Long methods, and ones whose files keep changing, drift. Move between them with the arrow keys to see each one's code, its first 6 lines, or as much as fits with Enter or by clicking how many more lines there are. Sort how it makes you feel with `1` to `5`, from best to worst: frolic, numb, woe, dread or malice. Woe, dread and malice ask why, which you type, then Enter, or Esc to leave it out. Either way, the cursor stays on the method, ready to fix. Each feeling goes into its project's `.raindown/feelings.csv`, even in a folder of projects, with the commit it was felt at and a checksum of the method's code. Feeling a method again replaces how it felt. Once its code changes, or it's gone, its feeling moves to `.raindown/memories.csv`, so `feelings.csv` only says how the code feels now, and the method comes back into the grid to be felt again. The code health at the top of this README is their average from 0 to 1, with each feeling's score below, labelled with how many feelings it's the average of. The code debt adds up how far each is from numb, from 1 for frolic to -1 for malice, so it's in debt below zero, labelled with how many fixes there have been, feelings that scored higher when their method was felt again after its code changed. Both are stats in `.raindown`. `e` opens the method in your editor, and `x` asks [Claude Code](https://claude.com/claude-code) to fix it, with how it felt, when the `claude` command is installed. Either way, the code is read again after, to be felt again.
 
 | Key     | 1      | 2    | 3   | 4     | 5      |
 | ------- | ------ | ---- | --- | ----- | ------ |

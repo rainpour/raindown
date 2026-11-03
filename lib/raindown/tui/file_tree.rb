@@ -28,8 +28,8 @@ module Raindown
       PROJECT = '🌧'
 
       def load
-        @files = Projects.files(root, nested: true)
-        @projects = Projects.roots(root).to_set
+        @projects = @workers.roots
+        @files = @projects.flat_map { Projects.files(it) }.sort
       end
 
       # The folder the tree starts from: the scope's, or the root's.

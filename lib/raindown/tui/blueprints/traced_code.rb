@@ -50,7 +50,8 @@ module Raindown
 
       def first_method(owner) = methods.select { it.owner == owner }.min_by { [it.path, it.line] }
 
-      def methods = @methods ||= CodeMethods.list(@root)
+      # The projects' methods. In a folder of projects, like ~/dev, only the projects' code is read.
+      def methods = @methods ||= code_projects.flat_map { CodeMethods.list(it) }
     end
   end
 end
