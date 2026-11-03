@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## 0.10.0
+
+### Added
+
+- Endpoint placeholders like `{token}` from front matter, `.raindown/environments.yml` and `env`, chosen with `--env NAME`
+- Endpoints named with `as:` pass their response to later endpoints, like `{login.token}`
+
+### Changed
+
+- **Breaking:** endpoints only run with `-x` or a TUI Run, and `endpoint: :x` is gone
+- **Breaking:** nested paths read keys, indices and a few safe methods, like `{tags.first}` and `{title.upcase}`, with Antlers 1.4
+- Endpoint snippets refuse link-local addresses, like cloud metadata, and `-L`
+
+### Fixed
+
+- Loops over a hash, like `<{ for: name, url in: links }>`
+
 ## 0.9.1
 
 ### Changed
