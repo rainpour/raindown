@@ -12,6 +12,7 @@ RSpec.describe Raindown::TUI::Layout do
     Dir.mktmpdir do |dir|
       @root = File.join(File.realpath(dir), 'docs')
       FileUtils.mkdir_p(File.join(@root, 'guides'))
+      FileUtils.mkdir_p(File.join(@root, '.raindown'))
       File.write(File.join(@root, 'guides', 'setup.md'),
                  "# Setup\n\n<!-- endpoint: -->\n```sh\ncurl https://example.com\n```\n```json\n{}\n```\n<!-- :endpoint -->\n")
       File.write(File.join(@root, 'README.md'), "# Readme\n")
@@ -207,10 +208,21 @@ RSpec.describe Raindown::TUI::Layout do
     end
   end
 
+  it 'says on the dashboard and in Code feelings when the folder has no projects, and how to make one' do
+    FileUtils.rm_rf(File.join(@root, '.raindown'))
+    navigator = Raindown::TUI::Navigator.new(root: @root)
+    says_so = include(a_string_including('No projects found in this directory.'),
+                      a_string_including(%(Run "raindown init" in a project's folder.)))
+
+    expect(text(described_class.new(navigator, width: 100, height: 30).lines)).to says_so
+    navigator.open_view(navigator.feelings)
+    expect(text(described_class.new(navigator, width: 100, height: 30).lines)).to says_so
+  end
+
   describe 'the project menu' do
     let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
 
-    before { [@root, File.join(@root, 'guides')].each { FileUtils.mkdir_p(File.join(it, '.raindown')) } }
+    before { FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown')) }
 
     it 'has a Projects button on the dashboard' do
       expect(described_class.new(navigator, width: 80, height: 8).lines.last.map(&:event).compact.uniq)

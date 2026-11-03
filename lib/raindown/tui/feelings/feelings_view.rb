@@ -29,12 +29,13 @@ module Raindown
       KEYS = %i[up down left right edit execute enter toggle expand celebrate].freeze
 
       # The temper being noted, and the note typed so far, while it's asking why, whether the selected method's code
-      # shows all that fits, until another's selected, and the rain then the waffle, once the batch is refined.
-      attr_reader :noting, :note, :cursor, :log, :celebration
+      # shows all that fits, until another's selected, the rain then the waffle, once the batch is refined, and the project
+      # its methods and counts are narrowed to, if any.
+      attr_reader :noting, :note, :cursor, :log, :celebration, :project
 
-      def initialize(root:)
-        @root = root
-        @log = FeelingsLog.new(root:)
+      def initialize(projects:)
+        @projects = projects
+        @log = FeelingsLogs.new(projects:)
         @last_feelings = {}
         @cursor = 0
         @week = WeeklyBatch.new(log: @log)
@@ -63,10 +64,18 @@ module Raindown
       # the memories.
       def load
         was = selected
-        every = CodeMethods.list(@root)
-        @log.move_stale_to_memories(every)
-        @week.read(every)
+        @every = @projects.flat_map { CodeMethods.list(it) }
+        @log.move_stale_to_memories(@every)
+        @week.read(in_project)
         reselect(was)
+      end
+
+      # Narrows the methods to a project's, or with nil, shows every project's, picking the batch again from them.
+      def project=(project)
+        @project = project
+        @week.read(in_project)
+        @week.pick_again
+        self.cursor = 0
       end
 
       # Selects the method again, by its file and name, wherever it is now, or keeps the cursor where it was.
@@ -77,6 +86,9 @@ module Raindown
       # The Batch of files whose methods are in the grid.
       def batch = @week.batch
       def code_methods = batch.code_methods
+
+      # How many feelings there are of each temper, in the project the methods are narrowed to, if any.
+      def counts = log.counts(within: project)
 
       def selected = code_methods[@cursor]
 
@@ -105,6 +117,11 @@ module Raindown
       end
 
       private
+
+      # The methods of the project they're narrowed to, if any, which are none until they're read.
+      def in_project
+        @every.to_a.select { @project.nil? || it.path.start_with?(File.join(@project, '')) }
+      end
 
       # Moves between the methods, or acts on the selected one.
       def method_step(key)

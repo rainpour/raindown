@@ -15,10 +15,11 @@ module Raindown
 
       def typing? = @filtering == true
 
-      # The blueprints with every keyword, or all of them, filtered again only when the keywords or the blueprints change,
+      # The blueprints with every keyword, or all of them, in the project they're narrowed to, if any, filtered again only when
+      # the keywords, the project or the blueprints change,
       # as what's drawn asks for the selected one many times a frame.
       def blueprints
-        @filtered = [query, @all, filtered(query.to_s.downcase.split)] unless filtered_now?
+        @filtered = [query, @all, @project, filtered(query.to_s.downcase.split)] unless filtered_now?
         @filtered.last
       end
 
@@ -38,12 +39,12 @@ module Raindown
 
       private
 
-      def filtered_now? = @filtered && @filtered[0] == query && @filtered[1].equal?(@all)
+      def filtered_now? = @filtered && @filtered[0] == query && @filtered[1].equal?(@all) && @filtered[2] == @project
 
       def filtered(keywords)
-        return @all if keywords.empty?
+        return in_project if keywords.empty?
 
-        @all.select { |blueprint| keywords.all? { blueprint.words.downcase.include?(it) || blueprint.kind.include?(it) } }
+        in_project.select { |blueprint| keywords.all? { blueprint.words.downcase.include?(it) || blueprint.kind.include?(it) } }
       end
 
       def open_filter

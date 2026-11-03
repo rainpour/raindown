@@ -3,8 +3,8 @@
 module Raindown
   module TUI
     # The list of projects that drops down from the header's path, with "p" or a click, when there's more than one.
-    # Choosing one narrows the files and the dashboard to its own, and "All projects" shows every project's again.
-    # It stays open until a project's chosen, with Enter or a click, while up and down move its cursor.
+    # Choosing one narrows the files, the dashboard, Code feelings and Blueprints to its own, and "All projects" shows every
+    # project's again. It stays open until a project's chosen, with Enter or a click, while up and down move its cursor.
     # Esc or "p" close it without choosing, and other keys and clicks do nothing while it's open.
     module ProjectMenu
       # The menu's cursor, while it's open.
@@ -54,6 +54,8 @@ module Raindown
         @files.scope = project
         @endpoints.project = project
         dashboard.project = project
+        feelings.project = project
+        blueprints.project = project
         open_view(dashboard)
       end
     end

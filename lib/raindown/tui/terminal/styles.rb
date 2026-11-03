@@ -85,7 +85,7 @@ module Raindown
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
           body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, page: Curses::A_BOLD,
           key: Curses::A_REVERSE, border: Curses::A_DIM, divider: Curses::A_BOLD,
-          code_keyword: Curses::A_BOLD, code_comment: Curses::A_DIM
+          code_keyword: Curses::A_BOLD, code_comment: Curses::A_DIM, alert: Curses::A_BOLD
         )
       end
 
@@ -112,11 +112,12 @@ module Raindown
         Hash.new(text).merge(plain.transform_values { it | text })
       end
 
-      # Headings, the waffle's butter's shine and its syrup, and Code feelings' text and lines, bold around the method the
+      # Headings, alerts, the waffle's butter's shine and its syrup, and Code feelings' text and lines, bold around the method the
       # mouse is over, and its purple.
       def emphasis
         { heading: pair(:heading) | Curses::A_BOLD, feelings: pair(:feelings), nearby: pair(:feelings) | Curses::A_BOLD,
-          feelings_purple: pair(:feelings_purple), shine: pair(:shine) | Curses::A_BOLD, syrup: pair(:syrup) }
+          feelings_purple: pair(:feelings_purple), alert: pair(:feelings_purple) | Curses::A_BOLD,
+          shine: pair(:shine) | Curses::A_BOLD, syrup: pair(:syrup) }
       end
 
       # Highlighted code's tokens, like keywords and comments, with comments dim in 8 colours, where there's no grey.

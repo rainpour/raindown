@@ -45,7 +45,7 @@ module Raindown
         @files = FileTree.new(root:, workers:)
         @endpoints = Endpoints.new(workers:)
         @dashboard = DashboardView.new(root:, workers:)
-        @feelings = FeelingsView.new(root:)
+        @feelings = FeelingsView.new(projects: Projects.outer_roots(workers.roots))
         @blueprints = BlueprintsView.new(root:, projects: workers.roots)
         @nav = ListView.new { nav_rows }
         first = @files.files.first

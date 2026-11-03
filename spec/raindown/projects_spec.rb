@@ -39,13 +39,11 @@ RSpec.describe Raindown::Projects do
     end
   end
 
-  describe '.opened_roots' do
-    it 'is the projects in a directory, or else the directory itself' do
-      FileUtils.mkdir_p(File.join(@dir, 'plain'))
-      expect(described_class.opened_roots(File.join(@dir, 'plain'))).to eq([File.join(@dir, 'plain')])
+  describe '.outer_roots' do
+    it 'leaves out the roots inside another' do
+      roots = %w[docs docs/guides docsite].map { File.join(@dir, it) }
 
-      docs = project('docs')
-      expect(described_class.opened_roots(@dir)).to eq([docs])
+      expect(described_class.outer_roots(roots)).to eq([roots[0], roots[2]])
     end
   end
 

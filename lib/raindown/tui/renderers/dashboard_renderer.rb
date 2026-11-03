@@ -28,8 +28,10 @@ module Raindown
       def page = 'Dashboard'
 
       def lines
+        return alert(NO_PROJECTS) if navigator.projects.empty?
+
         cards = dashboard.cards
-        return blank(height, " No charts in #{File.basename(navigator.root)} yet, like <{ chart: '3 5 2 8' }>") if cards.empty?
+        return alert(["No charts in #{File.basename(navigator.root)} yet.", "Add one like <{ chart: '3 5 2 8' }>"]) if cards.empty?
 
         rows = dashboard.rows(width)
         @headings = headings(rows, cards)
@@ -94,9 +96,7 @@ module Raindown
         [segment(" #{from_home(project)}", :project)]
       end
 
-      def blank(count, message = '')
-        [[segment(message, :info)], *Array.new([count - 1, 0].max) { [segment('', :blank)] }].first(count)
-      end
+      def blank(count) = Array.new(count) { [segment('', :blank)] }
     end
   end
 end

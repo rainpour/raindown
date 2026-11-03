@@ -19,8 +19,7 @@ module Raindown
       # The blueprints in the comments of the projects' code, by file from the root, from the top of each. In a folder of
       # projects, like ~/dev, only the projects' code is read.
       def blueprints(root, projects: [root])
-        files = projects.flat_map { CodeMethods.files(it) }.uniq
-        files.flat_map { |path| in_file(path, path.delete_prefix(File.join(root, ''))) }
+        projects.flat_map { CodeMethods.files(it) }.flat_map { |path| in_file(path, path.delete_prefix(File.join(root, ''))) }
       end
 
       def in_file(path, relative)

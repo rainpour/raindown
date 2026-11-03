@@ -73,3 +73,33 @@ RSpec.describe Raindown::TUI::FeelingsLog do
     expect(feeling(nil).prompt).to include('It needs a second look.')
   end
 end
+
+RSpec.describe Raindown::TUI::FeelingsLogs do
+  around do |example|
+    Dir.mktmpdir do |dir|
+      @dir = File.realpath(dir)
+      example.run
+    end
+  end
+
+  let(:projects) { %w[docs site].map { File.join(@dir, it) } }
+  let(:logs) { described_class.new(projects:) }
+
+  def feeling(temper, project)
+    method = Raindown::TUI::CodeMethod.new(path: File.join(project, 'lib', 'text.rb'), owner: 'Text', name: 'fit', line: 1,
+                                           lines: [], changes: 0, drift: 0)
+    Raindown::TUI::Feeling.new(method:, temper:, note: nil)
+  end
+
+  it "keeps each feeling in its method's project, counting them all, or a folder's, and leaves the folder of projects alone" do
+    logs.add(feeling('woe', projects.first))
+    logs.add(feeling('frolic', projects.last))
+
+    expect(Dir.glob('**/*.csv', File::FNM_DOTMATCH, base: @dir))
+      .to contain_exactly('docs/.raindown/feelings.csv', 'site/.raindown/feelings.csv')
+    expect(logs.counts.values_at('woe', 'frolic')).to eq([1, 1])
+    expect(logs.temper(feeling(nil, projects.last).method)).to eq('frolic')
+    expect(logs.counts(within: projects.last).values_at('woe', 'frolic')).to eq([0, 1])
+    expect(logs.counts(within: File.join(projects.first, 'lib')).values_at('woe', 'frolic')).to eq([1, 0])
+  end
+end

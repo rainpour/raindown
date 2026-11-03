@@ -3,6 +3,7 @@
 require_relative '../code_box'
 require_relative '../events'
 require_relative '../../blueprints'
+require_relative '../../projects'
 require_relative 'traced_code'
 require_relative 'canvas'
 require_relative 'code_comments'
@@ -35,7 +36,7 @@ module Raindown
       def initialize(root:, projects: [root])
         @root = root
         @projects = projects
-        @path = File.join(root, Blueprints::FILE)
+        @paths = projects.map { File.join(it, Blueprints::FILE) }
         @all = []
         @cursor = 0
         select_box(0)
@@ -52,7 +53,7 @@ module Raindown
       end
 
       # Whether there are any blueprints yet, saved or in the code's comments, which are looked for once until it's loaded.
-      def any? = File.exist?(@path) || commented.any?
+      def any? = @paths.any? { File.exist?(it) } || commented.any?
 
       # Whether the file's changed since it was read, so it's read again on the next tick.
       def changed? = mtime != @read_at
@@ -61,12 +62,25 @@ module Raindown
         @read_at = mtime
         newest = @all.first&.time
         @commented = nil
-        @all = Blueprints.read(@root) + commented
+        @all = saved + commented
         self.cursor = 0 unless @all.first&.time == newest
         self.cursor = @cursor
       end
 
       def selected = blueprints[@cursor]
+
+      # Narrows the blueprints to a project's, or with nil, shows every project's.
+      def project=(project)
+        @project = project
+        self.cursor = 0
+      end
+
+      # The blueprints in the project they're narrowed to, if any, which the filter's keywords narrow further.
+      def in_project
+        return @all unless @project
+
+        @all.select { File.expand_path(it.path, @root).start_with?(File.join(@project, '')) }
+      end
 
       # Another blueprint's shown from its first box, while the same one keeps its box and canvas, like when it's clicked.
       def cursor=(index)
@@ -116,7 +130,7 @@ module Raindown
         method = code
         return Edit.new(path: method.path, line: method.line) if method
 
-        Edit.new(path: File.join(@root, selected.path), line: selected.line)
+        Edit.new(path: File.expand_path(selected.path, @root), line: selected.line)
       end
 
       # A click on a box drawn in the blueprint, which moves on to the next code it names when it's already selected.
@@ -139,9 +153,20 @@ module Raindown
 
       def count(number, noun) = "#{number} #{number == 1 ? noun : "#{noun}s"}"
 
-      def mtime = File.exist?(@path) ? File.mtime(@path) : nil
+      def mtime = @paths.map { File.exist?(it) ? File.mtime(it) : nil }
 
-      def commented = @commented ||= CodeComments.blueprints(@root, projects: @projects)
+      # Every project's saved blueprints, newest first, each by its file from the root.
+      def saved
+        @projects.flat_map { |project| Blueprints.read(project).map { it.with(path: from_root(File.join(project, it.path))) } }
+                 .sort_by(&:time).reverse
+      end
+
+      def from_root(path) = path.delete_prefix(File.join(@root, ''))
+
+      # The projects whose code is read, as a project's code includes the projects inside it.
+      def code_projects = @code_projects ||= Projects.outer_roots(@projects)
+
+      def commented = @commented ||= CodeComments.blueprints(@root, projects: code_projects)
     end
   end
 end

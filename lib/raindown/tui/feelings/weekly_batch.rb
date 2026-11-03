@@ -38,6 +38,11 @@ module Raindown
         refill(grid_cells)
       end
 
+      # Picks the batch again on the next fill, like when the methods are narrowed to a project's.
+      def pick_again
+        @filled_for = nil
+      end
+
       private
 
       def refill(grid_cells)

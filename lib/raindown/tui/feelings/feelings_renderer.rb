@@ -76,9 +76,10 @@ module Raindown
 
       def view = navigator.view
 
-      # Instead of the grid, that there's nothing to feel, or the celebration.
+      # Instead of the grid, that there's nothing to feel, as there are no projects or no methods, or the celebration.
       def instead
-        return blank(" No functions or methods in #{File.basename(navigator.root)} to feel") if view.code_methods.empty?
+        return alert(NO_PROJECTS) if navigator.projects.empty?
+        return alert(["No functions or methods in #{File.basename(navigator.root)} to feel."]) if view.code_methods.empty?
 
         celebration(view.celebration)
       end
@@ -173,10 +174,6 @@ module Raindown
         lines = Array.new(height, '')
         lines[(height - shown.length) / 2, shown.length] = shown
         lines.map { [segment(it.center(width), :too_small)] }
-      end
-
-      def blank(message)
-        [[segment(message, :feelings)], *Array.new([height - 1, 0].max) { [segment('', :blank)] }].first(height)
       end
     end
   end

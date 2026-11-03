@@ -22,15 +22,6 @@ module Raindown
       [root(directory), *project_folders(directory)].compact.uniq
     end
 
-    # The projects to open in a directory, or the directory itself when it has none, so a folder of plain Markdown still
-    # opens, while in a folder of projects, like ~/dev, the Markdown outside them is left alone.
-    def opened_roots(directory)
-      roots = roots(directory)
-      return roots unless roots.empty?
-
-      [File.expand_path(directory)]
-    end
-
     # The folders below a directory with a .raindown folder. Only folders are walked, leaving out ignored, linked and
     # gitignored ones, so it stays quick in a big folder like ~/dev.
     def project_folders(directory, gitignore = Gitignore.new(directory))
@@ -79,6 +70,11 @@ module Raindown
     # Whether a file is one of a project's own nodes, which load when its watcher starts.
     def node?(path, root:)
       File.expand_path(path).start_with?(File.join(root, Nodes::FOLDER, '')) && NODE_EXTENSIONS.include?(File.extname(path))
+    end
+
+    # The roots that aren't inside another of them, as a project's code includes the projects inside it.
+    def outer_roots(roots)
+      roots.reject { |root| roots.any? { root != it && root.start_with?(File.join(it, '')) } }
     end
 
     def project?(folder)
