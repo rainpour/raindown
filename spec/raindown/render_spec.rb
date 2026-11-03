@@ -125,7 +125,7 @@ RSpec.describe Raindown do
     end
 
     it 'renders an endpoint as its code blocks, leaving out its directive and end tag in delimiters or comments' do
-      [['<{ endpoint: :x }>', '<{ :endpoint }>'], ['<!-- endpoint: :x -->', '<!-- :endpoint -->']].each do |open, close|
+      [['<{ endpoint: }>', '<{ :endpoint }>'], ['<!-- endpoint: -->', '<!-- :endpoint -->']].each do |open, close|
         html = described_class.render(markdown: "#{open}\n\n```sh\ncurl https://api.example.com\n```\n#{close}\n")
 
         expect(html).to start_with('<pre').and end_with("</pre>\n")
@@ -135,9 +135,9 @@ RSpec.describe Raindown do
     end
 
     it 'renders a bare endpoint between its directive and end tag in bold' do
-      html = described_class.render(markdown: "endpoint: :x\n\n```sh\ncurl https://api.example.com\n```\n", bare: true)
+      html = described_class.render(markdown: "endpoint:\n\n```sh\ncurl https://api.example.com\n```\n", bare: true)
 
-      expect(html).to start_with("<p><strong>endpoint: :x</strong></p>\n").and include("<p><strong>:endpoint</strong></p>\n")
+      expect(html).to start_with("<p><strong>endpoint:</strong></p>\n").and include("<p><strong>:endpoint</strong></p>\n")
     end
 
     it 'renders node blocks with their HTML, or their Markdown when they have no HTML' do
@@ -151,7 +151,7 @@ RSpec.describe Raindown do
     end
 
     it 'raises when an endpoint is not closed' do
-      expect { described_class.render(markdown: "<{ endpoint: :x }>\n\n```sh\ncurl x\n```\n") }
+      expect { described_class.render(markdown: "<{ endpoint: }>\n\n```sh\ncurl x\n```\n") }
         .to raise_error(Antlers::Parser::ParserError, /Missing end tag/)
     end
 

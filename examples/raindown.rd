@@ -60,7 +60,7 @@ b737205  -11  ▐│██▍                            +62
 
 An `endpoint:` directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.
 
-endpoint: :x
+endpoint:
 
 ```sh
 curl https://httpbin.org/uuid

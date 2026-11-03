@@ -327,7 +327,7 @@ Then `<!-- Issues: -->` and `<!-- :Issues -->` in a file write it there. An open
 Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched:
 
 ````md
-<!-- endpoint: :x -->
+<!-- endpoint: -->
 
 ```sh
 curl https://httpbin.org/uuid
@@ -342,16 +342,18 @@ curl https://httpbin.org/uuid
 <!-- :endpoint -->
 ````
 
-In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare, which ends after the curl snippet and response, so there's no `<!-- :endpoint -->`. In `<{ endpoint: }>` it only renders, so it never runs.
+In a [Raindown file](#raindown-files) you can write `endpoint:` bare, which ends after the curl snippet and response, so there's no `<!-- :endpoint -->`. In `<{ endpoint: }>` it only renders, so it never runs.
 
-The request only runs when the response block is missing or empty, and either the directive has `:x` (or `:execute`) or you pass `-x` (or `--execute`):
+Endpoints only run when you pass `-x` (or `--execute`), and then only the ones whose response block is missing or empty. Without it, Raindown never sends a request, so opening a file is safe. In the terminal UI, `x` or `[Run]` runs just the endpoint you pick, replacing its response.
 
 ```sh
 raindown api.md -x
 raindown watch api.md -x
 ```
 
-To refresh a response, empty its code block, and its fetched date is updated too. The date is an HTML comment, so it's hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported, but [variables](#endpoint-variables) are. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Raindown also runs curl without your `~/.curlrc`.
+Be careful which files and folders you run Raindown on with `-x`. It runs every endpoint in the files it opens or watches, including files added to a watched folder later, so only use it on files you've read or trust, as you would before running `make` in a repo. Requests go out from your machine, so a snippet can reach anything it can, like servers running on it at `localhost` and services on your private network. With [variables](#endpoint-variables) it can send your environment variables, like API keys, wherever its URL points.
+
+To refresh a response, empty its code block, and its fetched date is updated too. The date is an HTML comment, so it's hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported, but [variables](#endpoint-variables) are. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Redirects aren't followed, so `-L` is rejected too, and so are link-local addresses, like the cloud metadata service at `169.254.169.254`, which can give out a server's credentials. Raindown also runs curl without your `~/.curlrc`.
 
 #### Endpoint variables
 
@@ -376,14 +378,14 @@ raindown api.md -x --env staging
 Name an endpoint with `as:` and later snippets in the file can read its response, like `{login.token}` or `{users.0.id}` in JSON, or the whole response as `{login}`:
 
 `````md
-<!-- endpoint: :x as: login -->
+<!-- endpoint: as: login -->
 
 ```sh
 curl -d 'user=ada' {base_url}/login
 ```
 <!-- :endpoint -->
 
-<!-- endpoint: :x -->
+<!-- endpoint: -->
 
 ```sh
 curl -H 'Authorization: Bearer {login.token}' {base_url}/me

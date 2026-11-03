@@ -1,18 +1,25 @@
 # frozen_string_literal: true
 
+require 'ipaddr'
 require 'json'
 require 'open3'
 require 'shellwords'
+require 'socket'
+require 'uri'
 
 module Raindown
   # Runs a curl snippet with the curl binary. There's no shell, so pipes, redirects and variables don't apply.
   # Snippets come from files that anyone (or any agent) may have written, so only options that make an HTTP request
   # are allowed: nothing that reads or writes local files, loads a config, or uses another protocol.
+  # Link-local addresses, like the cloud metadata service at 169.254.169.254, are refused, as they can give out
+  # credentials, and redirects aren't followed (no -L), so a URL can't redirect there either.
   module Curl
     class Error < StandardError; end
     Request = Data.define(:method, :url)
 
     TIMEOUT = '30'
+    # The variables curl reads a proxy from, which then looks the names up rather than curl.
+    PROXY_VARIABLES = %w[http_proxy https_proxy HTTPS_PROXY all_proxy ALL_PROXY].freeze
     # --disable must come first and skips ~/.curlrc. The protocol options stop redirects to file:// and the like.
     SAFE_OPTIONS = ['--disable', '--proto', '=http,https', '--proto-redir', '=http,https'].freeze
 
@@ -21,7 +28,7 @@ module Raindown
 
     # Options without a value.
     FLAGS = {
-      '-G' => '--get', '-I' => '--head', '-L' => '--location', '-i' => '--include', '-k' => '--insecure',
+      '-G' => '--get', '-I' => '--head', '-i' => '--include', '-k' => '--insecure',
       '-f' => '--fail', '-g' => '--globoff', '-s' => '--silent', '-S' => '--show-error'
     }.freeze
     LONG_FLAGS = (FLAGS.values + %w[--compressed --http1.1 --http2]).freeze
@@ -54,8 +61,9 @@ module Raindown
     # Returns the response body and the code block language for its content type.
     # Placeholders like {base_url} are replaced from the variables, word by word, so a value can't add options.
     def run(snippet, variables = nil)
+      args = arguments(snippet, variables)
       stdout, stderr, status = Open3.capture3('curl', *SAFE_OPTIONS, '--silent', '--show-error', '--max-time', TIMEOUT,
-                                              *arguments(snippet, variables), '--write-out', WRITE_OUT)
+                                              *resolve_options(args), *args, '--write-out', WRITE_OUT)
       raise Error, stderr.strip.empty? ? "curl exited with #{status.exitstatus}" : stderr.strip unless status.success?
 
       body, _, content_type = stdout.rpartition(TYPE_MARKER)
@@ -122,7 +130,7 @@ module Raindown
       [option, value(option, words.shift)]
     end
 
-    # Short flags can be grouped like -sSL, and a short option's value can be attached like -XPOST.
+    # Short flags can be grouped like -sS, and a short option's value can be attached like -XPOST.
     def short_options(word, words)
       letters = word.delete_prefix('-')
       args = []
@@ -160,6 +168,50 @@ module Raindown
       raise Error, "Endpoint snippets can only request http(s) URLs, not #{value}" unless value.match?(URL)
 
       value
+    end
+
+    # Resolves each URL's host and pins curl to the address it was checked at, like --resolve api.io:443:203.0.113.5,
+    # so the name can't point somewhere else by the time curl looks it up. A host that's already an IP isn't pinned,
+    # and behind a proxy, which looks names up itself, only a host that's an IP is checked.
+    def resolve_options(args)
+      args.grep(URL).flat_map { pin_option(URI.parse(it)) }
+    rescue URI::InvalidURIError => e
+      raise Error, "Can't read the URL: #{e.message}"
+    end
+
+    def pin_option(uri)
+      raise Error, "#{uri} has no host" if uri.hostname.to_s.empty?
+      return [] if proxy? && !ip?(uri.hostname)
+
+      address = allowed_address(uri.hostname)
+      return [] if ip?(uri.hostname)
+
+      pinned = address.to_s
+      pinned = "[#{pinned}]" if address.ipv6?
+      ['--resolve', "#{uri.hostname}:#{uri.port}:#{pinned}"]
+    end
+
+    # Any way of writing an IP, like 169.254.169.254 or 2852039166, found without a DNS lookup.
+    def ip?(host)
+      Addrinfo.getaddrinfo(host, nil, nil, :STREAM, nil, Socket::AI_NUMERICHOST)
+      true
+    rescue SocketError
+      false
+    end
+
+    def proxy?
+      PROXY_VARIABLES.any? { !ENV[it].to_s.empty? }
+    end
+
+    # The host's first address, unless any of them is link-local.
+    def allowed_address(host)
+      addresses = Addrinfo.getaddrinfo(host, nil, nil, :STREAM).map { IPAddr.new(it.ip_address.sub(/%.*/, '')).native }
+      blocked = addresses.find(&:link_local?)
+      raise Error, "Endpoint snippets can't request link-local addresses, like cloud metadata at #{blocked}" if blocked
+
+      addresses.first
+    rescue SocketError => e
+      raise Error, "Can't resolve #{host}: #{e.message}"
     end
 
     def language(content_type)

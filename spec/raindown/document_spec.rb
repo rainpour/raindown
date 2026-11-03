@@ -80,7 +80,7 @@ RSpec.describe Raindown::Document do
 
     it 'reads an endpoint, whose body is its request and response, and whose output is only the response and its date' do
       markdown = <<~MARKDOWN
-        <!-- endpoint: :x -->
+        <!-- endpoint: -->
 
         ```sh
         curl https://example.com
@@ -94,18 +94,18 @@ RSpec.describe Raindown::Document do
       MARKDOWN
 
       expect(directives(markdown))
-        .to eq([{ name: 'endpoint', args: ':x', line: 1, end_line: 11, body: 3..10, output: 7..10, writes: true }])
+        .to eq([{ name: 'endpoint', args: '', line: 1, end_line: 11, body: 3..10, output: 7..10, writes: true }])
     end
 
     it "reads an endpoint without a response yet, one in Antlers' delimiters, which never writes, and a bare endpoint" do
       waiting = "<!-- endpoint: -->\n```sh\ncurl https://example.com\n```\n<!-- :endpoint -->\n"
       rendered = "<{ endpoint: }>\n```sh\ncurl https://example.com\n```\n<{ :endpoint }>\n"
-      bare = "endpoint: :x\n```sh\ncurl https://example.com\n```\n```json\n{}\n```\n\nText.\n"
+      bare = "endpoint:\n```sh\ncurl https://example.com\n```\n```json\n{}\n```\n\nText.\n"
 
       expect(directives(waiting)).to eq([{ name: 'endpoint', args: '', line: 1, end_line: 5, body: 2..4, output: nil, writes: true }])
       expect(directives(rendered)).to eq([{ name: 'endpoint', args: '', line: 1, end_line: 5, body: 2..4, output: nil, writes: false }])
       expect(directives(bare, bare: true))
-        .to eq([{ name: 'endpoint', args: ':x', line: 1, end_line: 7, body: 2..7, output: 5..7, writes: true }])
+        .to eq([{ name: 'endpoint', args: '', line: 1, end_line: 7, body: 2..7, output: 5..7, writes: true }])
     end
 
     it 'leaves out directives in code and front matter, template directives and names that are not nodes' do

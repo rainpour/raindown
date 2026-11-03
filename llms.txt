@@ -86,7 +86,7 @@ Filter values must be quoted: `files: tags: 'intro'`.
 `endpoint:` goes above a `curl` snippet in a fenced `sh` block. Raindown runs it and writes the response in a code block below, typed by content type, followed by `<!-- raindown:fetched YYYY-MM-DD -->`.
 
 ````md
-<{ endpoint: :x }>
+<{ endpoint: }>
 
 ```sh
 curl https://httpbin.org/uuid
@@ -99,9 +99,10 @@ curl https://httpbin.org/uuid
 <{ :endpoint }>
 ````
 
-- The request runs only when the response block is missing or empty, and the directive has `:x` / `:execute` or the CLI gets `-x` / `--execute`. Empty the response block to refresh it.
-- In bare form, `endpoint: :x` ends after the response, with no end tag.
-- Curl runs without a shell and without `~/.curlrc`: no pipes, redirects, `$VARIABLES`, `@file` values, or options like `-o`, `-F`, `-K`.
+- The request runs only when the response block is missing or empty, and the CLI gets `-x` / `--execute`. Empty the response block to refresh it.
+- In bare form, `endpoint:` ends after the response, with no end tag.
+- `{name}` in a snippet is filled from front matter, the `.raindown/environments.yml` environment (`--env NAME`), `{env.NAME}` environment variables, and earlier responses named with `as:`, like `endpoint: as: login` then `{login.token}`.
+- Curl runs without a shell and without `~/.curlrc`: no pipes, redirects, `$VARIABLES`, `@file` values, or options like `-o`, `-F`, `-K`, or `-L` (redirects aren't followed). Link-local addresses, like cloud metadata at `169.254.169.254`, are refused.
 
 ## Custom nodes
 

@@ -10,9 +10,9 @@ module Raindown
   # Runs the curl block under an endpoint directive in a comment, or a bare one, and writes the response in the code
   # block below it,
   # followed by the date it was fetched.
-  # Only runs when that block is missing or empty, and the directive has :x/:execute or --execute is passed.
+  # Only runs when that block is missing or empty, and --execute is passed, so a file can't run requests by itself.
   # Or with only: and a directive's line index, runs just that endpoint, replacing any response it has.
-  #   <!-- endpoint: :x -->
+  #   <!-- endpoint: -->
   #   ```sh
   #   curl https://api.example.com
   #   ```
@@ -30,7 +30,6 @@ module Raindown
     DIRECTIVE = /\A {0,3}<\{\s*endpoint:(.*?)\}>[ \t]*$/
     COMMENT = /\A {0,3}<!--\s*endpoint:(.*?)-->[ \t]*$/
     END_TAG = /\A {0,3}(?:<\{\s*:endpoint\s*\}>|<!--\s*:endpoint\s*-->)[ \t]*$/
-    EXECUTE_ARGS = %w[:x :execute].freeze
     # The date a response was fetched, on the line after it.
     FETCHED = /\A {0,3}<!-- raindown:fetched [^\n]*? -->[ \t]*$/
 
@@ -75,7 +74,7 @@ module Raindown
     def fill(index, args, directive:)
       curl, output = CodeBlocks.endpoint(@lines, index)
       return index - 1 unless curl&.dig(:body)&.lstrip&.start_with?('curl')
-      return write_output(curl:, output:, name: response_name(args)) if run?(args, output, directive)
+      return write_output(curl:, output:, name: response_name(args)) if run?(output, directive)
 
       @variables.remember(response_name(args), output[:body]) if output
       curl[:close]
@@ -87,14 +86,10 @@ module Raindown
       args[index + 1] if index
     end
 
-    def run?(args, output, directive)
+    def run?(output, directive)
       return directive == @only if @only
 
-      (output.nil? || output[:body].strip.empty?) && execute?(args)
-    end
-
-    def execute?(args)
-      @execute || args.intersect?(EXECUTE_ARGS)
+      @execute && (output.nil? || output[:body].strip.empty?)
     end
 
     # Replaces the output block and the date it was fetched, or with no block, replaces nothing just after the curl block.

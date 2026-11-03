@@ -27,10 +27,10 @@ RSpec.describe Raindown::BareDirectives do
     def curl = "```sh\ncurl x\n```\n"
 
     it 'closes an endpoint after the code blocks it holds, in bold' do
-      content = "endpoint: :x\n\n#{curl}\n```json\n{}\n```\n\nAfter\n"
+      content = "endpoint:\n\n#{curl}\n```json\n{}\n```\n\nAfter\n"
 
       expect(described_class.expand(content))
-        .to eq("#{bold('endpoint: :x')}<{ endpoint: :x }>\n\n#{curl}\n```json\n{}\n```\n<{ :endpoint }>\n#{bold(':endpoint')}\nAfter\n")
+        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n\n#{curl}\n```json\n{}\n```\n<{ :endpoint }>\n#{bold(':endpoint')}\nAfter\n")
     end
 
     it 'only closes around code blocks directly below' do
@@ -41,10 +41,10 @@ RSpec.describe Raindown::BareDirectives do
     end
 
     it 'closes an endpoint before another curl example' do
-      content = "endpoint: :x\n\n#{curl}\n```sh\ncurl y\n```\n"
+      content = "endpoint:\n\n#{curl}\n```sh\ncurl y\n```\n"
 
       expect(described_class.expand(content))
-        .to eq("#{bold('endpoint: :x')}<{ endpoint: :x }>\n\n#{curl}<{ :endpoint }>\n#{bold(':endpoint')}\n```sh\ncurl y\n```\n")
+        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n\n#{curl}<{ :endpoint }>\n#{bold(':endpoint')}\n```sh\ncurl y\n```\n")
     end
 
     it 'closes an endpoint with nothing below it straight away, or at the end of the file' do
@@ -66,8 +66,8 @@ RSpec.describe Raindown::BareDirectives do
       'in a tilde fence' => "~~~\n:toc\n~~~\n",
       'an unknown keyword' => ":foo\n",
       'an end tag, since bare directives have none' => ":list\n",
-      'a keyword without a space before its arguments' => "endpoint:x\n",
-      'a capitalised keyword' => "Endpoint: :x\n",
+      'a keyword without a space before its arguments' => "endpoint:api\n",
+      'a capitalised keyword' => "Endpoint:\n",
       'an emoji shortcode' => ":toc:\n",
       'already wrapped' => "<{ :toc }>\n"
     }.each do |description, content|
