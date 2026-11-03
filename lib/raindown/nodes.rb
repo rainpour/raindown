@@ -2,13 +2,14 @@
 
 require_relative 'chart/chart'
 require_relative 'files'
+require_relative 'js/js_nodes'
 require_relative 'node'
 require_relative 'stat'
 require_relative 'toc'
 
 module Raindown
   # Nodes are LowNodes that a node block writes into the Markdown and renders into the HTML.
-  # A project keeps them in a .raindown folder, which is loaded with Dirload.
+  # A project keeps them in a .raindown folder, which is loaded with Dirload, beside its JavaScript Components, if any.
   # A node writes Markdown with #replace, and HTML with #render if it has one. Either can take the keywords
   # document: (the Markdown being rendered), metadata: and bare:, and gets the ones it asks for.
   module Nodes
@@ -29,6 +30,7 @@ module Raindown
       require 'dirload'
       loaded << folder
       dirload(folder)
+      JSNodes.load(folder)
     end
 
     def find_folder(directory)
@@ -54,11 +56,12 @@ module Raindown
       loaded_class(BUILT_INS[name]) || Raindown.const_get(BUILT_INS[name])
     end
 
+    # A Ruby node of the name, or else a JavaScript one.
     def loaded_class(name)
-      klass = Object.const_get(name)
-      klass if node?(klass)
-    rescue NameError
-      nil
+      klass = Object.const_get(name) if Object.const_defined?(name)
+      return klass if node?(klass)
+
+      JSNodes.node_class(name)
     end
 
     # A LowNode, or one of Raindown's own nodes, that writes Markdown. In an app, LowNodes are also routes and pages,

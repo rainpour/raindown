@@ -10,6 +10,8 @@ module Raindown
   module Projects
     # Folders of dependencies, builds and tooling, which aren't searched for projects or watched, nor are hidden folders.
     IGNORED = %w[node_modules vendor tmp pkg build dist coverage].freeze
+    # Ruby nodes and JavaScript Components.
+    NODE_EXTENSIONS = ['.rb', '.rbx', *JSNodes::EXTENSIONS].freeze
 
     module_function
 
@@ -61,7 +63,7 @@ module Raindown
 
     # Whether a file is one of a project's own nodes, which load when its watcher starts.
     def node?(path, root:)
-      File.expand_path(path).start_with?(File.join(root, Nodes::FOLDER, '')) && %w[.rb .rbx].include?(File.extname(path))
+      File.expand_path(path).start_with?(File.join(root, Nodes::FOLDER, '')) && NODE_EXTENSIONS.include?(File.extname(path))
     end
 
     def project?(folder)

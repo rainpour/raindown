@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -304 ████│██████████████████████████▎ +2,093
-─────────────────────────────────────────────────────
-7c9bc52  -132   ▐█│██████████████████████▌     +1,797
-8336ced   -11    ▕│▏                              +13
-b23b9e3  -110   ▐█│█▉                            +154
-513ed05   -10    ▕│█▏                             +85
-6e33b0b   -41    ▐│▌                              +44
+Total    -16 ▕███████│██████████████████████▉ +51
+─────────────────────────────────────────────────
+48bd107   -8     ▐███│████████████████▏       +36
+5742c2b   -4       ██│████▉                   +11
+ad5e1d8   -1        ▐│▌                        +1
+d3292a0   -1        ▐│▌                        +1
+21ddbdf   -2        █│▉                        +2
 ```
 <!-- :Commits -->
 
@@ -98,7 +98,7 @@ How a directive is written says what it does: bare and comment directives write 
 | `<{ name: }>` … `<{ :name }>`       | No         | Hidden          | Markdown/HTML | Raw text `<{ name: }>`    | Raw text `<{ name: }>` |
 
 1. Bare directives work in [Raindown files](#raindown-files) (`.rd`) and in Markdown files (`.md`) with `raindown: true` front matter or `--bare` via the CLI.
-2. All directive types can output HTML or Markdown that is rendered to HTML, it's up to you to enabled it per component. See (Nodes)[#nodes]
+2. All directive types can output HTML or Markdown that is rendered to HTML, it's up to you to enable it per component. See [Nodes](#nodes).
 
 #### Template directives
 
@@ -355,7 +355,12 @@ To refresh a response, empty its code block, and its fetched date is updated too
 
 ### Nodes
 
-Nodes are your own [LowNodes](https://github.com/low-rb/lownode) that write Markdown into the file with `replace`, and render HTML into the page with `render`. Put them in a `.raindown` folder beside your files, or in a folder above them, and Raindown loads them with [Dirload](https://github.com/low-rb/dirload):
+> [!NOTE]
+> A node is how a directive is built and a component is how it's rendered. Nodes that start with a capital letter like `Changelog:` are components. Nodes like `if:` are templating.
+
+#### Ruby Components
+
+Use [LowNodes](https://github.com/low-rb/lownode) to write Markdown into the file with `replace`, and render HTML into the page with `render`. Put them in a `.raindown` folder in your project root and Raindown [loads](https://github.com/low-rb/dirload) them automatically:
 
 ```ruby
 # .raindown/changelog.rb
@@ -387,13 +392,40 @@ A node block names the node and its props, and Raindown writes the node's Markdo
 
 In a [Raindown file](#raindown-files) it can also use bare syntax, with the Markdown straight below it up to the next blank line (a bare node block can't write blank new lines):
 
-```
+```md
 Changelog: limit=3
 - **1.2.0** Bare directives close themselves
 - **1.1.0** Track fetched dates
 ```
 
 Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file, as does a `<{ Changelog: }>` block. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+
+#### JavaScript Components
+
+JavaScript can be used for custom components too, as a `.js` or `.mjs` file in the same `.raindown` folder that exports a class with `replace`, and optionally `render`:
+
+```js
+// .raindown/changelog.mjs
+import { Release } from "../lib/release.mjs"
+
+export class Changelog {
+  constructor({ limit = 5 }) {
+    this.releases = Release.all().slice(0, limit)
+  }
+
+  // Written into the Markdown. Can be async.
+  replace({ document, metadata, bare }) {
+    return this.releases.map((release) => `- **${release.version}** ${release.summary}`).join("\n")
+  }
+
+  // Rendered into the HTML. Without it, the HTML of the Markdown above is rendered.
+  render({ html }) {
+    return `<section class="changelog">...</section>`
+  }
+}
+```
+
+It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content. A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `files:` or `chart:`.
 
 ### Config
 
