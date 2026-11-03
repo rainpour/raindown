@@ -32,6 +32,14 @@ RSpec.describe Raindown::PreRenderer do
       expect(render("<{ for: tag in: tags }>\n- {tag}\n<{ :for }>\n", tags: %w[ruby markdown])).to eq("- ruby\n- markdown\n")
     end
 
+    it 'loops over a hash by key and value, and still reads a key named each' do
+      links = { docs: 'https://a.io', each: 'https://b.io' }
+
+      expect(render("<{ for: name, url in: links }>\n- {name}: {url}\n<{ :for }>\n", links:))
+        .to eq("- docs: https://a.io\n- each: https://b.io\n")
+      expect(render("{links.each}\n", links:)).to eq("https://b.io\n")
+    end
+
     it 'renders a condition' do
       markdown = "<{ if: draft }>\n**Draft**\n<{ :if }>\nText\n"
 
@@ -76,7 +84,7 @@ RSpec.describe Raindown::PreRenderer do
 
     it 'renders a list of pages as one list' do
       metadata = Class.new do
-        def list(folder:) = [{ title: "#{folder} 1" }, { title: "#{folder} 2" }].map { Raindown::Variables.new(it) }
+        def list(folder:) = [{ title: "#{folder} 1" }, { title: "#{folder} 2" }].map { Raindown::Page.new(file_path: nil, metadata: it) }
       end.new
       markdown = "<{ list: page folder: 'notes' }>\n- {page.title}\n<{ :list }>\n"
 

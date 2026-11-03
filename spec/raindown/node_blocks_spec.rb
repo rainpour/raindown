@@ -65,10 +65,11 @@ RSpec.describe Raindown::NodeBlocks do
       expect(props).to eq(a: nil, b: false, c: -2, d: :draft)
     end
 
-    it 'reads variables as the data they are, with their braces' do
+    it 'reads variables as the data they are, with their braces, by key and index but not method' do
       variables = Raindown::Variables.new(rows: [{ name: '{a}', count: 1 }], tags: %w[x y])
 
-      expect(described_class.props('a=rows b=tags.first', variables)).to eq(a: [{ name: '{a}', count: 1 }], b: 'x')
+      expect(described_class.props('a=rows b=tags.0 c=tags.size d=tags.clear', variables))
+        .to eq(a: [{ name: '{a}', count: 1 }], b: 'x', c: 2, d: nil)
     end
   end
 

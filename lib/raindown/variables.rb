@@ -1,15 +1,17 @@
 # frozen_string_literal: true
 
+require 'antlers/api'
+
 module Raindown
   # The front matter values that Antlers variables like {title} and <{ title }> render.
   # Antlers reads a variable from the binding's locals, then by sending it to the binding's receiver, which is this.
   # It's a BasicObject so a key like "hash" or "display" isn't shadowed by a method, and unknown names render nothing.
-  # Nested values work too, like {author.name} and <{ for: tag in: tags }>.
+  # Nested values are hashes and arrays like {author.name}, {tags.0} or <{ for: name, url in: links }>.
   class Variables < BasicObject
     # Braces in a value become the placeholders that render as braces, so Antlers doesn't read them as a variable.
     def self.wrap(value)
       case value
-      when ::Hash then new(value)
+      when ::Hash then value.transform_values { |item| wrap(item) }
       when ::Array then value.map { |item| wrap(item) }
       when ::String then value.gsub(/[{}]/, CODE_BRACES)
       else value
@@ -20,6 +22,7 @@ module Raindown
     def self.unwrap(value)
       case value
       when Variables then value.to_h
+      when ::Hash then value.transform_values { |item| unwrap(item) }
       when ::Array then value.map { |item| unwrap(item) }
       when ::String then value.tr(CODE_BRACES.values.join, CODE_BRACES.keys.join)
       else value
@@ -28,7 +31,8 @@ module Raindown
 
     # A variable's value, like author.name, read the way {author.name} reads it, unwrapped. Unknown names are nil.
     def self.value(variables, name)
-      unwrap(name.split('.').reduce(variables) { |value, key| value.respond_to?(key) ? value.send(key) : nil })
+      first, *path = name.split('.')
+      unwrap(::Antlers::Queries.read_path(value: variables.send(first), path:))
     end
 
     def initialize(values)

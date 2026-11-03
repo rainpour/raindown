@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -119 ▐██████│███████████████████████▍ +422
+Total    -185 █████████│█████████████████████▏ +440
 ───────────────────────────────────────────────────
-a791ed4    -5       ▕│▎                          +5
-ff00e63    -1       ▕│▏                          +1
-80f237e   -73    ████│██████████████           +253
-9144b1a   -38     ▕██│████████▉                +161
-22bd045    -2       ▕│▏                          +2
+6d5e358    -8         ▐│█▍                      +29
+06a5d98   -98     █████│███████▎               +152
+a791ed4    -5         ▕│▎                        +5
+ff00e63    -1         ▕│▏                        +1
+80f237e   -73      ▐███│████████████▏          +253
 ```
 <!-- :Commits -->
 
@@ -228,6 +228,9 @@ title: Release notes
 author:
   name: Mark
 tags: [ruby, markdown]
+links:
+  docs: https://raindown.dev
+  code: https://github.com/raindeer-rb/raindown
 draft: false
 ---
 
@@ -239,12 +242,16 @@ draft: false
 - {tag}
 <{ :for }>
 
+<{ for: name, url in: links }>
+- [{name}]({url})
+<{ :for }>
+
 <{ if: draft }>
 This is a draft.
 <{ :if }>
 ```
 
-Variables, loops and conditions render before the Markdown does, like Liquid in Jekyll. So a loop's lines make one list or table, and a value can contain Markdown like `*emphasis*`. Unknown variables render nothing, and variables in code are left as text.
+Variables, loops and conditions render before the Markdown does, like Liquid in Jekyll. A loop over a hash, like `links`, gets each key and value. So a loop's lines make one list or table, and a value can contain Markdown like `*emphasis*`. Unknown variables render nothing, and variables in code are left as text. Nested paths read keys and list items, like `{author.name}` and `{tags.0}`, a list's `first`, `last` and `size`, and a string's `upcase` and `downcase`, like `{title.upcase}`, but don't call other methods. `<{ key }>` doesn't escape HTML, so only use it for values you trust.
 
 ### Charts
 
