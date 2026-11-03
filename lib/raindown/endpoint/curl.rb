@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'ipaddr'
-require 'json'
 require 'open3'
 require 'shellwords'
 require 'socket'
 require 'uri'
+require_relative 'curl_response'
 
 module Raindown
   # Runs a curl snippet with the curl binary. There's no shell, so pipes, redirects and variables don't apply.
@@ -48,28 +48,17 @@ module Raindown
       '--data-urlencode' => :no_urlencoded_file
     }.freeze
 
-    # Separates the response body from the content type that --write-out appends.
-    TYPE_MARKER = "\n--raindown-content-type--"
-    WRITE_OUT = "#{TYPE_MARKER}%{content_type}".freeze # rubocop:disable Style/FormatStringToken -- curl's syntax, not Ruby's
-    LANGUAGES = {
-      /json/ => 'json', /xml/ => 'xml', /html/ => 'html', /javascript/ => 'javascript',
-      /css/ => 'css', /yaml/ => 'yaml', %r{\Atext/plain} => 'text'
-    }.freeze
-
     module_function
 
-    # Returns the response body and the code block language for its content type.
+    # Returns the Response, with the code block language for its content type.
     # Placeholders like {base_url} are replaced from the variables, word by word, so a value can't add options.
     def run(snippet, variables = nil)
       args = arguments(snippet, variables)
       stdout, stderr, status = Open3.capture3('curl', *SAFE_OPTIONS, '--silent', '--show-error', '--max-time', TIMEOUT,
-                                              *resolve_options(args), *args, '--write-out', WRITE_OUT)
+                                              *resolve_options(args), *args, '--write-out', Response::WRITE_OUT)
       raise Error, stderr.strip.empty? ? "curl exited with #{status.exitstatus}" : stderr.strip unless status.success?
 
-      body, _, content_type = stdout.rpartition(TYPE_MARKER)
-      language = language(content_type)
-
-      [language == 'json' ? pretty_json(body) : body, language]
+      Response.parse(stdout)
     rescue Errno::ENOENT
       raise Error, 'curl is not installed'
     end
@@ -212,16 +201,6 @@ module Raindown
       addresses.first
     rescue SocketError => e
       raise Error, "Can't resolve #{host}: #{e.message}"
-    end
-
-    def language(content_type)
-      LANGUAGES.find { |pattern, _| content_type.match?(pattern) }&.last || ''
-    end
-
-    def pretty_json(body)
-      JSON.pretty_generate(JSON.parse(body))
-    rescue JSON::ParserError
-      body
     end
   end
 end

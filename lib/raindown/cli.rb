@@ -32,12 +32,14 @@ module Raindown
                             UI's Blueprints page, as a Stop hook that's given the hook's JSON
 
       Options:
-        --html [OUTPUT]     Render FILE to HTML once, writing to OUTPUT or else printing to stdout
+        --html [OUTPUT]     Render FILE to HTML once, writing to OUTPUT, or to stdout without one or with -, then exit with 1
+                            if its endpoint responses fail their status: or schema: checks
         --stdin             Render Markdown from stdin to HTML once, without formatting FILE, which only needs
                             its extension (to allow bare directives) and can be unsaved. Add --html OUTPUT to write a file
         --bare              Allow bare directives like :toc in Markdown files
         -x, --execute       Run endpoint curl snippets that have no output yet, as files are written back
-        --env NAME          Fill endpoint snippets from the NAME environment in .raindown/environments.yml
+        --env NAME          Fill endpoint snippets from the NAME environment in .raindown/environments.yml and
+                            environments.local.yml
         -h, --help          Show this message
         -v, --version       Show the version
 
@@ -108,8 +110,10 @@ module Raindown
 
       FileUtils.mkdir_p(folder)
       File.write(config, CONFIG)
+      gitignore = File.join(folder, '.gitignore')
+      File.write(gitignore, "#{EndpointVariables::LOCAL_FILE}\n") unless File.exist?(gitignore)
       puts "Created #{config}"
-      puts 'Put your own nodes in the same folder. See https://raindown.dev/docs/nodes'
+      puts 'Put your own nodes in the same folder. See https://raindown.dev/docs/components'
     end
 
     # The terminal UI loads curses, so it's only required when it starts. Without a terminal, the path's watched instead.
@@ -123,9 +127,9 @@ module Raindown
     class << self
       private
 
-      # Endpoints run while formatting, which --stdin skips, so -x can't go with it.
+      # Endpoints run while formatting, which --stdin skips, so -x can't go with it. --html - prints, like --html.
       def open_path(path, html:, stdin:, bare:, execute:)
-        output = html unless html == true
+        output = html unless [true, '-'].include?(html)
         abort("-x runs endpoints as the file's formatted, which --stdin doesn't do\n\n#{USAGE}") if stdin && execute
         return render_stdin(path, output, bare:) if stdin
         return render(path, output, bare:, execute:) if html
@@ -141,6 +145,16 @@ module Raindown
         metadata = Pages.for(path)
         Rewriter.update(path:, bare:, execute:, metadata:)
         write(output, Raindown.render_file(path:, bare:, metadata:))
+        check_endpoints(path, bare:)
+      end
+
+      # Endpoint responses that fail their checks, like status: 200, are listed, and fail the command, for CI.
+      def check_endpoints(path, bare:)
+        failures = EndpointRunner.failures(content: Utils.read_markdown(path), path:, bare:)
+        return if failures.empty?
+
+        warn(*failures.map { "Endpoint check failed: #{it}" })
+        exit 1
       end
 
       def render_stdin(path, output = nil, bare: false, **)

@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -185 █████████│█████████████████████▏ +440
+Total    -119 ███████████│███████████████████▏ +210
 ───────────────────────────────────────────────────
-6d5e358    -8         ▐│█▍                      +29
-06a5d98   -98     █████│███████▎               +152
-a791ed4    -5         ▕│▎                        +5
-ff00e63    -1         ▕│▏                        +1
-80f237e   -73      ▐███│████████████▏          +253
+e4b2d43    -1           ▕│█▋                    +18
+0a24319    -1           ▕│▏                      +1
+902518a   -14          ▕█│███▏                  +34
+06a5d98   -98   █████████│█████████████▉       +152
+a791ed4    -5           ▐│▌                      +5
 ```
 <!-- :Commits -->
 
@@ -331,7 +331,7 @@ Then `<!-- Issues: -->` and `<!-- :Issues -->` in a file write it there. An open
 
 ### Endpoints
 
-Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched:
+Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched, its status and how long it took:
 
 ````md
 <!-- endpoint: -->
@@ -345,7 +345,7 @@ curl https://httpbin.org/uuid
   "uuid": "4c9d6a2e-…"
 }
 ```
-<!-- raindown:fetched 2026-10-14 -->
+<!-- raindown:fetched 2026-10-14 · 200 · 142 ms -->
 <!-- :endpoint -->
 ````
 
@@ -360,7 +360,7 @@ raindown watch api.md -x
 
 Be careful which files and folders you run Raindown on with `-x`. It runs every endpoint in the files it opens or watches, including files added to a watched folder later, so only use it on files you've read or trust, as you would before running `make` in a repo. Requests go out from your machine, so a snippet can reach anything it can, like servers running on it at `localhost` and services on your private network. With [variables](#endpoint-variables) it can send your environment variables, like API keys, wherever its URL points.
 
-To refresh a response, empty its code block, and its fetched date is updated too. The date is an HTML comment, so it's hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported, but [variables](#endpoint-variables) are. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Redirects aren't followed, so `-L` is rejected too, and so are link-local addresses, like the cloud metadata service at `169.254.169.254`, which can give out a server's credentials. Raindown also runs curl without your `~/.curlrc`.
+To refresh a response, empty its code block, and its fetched date, status and time are updated too. They're in an HTML comment, so they're hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is and whether it worked. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported, but [variables](#endpoint-variables) are. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Redirects aren't followed, so `-L` is rejected too, and so are link-local addresses, like the cloud metadata service at `169.254.169.254`, which can give out a server's credentials. Raindown also runs curl without your `~/.curlrc`.
 
 #### Endpoint variables
 
@@ -382,6 +382,8 @@ The first environment is used unless you pass `--env` or set `RAINDOWN_ENV`:
 raindown api.md -x --env staging
 ```
 
+Put secrets in `.raindown/environments.local.yml`, which adds to and overrides `environments.yml`, environment by environment, and which the `.gitignore` that `raindown init` creates leaves out of git. Its values and `{env.NAME}` are secret, so when a response or error echoes one, Raindown writes its placeholder, like `{token}`, instead, while later requests that read the response still get the value. Values shorter than four characters aren't hidden, as they'd match anywhere.
+
 Name an endpoint with `as:` and later snippets in the file can read its response, like `{login.token}` or `{users.0.id}` in JSON, or the whole response as `{login}`:
 
 `````md
@@ -401,6 +403,40 @@ curl -H 'Authorization: Bearer {login.token}' {base_url}/me
 `````
 
 The response is read from the file, so running one endpoint on its own, like from the terminal UI, still uses earlier responses. Each word of the snippet is filled in after it's split, so a value can't add options, and placeholders without a value, like the braces in JSON, are left as they are.
+
+#### Checking responses
+
+Like tests in Postman or Bruno, an endpoint can say what its response should be, with `status:` and a [LowType](https://github.com/low-rb/lowtype) `schema:`:
+
+`````md
+<!-- endpoint: status: 200 schema: Schema[id: Integer, email: String | nil, tags: Array[String]] -->
+
+```sh
+curl {base_url}/users/1
+```
+<!-- :endpoint -->
+`````
+
+A key whose type allows `nil` may be missing, and keys a schema doesn't name are allowed. Nest schemas, like `Schema[address: Schema[city: String]]`, and check lists, like `Array[Schema[id: Integer]]`, but write them with `Schema[]`, not `{}`, which reads as a variable. The schema is read without running it, so only types, values, `|` and `[]` on `Array`, `Hash`, `Schema`, `Enum` and `Status` are allowed.
+
+For a bigger schema, name it with `schema:` and its fields below it, indented, then give its name to the endpoints below it. A key with no type holds the more indented fields under it:
+
+`````md
+<!-- schema: 'User'
+  id: Integer
+  email: String | nil
+  address:
+    city: String
+-->
+
+<!-- endpoint: schema: 'User' -->
+`````
+
+A name can go inside a type too, like `schema: Array[User]`, and in schemas below it, like `author: User`. In a [Raindown file](#raindown-files), write `schema: 'User'` bare, with its fields ending at the first line that isn't indented, and it shows in bold with its fields below it. In comments it's left out of the HTML.
+
+Schemas in `.raindown/schemas.rd`, written bare the same way, can be named by every file's endpoints, and a file's own schemas with the same name win.
+
+Every response in the file is checked, whether it's just run or was already there, by the status in its fetched comment, so checking needs no requests. Failures are listed with where they are, like `api.md:3: id: expected Integer, received "1"`. `--html` lists them and exits with `1`, so CI can check that your docs still match your API, watching lists them as the file's written back, and the terminal UI shows them after a run. To check a live API, empty the response blocks first, then run with `-x`.
 
 ### Nodes
 

@@ -33,6 +33,11 @@ RSpec.describe Raindown::BareDirectives do
         .to eq("#{bold('endpoint:')}<{ endpoint: }>\n\n#{curl}\n```json\n{}\n```\n<{ :endpoint }>\n#{bold(':endpoint')}\nAfter\n")
     end
 
+    it 'shows a schema in bold, with its fields in a code block' do
+      expect(described_class.expand("schema: 'User'\n  name: String\n  address:\n    city: String\nAfter\n"))
+        .to eq("#{bold("schema: 'User'").chomp}\n```\nname: String\naddress:\n  city: String\n```\nAfter\n")
+    end
+
     it 'only closes around code blocks directly below' do
       content = "endpoint:\n#{curl}Text\n```\nother\n```\n"
 

@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- `--html -` prints the HTML to stdout, like `--html`
+- Endpoint responses keep their status and time in their fetched comment, like `200 · 142 ms`
+- Endpoints check their responses with `status: 200` and a LowType `schema: Schema[id: Integer]`, and `--html` fails on failures
+- Named schemas, with `schema: 'User'` and indented fields below it, for endpoints like `schema: Array[User]`, and shared ones in `.raindown/schemas.rd`
+- Secrets in `.raindown/environments.local.yml`, which `raindown init` gitignores, and which responses and errors never write back
+
 ## 0.10.0
 
 ### Added

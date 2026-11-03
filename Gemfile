@@ -10,8 +10,8 @@ group :development do
     'dirload' => '../dirload',
     'lowevent' => '../lowevent',
     'lowkey' => '../lowkey',
-    'lowloop' => '../lowloop',
     'lownode' => '../lownode',
+    'lowtype' => '../lowtype',
 
     'antlers' => '../antlers',
     'expressions' => '../expressions',

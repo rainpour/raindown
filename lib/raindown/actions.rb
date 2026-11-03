@@ -12,6 +12,7 @@ module Raindown
   # Each returns true when the file changed, and raises when it can't, for the tool to show.
   module Actions
     class NotAnEndpoint < StandardError; end
+    class FailedCheck < StandardError; end
 
     # Editors that open a file at a line with "path:line" rather than "+line path".
     PATH_LINE_EDITORS = %w[hx helix subl zed].freeze
@@ -26,17 +27,22 @@ module Raindown
       Rewriter.update(path:, bare:, execute:, metadata: Pages.for(path))
     end
 
-    # Runs one endpoint's request and writes its response, replacing any response it had.
+    # Runs one endpoint's request and writes its response, replacing any response it had, then raises when the response
+    # fails its checks, like status: 200.
     def execute(path, directive)
+      check_runnable(directive)
+      content = Utils.read_markdown(path)
+      runner = EndpointRunner.new(content:, path:, bare: BareDirectives.enabled?(path:, content:), only: directive.line - 1)
+      rewritten = runner.rewrite
+      File.write(path, rewritten) unless rewritten == content
+      raise FailedCheck, runner.failures.join("\n") if runner.failures.any?
+
+      rewritten != content
+    end
+
+    def check_runnable(directive)
       raise NotAnEndpoint, "#{directive.name} on line #{directive.line} isn't an endpoint" unless directive.endpoint?
       raise NotAnEndpoint, "The endpoint on line #{directive.line} only renders, so put it in comments to run it" unless directive.writes
-
-      content = Utils.read_markdown(path)
-      rewritten = EndpointRunner.new(content:, path:, bare: BareDirectives.enabled?(path:, content:), only: directive.line - 1).rewrite
-      return false if rewritten == content
-
-      File.write(path, rewritten)
-      true
     end
 
     # The command that opens the file at a line in the person's editor, like ["vim", "+12", "notes.md"].

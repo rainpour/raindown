@@ -51,7 +51,9 @@ module Raindown
 
       # The files' metadata is loaded again each time, so new and renamed files are listed.
       def rewrite
-        Rewriter.update(path:, bare:, execute:, metadata: Pages.for(path))
+        changed = Rewriter.update(path:, bare:, execute:, metadata: Pages.for(path))
+        EndpointRunner.failures(content: Utils.read_markdown(path), path:, bare:).each { warn "Endpoint check failed: #{it}" }
+        changed
       end
     end
   end

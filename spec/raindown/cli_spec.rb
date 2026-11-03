@@ -54,11 +54,22 @@ RSpec.describe Raindown::CLI do
       expect { described_class.run([@dir, '--html']) }.to raise_error(SystemExit).and output(/not a directory/).to_stderr
     end
 
+    it 'lists the endpoint responses that fail their checks with --html, and fails' do
+      File.write(path, "<!-- endpoint: status: 200 -->\n\n```sh\ncurl https://a.io\n```\n\n```json\n{}\n```\n" \
+                       "<!-- raindown:fetched 2026-11-03 · 500 · 9 ms -->\n<!-- :endpoint -->\n")
+
+      expect { described_class.run([path, '--html', output_path]) }
+        .to raise_error(SystemExit) { expect(it.status).to eq(1) }
+        .and output(/Endpoint check failed: .*:1: expected status 200, received 500/).to_stderr
+      expect(File).to exist(output_path)
+    end
+
     context 'with --html' do
       it 'renders to stdout without watching' do
         File.write(path, "# Title\n\n<!-- toc: -->\n<!-- :toc -->\n\n## Section\n")
 
         expect { described_class.run([path, '--html']) }.to output(/Table of contents/).to_stdout
+        expect { described_class.run([path, '--html', '-']) }.to output(/Table of contents/).to_stdout
         expect(File.read(path)).to include('- [Section](#section)')
         expect(Raindown::Watcher::FileWatcher).not_to have_received(:new)
       end
@@ -145,10 +156,11 @@ RSpec.describe Raindown::CLI do
         expect(Raindown::Config.for(path)).to eq(Raindown::Config::DEFAULTS)
       end
 
-      it 'creates it in the given directory' do
+      it 'creates it in the given directory, with a .gitignore for local secrets' do
         expect { described_class.run(['init', @dir]) }.to output(/Created/).to_stdout
 
         expect(File).to exist(config)
+        expect(File.read(File.join(@dir, '.raindown', '.gitignore'))).to eq("environments.local.yml\n")
       end
 
       it 'keeps an existing config file' do

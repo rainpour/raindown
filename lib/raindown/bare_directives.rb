@@ -2,6 +2,7 @@
 
 require_relative 'code_blocks'
 require_relative 'directives'
+require_relative 'endpoint/schema_block'
 require_relative 'front_matter'
 
 module Raindown
@@ -9,6 +10,8 @@ module Raindown
   # like endpoint: or toc:, which shows in bold in the HTML. Markdown files opt in with "raindown: true" in their front
   # matter, or with the --bare flag. Nodes like toc: and files: are handled by NodeBlocks, before the rest.
   # Template directives, like if: and for:, are always in Antlers' delimiters, so they're never bare.
+  #
+  # A bare schema: shows in bold, with its fields in a code block below it.
   #
   # Bare directives have no end tag. A bare endpoint closes itself after its curl snippet and response, so where it
   # needs more than that, write it in comments with an end tag instead:
@@ -65,12 +68,23 @@ module Raindown
     # Returns the index of the last line it handled. That's the directive itself, so the lines it holds
     # are expanded too, and a bare directive inside it closes before it does.
     def expand_line(lines, index)
+      schema = SchemaBlock.at(lines, index, bare: true)
+      return expand_schema(lines, index, schema) if schema
+
       match = lines[index].match(LINE)
       return index unless match
 
       lines[index] = "#{Directives.marker(match[2], shown: true)}\n#{wrap(lines[index])}"
       close_block(lines, index, indent: match[1], keyword: match[3])
       index
+    end
+
+    # Returns the index of the code block's last line.
+    def expand_schema(lines, index, schema)
+      indent = schema.fields.first.to_s[/\A[ \t]*/]
+      block = [Directives.marker(lines[index], shown: true), "\n```\n", *schema.fields.map { it.delete_prefix(indent) }, "```\n"]
+      lines[index..schema.last] = block
+      index + block.length - 1
     end
 
     # The end tag after the block, then the end tag in bold, as a bare directive's shown.
