@@ -52,9 +52,10 @@ module Raindown
     module_function
 
     # Returns the response body and the code block language for its content type.
-    def run(snippet)
+    # Placeholders like {base_url} are replaced from the variables, word by word, so a value can't add options.
+    def run(snippet, variables = nil)
       stdout, stderr, status = Open3.capture3('curl', *SAFE_OPTIONS, '--silent', '--show-error', '--max-time', TIMEOUT,
-                                              *arguments(snippet), '--write-out', WRITE_OUT)
+                                              *arguments(snippet, variables), '--write-out', WRITE_OUT)
       raise Error, stderr.strip.empty? ? "curl exited with #{status.exitstatus}" : stderr.strip unless status.success?
 
       body, _, content_type = stdout.rpartition(TYPE_MARKER)
@@ -66,8 +67,8 @@ module Raindown
     end
 
     # The snippet's method and URL, like GET https://httpbin.org/uuid, or nil when it can't be read.
-    def request(snippet)
-      args = arguments(snippet)
+    def request(snippet, variables = nil)
+      args = arguments(snippet, variables)
       Request.new(method: request_method(args), url: args.find { it.match?(URL) })
     rescue Error
       nil
@@ -83,8 +84,9 @@ module Raindown
       'GET'
     end
 
-    def arguments(snippet)
+    def arguments(snippet, variables = nil)
       words = Shellwords.split(snippet.gsub(/\\\r?\n/, ' ').strip.delete_prefix('$ '))
+      words = words.map { variables.substitute(it) } if variables
       raise Error, 'Endpoint snippets must start with curl' unless words.first == 'curl'
       raise Error, 'Endpoint snippets must be a single curl command' if words.intersect?(OPERATORS)
 

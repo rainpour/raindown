@@ -37,6 +37,7 @@ module Raindown
                             its extension (to allow bare directives) and can be unsaved. Add --html OUTPUT to write a file
         --bare              Allow bare directives like :toc in Markdown files
         -x, --execute       Run endpoint curl snippets that have no output yet, as files are written back
+        --env NAME          Fill endpoint snippets from the NAME environment in .raindown/environments.yml
         -h, --help          Show this message
         -v, --version       Show the version
 
@@ -52,12 +53,18 @@ module Raindown
 
     # A path opens the terminal UI, or after "watch" it's watched, and with --html or --stdin it's rendered. The flags
     # are keyword arguments, in any order, like -x for x:, and --html is the OUTPUT when it's given one.
-    line(':path') do |path, html: nil, stdin: false, bare: false, execute: false, x: false| # rubocop:disable Metrics/ParameterLists -- each keyword is a flag
-      execute { open_path(path, html:, stdin:, bare:, execute: execute || x) }
+    line(':path') do |path, html: nil, stdin: false, bare: false, execute: false, x: false, env: nil| # rubocop:disable Metrics/ParameterLists -- each keyword is a flag
+      execute do
+        ENV['RAINDOWN_ENV'] = env if env
+        open_path(path, html:, stdin:, bare:, execute: execute || x)
+      end
     end
 
-    line('watch :path') do |path, bare: false, execute: false, x: false|
-      execute { watch(path, bare:, execute: execute || x) }
+    line('watch :path') do |path, bare: false, execute: false, x: false, env: nil|
+      execute do
+        ENV['RAINDOWN_ENV'] = env if env
+        watch(path, bare:, execute: execute || x)
+      end
     end
 
     def self.run(argv)

@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -68 ████│██████████████████████████▏ +466
-──────────────────────────────────────────────────
-9144b1a  -38  ▕██│█████████                   +161
-22bd045   -2    ▕│▏                             +2
-4b1b82a  -16    █│██████████████▍             +256
-48bd107   -8    ▐│██                           +36
-5742c2b   -4    ▕│▋                            +11
+Total    -119 ▐██████│███████████████████████▍ +422
+───────────────────────────────────────────────────
+a791ed4    -5       ▕│▎                          +5
+ff00e63    -1       ▕│▏                          +1
+80f237e   -73    ████│██████████████           +253
+9144b1a   -38     ▕██│████████▉                +161
+22bd045    -2       ▕│▏                          +2
 ```
 <!-- :Commits -->
 
@@ -351,7 +351,47 @@ raindown api.md -x
 raindown watch api.md -x
 ```
 
-To refresh a response, empty its code block, and its fetched date is updated too. The date is an HTML comment, so it's hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Raindown also runs curl without your `~/.curlrc`.
+To refresh a response, empty its code block, and its fetched date is updated too. The date is an HTML comment, so it's hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported, but [variables](#endpoint-variables) are. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Raindown also runs curl without your `~/.curlrc`.
+
+#### Endpoint variables
+
+Like Postman or Bruno, a snippet can use variables, like `{base_url}` and `{token}`, and use one response in the next request. Values come from the file's front matter, then the project's environment, then earlier responses. `{env.NAME}` is the environment variable `NAME`, so secrets stay out of your files.
+
+Environments go in `.raindown/environments.yml`, and an environment's values can read environment variables too:
+
+```yaml
+local:
+  base_url: http://localhost:3000
+staging:
+  base_url: https://staging.example.com
+  token: '{env.STAGING_TOKEN}'
+```
+
+The first environment is used unless you pass `--env` or set `RAINDOWN_ENV`:
+
+```sh
+raindown api.md -x --env staging
+```
+
+Name an endpoint with `as:` and later snippets in the file can read its response, like `{login.token}` or `{users.0.id}` in JSON, or the whole response as `{login}`:
+
+`````md
+<!-- endpoint: :x as: login -->
+
+```sh
+curl -d 'user=ada' {base_url}/login
+```
+<!-- :endpoint -->
+
+<!-- endpoint: :x -->
+
+```sh
+curl -H 'Authorization: Bearer {login.token}' {base_url}/me
+```
+<!-- :endpoint -->
+`````
+
+The response is read from the file, so running one endpoint on its own, like from the terminal UI, still uses earlier responses. Each word of the snippet is filled in after it's split, so a value can't add options, and placeholders without a value, like the braces in JSON, are left as they are.
 
 ### Nodes
 

@@ -32,7 +32,7 @@ module Raindown
       raise NotAnEndpoint, "The endpoint on line #{directive.line} only renders, so put it in comments to run it" unless directive.writes
 
       content = Utils.read_markdown(path)
-      rewritten = EndpointRunner.new(content:, bare: BareDirectives.enabled?(path:, content:), only: directive.line - 1).rewrite
+      rewritten = EndpointRunner.new(content:, path:, bare: BareDirectives.enabled?(path:, content:), only: directive.line - 1).rewrite
       return false if rewritten == content
 
       File.write(path, rewritten)
