@@ -7,7 +7,7 @@ Raindown renders a `.md`, `.rd` or `.raindown` file to HTML, and on each render 
 ## Rules for writing Raindown
 
 - Directives are `<{ ... }>`. Inside them, `name:` opens a block and `:name` closes it, like `<{ if: draft }>` ... `<{ :if }>`. A self-closing `<{ :name }>` with no opener renders HTML only, like `<{ :toc }>`.
-- Variables are `{key}` (HTML-escaped) or `<{ key }>` (unescaped). Dotted paths work: `{author.name}`. Unknown variables render nothing.
+- Variables are `{key}` (HTML-escaped) or `<{ key }>` (unescaped, so only for values you trust). Nested paths work: `{author.name}`. Unknown variables render nothing.
 - Directives and variables inside inline code or code blocks are left as literal text.
 - Arguments: an optional first value, then props written `key=value` or `key: value`. Values are quoted strings (`'notes'`), numbers, `true`, `false`, or unquoted variable names (`tags`, `author.name`). Quote literal strings, since unquoted words are variables.
 - Template directives (`for:`, `if:`, `list:`, variables) are invisible in the HTML and may sit inside paragraphs, lists and tables.
