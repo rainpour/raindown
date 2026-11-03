@@ -75,6 +75,20 @@ RSpec.describe Raindown::NodeBlocks do
       expect(props).to eq(a: 'notes', b: 'x y', c: 3, d: 'Mark', e: 'author.name')
     end
 
+    it 'reads unquoted text after name: up to the next prop, like YAML, and one word after name=' do
+      props = described_class.props('title: Hello world limit: 3 note: See: below tag=a', Raindown::Variables.new({}), antlers: false)
+
+      expect(props).to eq(title: 'Hello world', limit: 3, note: 'See: below', tag: 'a')
+      expect(described_class.args('Big news limit: 2', Raindown::Variables.new({}), antlers: false)).to eq([{ limit: 2 }, ['Big news']])
+    end
+
+    it "raises on text that isn't a prop, like a word after quoted text, and on a variable with spaces" do
+      expect { described_class.props("limit=3 title: 'Hello' world", Raindown::Variables.new({})) }
+        .to raise_error(Raindown::NodeBlocks::BrokenText, /\ACan't read world in limit=3 title: 'Hello' world/)
+      expect { described_class.props('title: Hello world', Raindown::Variables.new({})) }
+        .to raise_error(Raindown::NodeBlocks::BrokenText, /\ACan't read Hello world as a variable/)
+    end
+
     it 'reads nil, false, negative numbers and symbols as values' do
       props = described_class.props('a=nil b=false c=-2 d=:draft', Raindown::Variables.new(nil: 'x'))
 

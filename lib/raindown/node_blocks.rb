@@ -21,6 +21,7 @@ module Raindown
   # a block when it's a loaded node, so other text like "Note:" is left alone.
   module NodeBlocks
     class MissingEndTag < StandardError; end
+    class BrokenText < StandardError; end
 
     NAME = "(?:#{Nodes::BUILT_INS.keys.join('|')}|[A-Z]\\w*(?:::[A-Z]\\w*)*)".freeze
     OPEN = /\A( {0,3})<\{\s*(#{NAME}):(?:\s+(.*?))?\s*\}>[ \t]*$/
@@ -28,11 +29,13 @@ module Raindown
     BARE_OPEN = /\A( {0,3})(#{NAME}):(?:[ \t]+(.*?))?[ \t]*$/
     SELF_CLOSING = /\A( {0,3})<\{\s*:(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
     BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
+    # Unquoted text after name:, like YAML's, runs up to the next prop, so title: Hello world limit: 3 has two.
+    UNQUOTED = /.+?(?=[ \t]+\w+(?:=|:[ \t])|[ \t]*\z)/
     # A prop is name=value or name: value, where the value is quoted text, a number, true, false
-    # or a variable like author.name.
-    PROP = /(\w+)(?:=|:[ \t]+)("[^"]*"|'[^']*'|\S+)/
+    # or a variable like author.name. After name= it's one word.
+    PROP = /(\w+)(?:=|:[ \t]+)("[^"]*"|'[^']*'|(?<==)\S+|#{UNQUOTED})/
     # A value before the props is the node's argument.
-    ARG = /\A("[^"]*"|'[^']*'|[^\s"']\S*)(?:\s+|\z)/
+    ARG = /\A("[^"]*"|'[^']*'|[^\s"']#{UNQUOTED}|[^\s"'])(?:\s+|\z)/
 
     module_function
 
@@ -149,7 +152,11 @@ module Raindown
       [props(arg.post_match, variables, antlers:), [value(arg[1], variables, antlers:)]]
     end
 
+    # Text that isn't a prop, like world in title: 'Hello' world or tag=a b, is an error rather than left out.
     def props(text, variables, antlers: true)
+      unread = text.gsub(PROP, '').split
+      raise BrokenText, "Can't read #{unread.join(' ')} in #{text.strip}. Text with spaces needs quotes" if unread.any?
+
       text.scan(PROP).to_h { |name, value| [name.to_sym, value(value, variables, antlers:)] }
     end
 
@@ -161,6 +168,7 @@ module Raindown
         next value[1..-2] if value.match?(/\A(["']).*\1\z/)
         next Variables.value(variables, value[1..-2]) if !antlers && value.match?(/\A\{.+\}\z/)
         next value unless antlers
+        raise BrokenText, "Can't read #{value} as a variable. Text with spaces needs quotes" if value.match?(/\s/)
 
         Variables.value(variables, value)
       end

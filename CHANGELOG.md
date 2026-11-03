@@ -18,6 +18,8 @@ Minor features that don't break backwards compatibility are released as patches.
 ### Changed
 
 - **Breaking:** in bare directives and ones in comments an unquoted word is text, like `files: folder: notes`, and only a word in braces is a variable, like `chart: {stats}`, while in `<{ }>` it's still a variable
+- Unquoted text after `name:` runs up to the next prop, like YAML, so `title: Hello world limit: 3` has two props
+- Text a directive can't read as a prop, like `world` in `tag=a world`, is an error rather than left out
 
 ## 0.10.0
 
