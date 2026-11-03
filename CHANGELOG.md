@@ -5,16 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
-## Unreleased
+## 0.9.1
 
 ### Changed
 
-- A folder of projects, like `~/dev`, opens only its projects, and finding them skips the folders `.gitignore` files name
-- Choosing a project narrows Code feelings, picking its batch again, and Blueprints, which now include every project's saved blueprints
+- A folder of projects like `~/dev` only opens Raindown projects, and finding them skips the folders `.gitignore` files
 
 ### Fixed
 
-- In a folder of projects, Code feelings and blueprints read only the projects' code, so they don't freeze, and each feeling is kept in its own project
+- Choosing a project filters Code feelings and Blueprints
+
 ## 0.9.0
 
 ### Added
