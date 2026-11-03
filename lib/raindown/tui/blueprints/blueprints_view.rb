@@ -32,8 +32,9 @@ module Raindown
 
       attr_reader :cursor
 
-      def initialize(root:)
+      def initialize(root:, projects: [root])
         @root = root
+        @projects = projects
         @path = File.join(root, Blueprints::FILE)
         @all = []
         @cursor = 0
@@ -140,7 +141,7 @@ module Raindown
 
       def mtime = File.exist?(@path) ? File.mtime(@path) : nil
 
-      def commented = @commented ||= CodeComments.blueprints(@root)
+      def commented = @commented ||= CodeComments.blueprints(@root, projects: @projects)
     end
   end
 end

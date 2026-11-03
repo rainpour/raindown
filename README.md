@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -16 ▕███████│██████████████████████▉ +51
-─────────────────────────────────────────────────
-48bd107   -8     ▐███│████████████████▏       +36
-5742c2b   -4       ██│████▉                   +11
-ad5e1d8   -1        ▐│▌                        +1
-d3292a0   -1        ▐│▌                        +1
-21ddbdf   -2        █│▉                        +2
+Total    -31 ███│███████████████████████████▎ +306
+──────────────────────────────────────────────────
+22bd045   -2   ▕│▏                              +2
+4b1b82a  -16  ▐█│██████████████████████▊      +256
+48bd107   -8   █│███▎                          +36
+5742c2b   -4   ▐│█                             +11
+ad5e1d8   -1   ▕│▏                              +1
 ```
 <!-- :Commits -->
 
@@ -60,9 +60,9 @@ cat draft.rd | raindown draft.rd --stdin
 
 With `--stdin`, FILE only decides whether bare directives are allowed (by its extension), so it doesn't need to exist yet, and the TOC and tables aren't written back to it.
 
-`raindown watch` on a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders and ones like `node_modules` and `build`. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
+`raindown watch` on a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders, ones like `node_modules` and `build`, and the folders your `.gitignore` files name. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
 
-`raindown` shows a project's Markdown files beside an outline of the open file's headings and directives. It opens on the Dashboard (below), or on the file you name, like `raindown README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Like `raindown watch`, it watches every file in the folder, and writes back to each Markdown file as it's saved, so there's no need for `raindown watch` running in another terminal too. A click does what Enter does where it's clicked, or presses the button clicked, like `[Run]`, unless that would leave the TUI for your editor, so a stray click only moves the cursor. Scrolling does nothing.
+`raindown` shows a project's Markdown files beside an outline of the open file's headings and directives. On a folder of projects, like `raindown ~/dev`, it shows only the projects' files, leaving out the Markdown outside them. It opens on the Dashboard (below), or on the file you name, like `raindown README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Like `raindown watch`, it watches every file in the folder, and writes back to each Markdown file as it's saved, so there's no need for `raindown watch` running in another terminal too. A click does what Enter does where it's clicked, or presses the button clicked, like `[Run]`, unless that would leave the TUI for your editor, so a stray click only moves the cursor. Scrolling does nothing.
 
 **Dashboard**, at the top of the files (or `d`), shows every chart and stat in the project beside them, each in a card under its file and heading. The projects inside it, marked 🌧 in the files, are shown too, each with its own nodes, and their charts are under their paths. Click the path in the header, or press `p`, to narrow the files and the Dashboard to one project.
 

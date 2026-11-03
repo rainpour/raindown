@@ -210,7 +210,7 @@ RSpec.describe Raindown::TUI::Layout do
   describe 'the project menu' do
     let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
 
-    before { FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown')) }
+    before { [@root, File.join(@root, 'guides')].each { FileUtils.mkdir_p(File.join(it, '.raindown')) } }
 
     it 'has a Projects button on the dashboard' do
       expect(described_class.new(navigator, width: 80, height: 8).lines.last.map(&:event).compact.uniq)
