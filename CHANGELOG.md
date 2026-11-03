@@ -9,6 +9,7 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ### Added
 
+- Markdown Components, like `.raindown/BookCard.md`, which write their Markdown with their props as variables, with no code
 - `--html -` prints the HTML to stdout, like `--html`
 - Endpoint responses keep their status and time in their fetched comment, like `200 · 142 ms`
 - Endpoints check their responses with `status: 200` and a LowType `schema: Schema[id: Integer]`, and `--html` fails on failures
