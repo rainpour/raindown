@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -164 ▕█████│████████████████████████▊ +771
+Total    -160 ▕█████│████████████████████████▉ +771
 ───────────────────────────────────────────────────
+af37bfc   -10      ▐│█▏                         +34
 0645bd2   -35     ▕█│██▍                        +73
 e49629b  -113   ▐███│████████████████████▊     +645
 e4b2d43    -1      ▕│▋                          +18
 0a24319    -1      ▕│▏                           +1
-902518a   -14      ▐│█▏                         +34
 ```
 <!-- :Commits -->
 
@@ -186,6 +186,20 @@ To render the files with your own template instead, use a `list:` block. Its tem
 ## {page.title}
 <{ :list }>
 ```
+
+### Wikilinks and backlinks
+
+Like in [Obsidian](https://obsidian.md), `[[Reading list]]` links to the file named `Reading list.md`, wherever it is in the project, whatever its case. `[[Reading list#To read]]` links to a heading, `[[Reading list|books]]` changes the text, and `[[notes/Reading list]]` picks one of two files with the same name. They render as links, by the file's path like `files:`, while the file keeps them as you wrote them, so Obsidian still reads it. Ones that name no file, embeds like `![[photo.png]]`, and ones in code are left as they are.
+
+A `backlinks:` block writes a link to each file whose wikilinks link to this one:
+
+```md
+<!-- backlinks: -->
+- [Today](<journal/Today.md>)
+<!-- :backlinks -->
+```
+
+Obsidian shows backlinks in its sidebar, but these are written into the file, so they show on GitHub, in other editors and in the HTML too.
 
 ### Metadata
 
@@ -510,7 +524,7 @@ export class Changelog {
 }
 ```
 
-It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content. A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `files:` or `chart:`.
+It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content. A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `files:`, `chart:` or `backlinks:`.
 
 ### Config
 

@@ -9,6 +9,7 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ### Added
 
+- Obsidian's `[[wikilinks]]`, which render as links to the file they name, and `backlinks:`, which writes the files that link to this one
 - `--html -` prints the HTML to stdout, like `--html`
 - Endpoint responses keep their status and time in their fetched comment, like `200 · 142 ms`
 - Endpoints check their responses with `status: 200` and a LowType `schema: Schema[id: Integer]`, and `--html` fails on failures
