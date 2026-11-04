@@ -5,6 +5,8 @@ module Raindown
   module CodeBlocks
     FENCE = /\A {0,3}(`{3,}|~{3,})[ \t]*(\S*)/
     SNIPPET_LANGUAGES = %w[sh bash shell zsh console curl].freeze
+    # The line closing a fence, like ``` or ~~~~, compiled once per fence.
+    CLOSINGS = Hash.new { |closings, fence| closings[fence] = /\A {0,3}#{fence[0]}{#{fence.length},}[ \t]*$/ }
 
     module_function
 
@@ -13,7 +15,7 @@ module Raindown
       fence, language = lines[index]&.match(FENCE)&.captures
       return unless fence
 
-      close = (index + 1...lines.length).find { |i| lines[i].match?(/\A {0,3}#{fence[0]}{#{fence.length},}[ \t]*$/) }
+      close = (index + 1...lines.length).find { |i| lines[i].match?(CLOSINGS[fence]) }
       { open: index, close:, language:, body: lines[index + 1...close].join } if close
     end
 

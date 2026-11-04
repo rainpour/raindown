@@ -12,12 +12,15 @@ require 'csv'
 class CodeHealth < Raindown::Stat
   SCORES = { 'frolic' => 1.0, 'numb' => 0.5, 'woe' => 1.0 / 3, 'dread' => 1.0 / 6, 'malice' => 0.0 }.freeze
 
-  # The rows of .raindown/feelings.csv or memories.csv, by name.
+  # The rows of .raindown/feelings.csv or memories.csv, by name, read again only once the file's changed.
   def self.rows(root, name)
     csv = File.join(root, '.raindown', "#{name}.csv")
     return [] unless File.exist?(csv)
 
-    CSV.read(csv, headers: true).map(&:to_h)
+    modified, rows = (@rows ||= {})[csv]
+    return rows if modified == File.mtime(csv)
+
+    CSV.read(csv, headers: true).map(&:to_h).tap { @rows[csv] = [File.mtime(csv), it] }
   end
 
   # The row's feeling's score, or nil for a temper without one.
