@@ -69,7 +69,8 @@ module Raindown
 
     # Whether a file is one of a project's own nodes, which load when its watcher starts.
     def node?(path, root:)
-      File.expand_path(path).start_with?(File.join(root, Nodes::FOLDER, '')) && NODE_EXTENSIONS.include?(File.extname(path))
+      File.expand_path(path).start_with?(File.join(root, Nodes::FOLDER, '')) &&
+        (NODE_EXTENSIONS.include?(File.extname(path)) || MarkdownNodes.file?(path))
     end
 
     # The roots that aren't inside another of them, as a project's code includes the projects inside it.

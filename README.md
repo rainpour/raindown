@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -135 ▕███████████│██████████████████▊ +226
+Total    -134 ▐█████│████████████████████████▋ +615
 ───────────────────────────────────────────────────
-33457fb    -1            ▕│█▌                   +18
-f3998f6   -21           ██│█▊                   +21
-0a24319    -1            ▕│▏                     +1
-902518a   -14           ▕█│██▉                  +34
-06a5d98   -98    ▕████████│████████████▋       +152
+51aea22    -1      ▕│▏                           +1
+2e44dd1   -95   ████│███████████████▋          +389
+33457fb    -1      ▕│▊                          +18
+f3998f6   -21      █│▉                          +21
+8ccb3ae   -16      ▐│███████▌                  +186
 ```
 <!-- :Commits -->
 
@@ -515,6 +515,20 @@ export class Changelog {
 ```
 
 It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content. A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `files:` or `chart:`.
+
+#### Markdown Components
+
+A Markdown file in `.raindown` named like a component, like `BookCard.md`, is a component too, with no code. Its props are its variables, and its front matter is their defaults:
+
+`````md
+---
+rating: 0
+---
+
+**{title}** · {rating}/5
+`````
+
+`BookCard: title: The Dispossessed rating: 5` writes `**The Dispossessed** · 5/5` below it. A value before the props, like `'Dune'` in `BookCard: 'Dune'`, is `{value}`, and templating like `<{ if: }>` and `<{ for: }>` works in it. Raindown reads the file each time it writes the component, so a change shows on the next render. A Ruby or JavaScript component of the same name is used instead.
 
 ### Config
 
