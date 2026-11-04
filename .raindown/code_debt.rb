@@ -29,10 +29,9 @@ class CodeDebt < Raindown::Stat
   # The memories whose method's next feeling scored higher. A method's memories come oldest first, then its feeling now.
   def fixes
     memories = CodeHealth.rows(@root, 'memories')
-    history = memories + CodeHealth.rows(@root, 'feelings')
-    memories.each_index.count do |index|
-      later = history[(index + 1)..].find { row_method(it) == row_method(history[index]) }
-      later && CodeHealth.score(later).to_f > CodeHealth.score(history[index]).to_f
+    history = (memories + CodeHealth.rows(@root, 'feelings')).each_with_index.group_by { |row, _| row_method(row) }
+    history.values.sum do |rows|
+      rows.each_cons(2).count { |(was, index), (now, _)| index < memories.length && CodeHealth.score(now).to_f > CodeHealth.score(was).to_f }
     end
   end
 

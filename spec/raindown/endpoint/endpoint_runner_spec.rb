@@ -7,6 +7,10 @@ RSpec.describe Raindown::EndpointRunner do
     described_class.rewrite(content:, execute:, **options)
   end
 
+  def failures(**)
+    described_class.new(**).tap(&:rewrite).failures
+  end
+
   let(:curl) { "```sh\ncurl https://api.example.com/users\n```\n" }
   let(:fetched) { "<!-- raindown:fetched 2026-10-14 · 200 · 142 ms -->\n" }
   let(:response) { "```json\n{\n  \"id\": 1\n}\n```\n#{fetched}" }
@@ -120,7 +124,7 @@ RSpec.describe Raindown::EndpointRunner do
     it 'checks the responses in the file by the status in their fetched comment, without running them' do
       content = "#{checked}\n```json\n{\"id\": \"1\"}\n```\n<!-- raindown:fetched 2026-10-14 · 404 · 9 ms -->\n"
 
-      expect(described_class.failures(content:, path: 'api.md'))
+      expect(failures(content:, path: 'api.md'))
         .to eq(['api.md:1: expected status 200, received 404', 'api.md:1: id: expected Integer, received "1"'])
       expect(Raindown::Curl).not_to have_received(:run)
     end
@@ -128,7 +132,7 @@ RSpec.describe Raindown::EndpointRunner do
     it 'checks the status of a response with an empty body' do
       content = "<!-- endpoint: status: 201 -->\n\n#{curl}\n```html\n\n```\n<!-- raindown:fetched 2026-10-14 · 404 · 9 ms -->\n"
 
-      expect(described_class.failures(content:)).to eq(['1: expected status 201, received 404'])
+      expect(failures(content:)).to eq(['1: expected status 201, received 404'])
     end
 
     it "checks responses against the project's shared schemas in .raindown/schemas.rd" do
@@ -137,7 +141,7 @@ RSpec.describe Raindown::EndpointRunner do
         File.write(File.join(dir, '.raindown', 'schemas.rd'), "schema: 'User'\n  id: Integer\n\nschema: 'Users'\n  users: Array[User]\n")
         content = "<!-- endpoint: schema: 'Users' -->\n\n#{curl}\n```json\n{\"users\": [{\"id\": \"1\"}]}\n```\n"
 
-        expect(described_class.failures(content:, path: File.join(dir, 'api.md')))
+        expect(failures(content:, path: File.join(dir, 'api.md')))
           .to eq(["#{dir}/api.md:1: users[0].id: expected Integer, received \"1\""])
       end
     end

@@ -42,11 +42,6 @@ module Raindown
       new(content:, path:, bare: BareDirectives.enabled?(path:, content:, bare:), execute:).rewrite
     end
 
-    # The file's failed checks, like "api.md:3: expected status 200, received 404", from the responses in it.
-    def self.failures(content:, path: nil, bare: false)
-      new(content:, path:, bare: BareDirectives.enabled?(path:, content:, bare:)).tap(&:rewrite).failures
-    end
-
     def initialize(content:, path: nil, bare: false, execute: false, only: nil)
       @lines = content.lines
       @path = path

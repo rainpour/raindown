@@ -15,7 +15,7 @@ RSpec.describe Raindown::Rewriter do
     it 'runs every rewriter over the file' do
       File.write(@path, "# Title\n\n<!-- toc: -->\n<!-- :toc -->\n\n| a | b |\n|-|-|\n| ccc | d |\n")
 
-      expect(described_class.update(path: @path)).to be(true)
+      expect(described_class.update(path: @path)).to be_changed
 
       content = File.read(@path)
       expect(content).to include("<!-- toc: -->\n- [Title](#title)\n<!-- :toc -->\n")
@@ -34,7 +34,7 @@ RSpec.describe Raindown::Rewriter do
       File.write(@path, "| a   | b   |\n| --- | --- |\n| ccc | d   |\n")
       allow(File).to receive(:write).and_call_original
 
-      expect(described_class.update(path: @path)).to be(false)
+      expect(described_class.update(path: @path)).not_to be_changed
       expect(File).not_to have_received(:write)
     end
   end

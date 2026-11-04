@@ -8,26 +8,27 @@ require_relative 'utils'
 module Raindown
   # Rewrites the generated parts of a Markdown file in place before it's rendered:
   # node output, like the TOC, endpoint responses and table alignment.
-  # Each rewriter responds to rewrite(content:, path:, bare:, execute:, metadata:) and returns the new content.
   module Rewriter
-    REWRITERS = [NodeInjector, EndpointRunner, TableFormatter].freeze
+    # The content written back, and the endpoint checks it failed, like "api.md:3: expected status 200, received 404".
+    Rewrite = Data.define(:original, :content, :failures) do
+      def changed?
+        content != original
+      end
+    end
 
     module_function
 
     def rewrite(content:, path:, bare: false, execute: false, metadata: NoMetadata)
-      REWRITERS.reduce(content) do |rewritten, rewriter|
-        rewriter.rewrite(content: rewritten, path:, bare:, execute:, metadata:)
-      end
+      injected = NodeInjector.rewrite(content:, path:, bare:, metadata:)
+      endpoints = EndpointRunner.new(content: injected, path:, bare: BareDirectives.enabled?(path:, content: injected, bare:), execute:)
+      Rewrite.new(original: content, content: TableFormatter.rewrite(content: endpoints.rewrite), failures: endpoints.failures)
     end
 
-    # Returns true when the file changed.
+    # Writes the file only when it changed.
     def update(path:, bare: false, execute: false, metadata: NoMetadata)
-      content = Utils.read_markdown(path)
-      rewritten = rewrite(content:, path:, bare:, execute:, metadata:)
-      return false if rewritten == content
-
-      File.write(path, rewritten)
-      true
+      rewrite(content: Utils.read_markdown(path), path:, bare:, execute:, metadata:).tap do |rewrite|
+        File.write(path, rewrite.content) if rewrite.changed?
+      end
     end
   end
 end

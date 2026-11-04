@@ -28,10 +28,9 @@ module Raindown
 
       # Writing back saves the file again, and that save changes nothing, so it ends there.
       def update(path)
-        changed = Rewriter.update(path:, bare: @bare, execute: @execute, metadata: Pages.for(path))
-        puts "[#{name}] Updated #{relative(path)}" if changed
-        EndpointRunner.failures(content: Utils.read_markdown(path), path:, bare: @bare)
-                      .each { warn "[#{name}] Endpoint check failed: #{it}" }
+        rewrite = Rewriter.update(path:, bare: @bare, execute: @execute, metadata: Pages.for(path))
+        puts "[#{name}] Updated #{relative(path)}" if rewrite.changed?
+        rewrite.failures.each { warn "[#{name}] Endpoint check failed: #{it}" }
       rescue StandardError => e
         raise if ENV['RAINDOWN_DEBUG']
 
