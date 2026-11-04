@@ -5,20 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
-## Unreleased
+## 0.11.0
 
 ### Added
 
-- An [Obsidian plugin](https://github.com/rainpour/raindown-obsidian), which writes back to notes as they're saved, and offers to download Raindown if it isn't installed
-- `raindown server` keeps Raindown loaded for editors, answering a JSON request a line, so the Obsidian plugin and the VS Code extension render in milliseconds rather than starting Ruby each time
+- An [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) which writes back to notes as they're saved
+- `raindown server` keeps Raindown loaded so the Obsidian plugin and the VS Code extension render in milliseconds rather than booting Ruby each time
 - `raindown FILE --stdin --rewrite` prints the Markdown from stdin as it would be written back to FILE, for editors
-- Obsidian's `[[wikilinks]]`, which render as links to the file they name
-- Markdown Components, like `.raindown/BookCard.md`, which write their Markdown with their props as variables, with no code
+- Support `[[wikilinks]]` syntax which renders links to the file they name
+- Markdown Components like `.raindown/BookCard.md`, which write their Markdown with their props as variables without code
 - `--html -` prints the HTML to stdout, like `--html`
-- Endpoint responses keep their status and time in their fetched comment, like `200 · 142 ms`
-- Endpoints check their responses with `status: 200` and a LowType `schema: Schema[id: Integer]`, and `--html` fails on failures
-- Named schemas, with `schema: User` and indented fields below it, for endpoints like `schema: Array[User]`, and shared ones in `.raindown/schemas.rd`
-- Secrets in `.raindown/environments.local.yml`, which `raindown init` gitignores, and which responses and errors never write back
+- Endpoint responses keep their status and time in their fetched comment (`200 · 142 ms`)
+- Endpoints check their responses with `status: 200` and a LowType `schema: Schema[id: Integer]`
+- `--html` fails on failures
+- Named schemas with `schema: User` and indented fields below it, for endpoints like `schema: Array[User]` or shared ones in `.raindown/schemas.rd`
+- Secrets in `.raindown/environments.local.yml` which `raindown init` gitignores
 
 ### Changed
 
