@@ -17,6 +17,7 @@ require_relative 'raindown/pages'
 require_relative 'raindown/pre_renderer'
 require_relative 'raindown/utils'
 require_relative 'raindown/variables'
+require_relative 'raindown/wiki_links'
 
 module Raindown
   # Antlers evaluates any braces in the HTML, so braces in code are swapped for placeholders
@@ -83,6 +84,7 @@ module Raindown
   # The document's HTML from Commonmarker, after nodes and the template pass, with components as fragments.
   def html(markdown:, variables:, metadata: NoMetadata, bare: false)
     markdown = NodeBlocks.to_rendered(markdown.dup.force_encoding('UTF-8'), metadata:, bare:)
+    markdown = WikiLinks.to_markdown(markdown, metadata:)
     commonmark(PreRenderer.render(markdown, variables:, metadata:, bare:))
   end
 

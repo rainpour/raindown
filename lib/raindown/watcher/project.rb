@@ -30,6 +30,8 @@ module Raindown
       def update(path)
         changed = Rewriter.update(path:, bare: @bare, execute: @execute, metadata: Pages.for(path))
         puts "[#{name}] Updated #{relative(path)}" if changed
+        EndpointRunner.failures(content: Utils.read_markdown(path), path:, bare: @bare)
+                      .each { warn "[#{name}] Endpoint check failed: #{it}" }
       rescue StandardError => e
         raise if ENV['RAINDOWN_DEBUG']
 

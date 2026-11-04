@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -119 ███████████│███████████████████▏ +210
+Total    -135 ▕███████████│██████████████████▊ +226
 ───────────────────────────────────────────────────
-e4b2d43    -1           ▕│█▋                    +18
-0a24319    -1           ▕│▏                      +1
-902518a   -14          ▕█│███▏                  +34
-06a5d98   -98   █████████│█████████████▉       +152
-a791ed4    -5           ▐│▌                      +5
+33457fb    -1            ▕│█▌                   +18
+f3998f6   -21           ██│█▊                   +21
+0a24319    -1            ▕│▏                     +1
+902518a   -14           ▕█│██▉                  +34
+06a5d98   -98    ▕████████│████████████▋       +152
 ```
 <!-- :Commits -->
 
@@ -128,7 +128,7 @@ It has two paragraphs.
 <{ :if }>
 ```
 
-Directives in prose or code are left as text.
+Bare directives, like ones in comments, read like prose, so an unquoted word is text, like `files: folder: notes`, and only a word in braces is a variable, like `chart: {stats}`. Directives in prose or code are left as text.
 
 Markdown files can opt in too, with `raindown: true` in their front matter:
 
@@ -186,6 +186,10 @@ To render the files with your own template instead, use a `list:` block. Its tem
 ## {page.title}
 <{ :list }>
 ```
+
+### Wikilinks
+
+Like in [Obsidian](https://obsidian.md), `[[Reading list]]` links to the file named `Reading list.md`, wherever it is in the project, whatever its case. `[[Reading list#To read]]` links to a heading, `[[Reading list|books]]` changes the text, and `[[notes/Reading list]]` picks one of two files with the same name. They render as links, by the file's path like `files:`, while the file keeps them as you wrote them, so Obsidian still reads it. Ones that name no file, embeds like `![[photo.png]]`, and ones in code are left as they are.
 
 ### Metadata
 
@@ -268,7 +272,7 @@ Apr  ███████████████▊                           
 <!-- :chart -->
 ````
 
-Its data can be a CSV, TSV, JSON or YAML file relative to the project, numbers like `chart: '3 5 -2 8'`, or a [variable](#variables) like `chart: stats`. A variable can hold either of those, or data of its own like a list of numbers or a hash of labels and values. A table's labels come from its first column and its values from the first column of numbers after it, or name them with `label:` and `value:`, like `value: 'sales'`.
+Its data can be a CSV, TSV, JSON or YAML file relative to the project, numbers like `chart: '3 5 -2 8'`, or a [variable](#variables) in braces like `chart: {stats}`. A variable can hold either of those, or data of its own like a list of numbers or a hash of labels and values. A table's labels come from its first column and its values from the first column of numbers after it, or name them with `label:` and `value:`, like `value: 'sales'`.
 
 `format:` draws it as `'bars'`, `'columns'`, a `'line'` or a `'sparkline'` (`▂▄▁▇▅█▃`). Without it, labeled data draws as bars and numbers alone as a sparkline. Negative values go below the line, or left of it for bars:
 
@@ -331,7 +335,7 @@ Then `<!-- Issues: -->` and `<!-- :Issues -->` in a file write it there. An open
 
 ### Endpoints
 
-Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched:
+Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched, its status and how long it took:
 
 ````md
 <!-- endpoint: -->
@@ -345,7 +349,7 @@ curl https://httpbin.org/uuid
   "uuid": "4c9d6a2e-…"
 }
 ```
-<!-- raindown:fetched 2026-10-14 -->
+<!-- raindown:fetched 2026-10-14 · 200 · 142 ms -->
 <!-- :endpoint -->
 ````
 
@@ -360,7 +364,7 @@ raindown watch api.md -x
 
 Be careful which files and folders you run Raindown on with `-x`. It runs every endpoint in the files it opens or watches, including files added to a watched folder later, so only use it on files you've read or trust, as you would before running `make` in a repo. Requests go out from your machine, so a snippet can reach anything it can, like servers running on it at `localhost` and services on your private network. With [variables](#endpoint-variables) it can send your environment variables, like API keys, wherever its URL points.
 
-To refresh a response, empty its code block, and its fetched date is updated too. The date is an HTML comment, so it's hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported, but [variables](#endpoint-variables) are. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Redirects aren't followed, so `-L` is rejected too, and so are link-local addresses, like the cloud metadata service at `169.254.169.254`, which can give out a server's credentials. Raindown also runs curl without your `~/.curlrc`.
+To refresh a response, empty its code block, and its fetched date, status and time are updated too. They're in an HTML comment, so they're hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is and whether it worked. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported, but [variables](#endpoint-variables) are. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Redirects aren't followed, so `-L` is rejected too, and so are link-local addresses, like the cloud metadata service at `169.254.169.254`, which can give out a server's credentials. Raindown also runs curl without your `~/.curlrc`.
 
 #### Endpoint variables
 
@@ -382,6 +386,8 @@ The first environment is used unless you pass `--env` or set `RAINDOWN_ENV`:
 raindown api.md -x --env staging
 ```
 
+Put secrets in `.raindown/environments.local.yml`, which adds to and overrides `environments.yml`, environment by environment, and which the `.gitignore` that `raindown init` creates leaves out of git. Its values and `{env.NAME}` are secret, so when a response or error echoes one, Raindown writes its placeholder, like `{token}`, instead, while later requests that read the response still get the value. Values shorter than four characters aren't hidden, as they'd match anywhere.
+
 Name an endpoint with `as:` and later snippets in the file can read its response, like `{login.token}` or `{users.0.id}` in JSON, or the whole response as `{login}`:
 
 `````md
@@ -401,6 +407,40 @@ curl -H 'Authorization: Bearer {login.token}' {base_url}/me
 `````
 
 The response is read from the file, so running one endpoint on its own, like from the terminal UI, still uses earlier responses. Each word of the snippet is filled in after it's split, so a value can't add options, and placeholders without a value, like the braces in JSON, are left as they are.
+
+#### Checking responses
+
+Like tests in Postman or Bruno, an endpoint can say what its response should be, with `status:` and a [LowType](https://github.com/low-rb/lowtype) `schema:`:
+
+`````md
+<!-- endpoint: status: 200 schema: Schema[id: Integer, email: String | nil, tags: Array[String]] -->
+
+```sh
+curl {base_url}/users/1
+```
+<!-- :endpoint -->
+`````
+
+A key whose type allows `nil` may be missing, and keys a schema doesn't name are allowed. Nest schemas, like `Schema[address: Schema[city: String]]`, and check lists, like `Array[Schema[id: Integer]]`, but write them with `Schema[]`, not `{}`, which reads as a variable. The schema is read without running it, so only types, values, `|` and `[]` on `Array`, `Hash`, `Schema`, `Enum` and `Status` are allowed.
+
+For a bigger schema, name it with `schema:` and its fields below it, indented, then give its name to the endpoints below it. A key with no type holds the more indented fields under it:
+
+`````md
+<!-- schema: User
+  id: Integer
+  email: String | nil
+  address:
+    city: String
+-->
+
+<!-- endpoint: schema: User -->
+`````
+
+The name can be quoted, like `'User'`, or not. A name can go inside a type too, like `schema: Array[User]`, and in schemas below it, like `author: User`. In a [Raindown file](#raindown-files), write `schema: User` bare, with its fields ending at the first line that isn't indented, and it shows in bold with its fields below it. In comments it's left out of the HTML.
+
+Schemas in `.raindown/schemas.rd`, written bare the same way, can be named by every file's endpoints, and a file's own schemas with the same name win.
+
+Every response in the file is checked, whether it's just run or was already there, by the status in its fetched comment, so checking needs no requests. Failures are listed with where they are, like `api.md:3: id: expected Integer, received "1"`. `--html` lists them and exits with `1`, so CI can check that your docs still match your API, watching lists them as the file's written back, and the terminal UI shows them after a run. To check a live API, empty the response blocks first, then run with `-x`.
 
 ### Nodes
 
@@ -447,7 +487,7 @@ Changelog: limit=3
 - **1.1.0** Track fetched dates
 ```
 
-Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file, as does a `<{ Changelog: }>` block. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. Bare or in comments, a word is text, like `folder: notes`, and a variable is in braces, like `{author.name}`, while in `<{ }>` a word is a variable. Like YAML, unquoted text after `name:` runs up to the next prop, so `title: Hello world limit: 3` has two, while after `name=` it's one word. Quote text with a word and colon inside, like `title: 'Read this: now'`, and words that read as values, like `'1.10'` or `'true'`. Quoted text means the same in every way a directive's written. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file, as does a `<{ Changelog: }>` block. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
 
 #### JavaScript Components
 
@@ -489,7 +529,23 @@ highlight_code: false
 
 ### VS Code
 
-The [VS Code extension](vscode/) highlights syntax and previews Raindown files with `--stdin`, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.
+The [VS Code extension](vscode/) highlights syntax and previews Raindown files with the [editor server](#editor-server), or `--stdin` with a Raindown from before it, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.
+
+### Obsidian
+
+The [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) writes back to your notes as you save them, like `raindown watch`, with the [editor server](#editor-server), or `raindown NOTE --stdin --rewrite`, which prints the note as it would be written back without writing it. So tables of contents, components and `files:` fill in as you write, in plain Markdown that reads the same outside Obsidian. Endpoints only run from its **Run the endpoints in this note** command. If Raindown isn't installed, it offers to download the standalone binary.
+
+### Editor server
+
+Editors keep Raindown loaded with `raindown server`, so a render doesn't start Ruby again each time: the first takes about a second, and the ones after it a few milliseconds. It says it's ready, then answers one JSON request a line on stdin, in order, on stdout:
+
+```
+{"ready":true,"version":"0.10.0"}
+{"id":1,"path":"/notes/a.md","markdown":"# A\n\n<!-- toc: -->\n<!-- :toc -->\n","rewrite":true}
+{"id":1,"output":"# A\n\n<!-- toc: -->\n- [A](#a)\n<!-- :toc -->\n","warnings":[]}
+```
+
+With `"rewrite": true`, it answers like `--stdin --rewrite`, with `"execute": true` like `-x`, and otherwise with HTML, like `--stdin`. `"bare": true` is like `--bare`. An error is answered as `{"id":1,"error":"raindown: /notes/a.md: ..."}`. Each project renders in a process of its own, which starts again when a file in its `.raindown` folder changes, so its components, config and schemas are never stale. On Windows, which can't fork, start the server again after changing them.
 
 ### Standalone binaries
 

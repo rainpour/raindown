@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- An [Obsidian plugin](https://github.com/rainpour/raindown-obsidian), which writes back to notes as they're saved, and offers to download Raindown if it isn't installed
+- `raindown server` keeps Raindown loaded for editors, answering a JSON request a line, so the Obsidian plugin and the VS Code extension render in milliseconds rather than starting Ruby each time
+- `raindown FILE --stdin --rewrite` prints the Markdown from stdin as it would be written back to FILE, for editors
+- Obsidian's `[[wikilinks]]`, which render as links to the file they name
+- `--html -` prints the HTML to stdout, like `--html`
+- Endpoint responses keep their status and time in their fetched comment, like `200 · 142 ms`
+- Endpoints check their responses with `status: 200` and a LowType `schema: Schema[id: Integer]`, and `--html` fails on failures
+- Named schemas, with `schema: User` and indented fields below it, for endpoints like `schema: Array[User]`, and shared ones in `.raindown/schemas.rd`
+- Secrets in `.raindown/environments.local.yml`, which `raindown init` gitignores, and which responses and errors never write back
+
+### Changed
+
+- **Breaking:** in bare directives and ones in comments an unquoted word is text, like `files: folder: notes`, and only a word in braces is a variable, like `chart: {stats}`, while in `<{ }>` it's still a variable
+- Unquoted text after `name:` runs up to the next prop, like YAML, so `title: Hello world limit: 3` has two props
+- Text a directive can't read as a prop, like `world` in `tag=a world`, is an error rather than left out
+
 ## 0.10.0
 
 ### Added

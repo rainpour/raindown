@@ -30,7 +30,7 @@ RSpec.describe Raindown::Actions do
 
   describe '.execute' do
     before do
-      allow(Raindown::Curl).to receive(:run).and_return(['{ "id": 2 }', 'json'])
+      allow(Raindown::Curl).to receive(:run).and_return(curl_response('{ "id": 2 }', 'json'))
       allow(Date).to receive(:today).and_return(Date.new(2026, 10, 20))
     end
 
@@ -40,13 +40,21 @@ RSpec.describe Raindown::Actions do
 
       expect(described_class.execute(path, second)).to be(true)
       expect(File.read(path).scan('{ "id": 2 }').length).to eq(1)
-      expect(File.read(path)).to end_with("```json\n{ \"id\": 2 }\n```\n<!-- raindown:fetched 2026-10-20 -->\n")
+      expect(File.read(path)).to end_with("```json\n{ \"id\": 2 }\n```\n<!-- raindown:fetched 2026-10-20 · 200 · 142 ms -->\n")
     end
 
     it 'runs bare endpoints in Raindown files' do
       path = write('api.rd', "endpoint:\n#{curl}")
 
       expect(described_class.execute(path, Raindown::Document.read(path).directives.first)).to be(true)
+      expect(File.read(path)).to include('{ "id": 2 }')
+    end
+
+    it 'writes the response, then raises when it fails its checks' do
+      path = write('api.md', "<!-- endpoint: status: 201 -->\n\n#{curl}")
+
+      expect { described_class.execute(path, Raindown::Document.read(path).directives.first) }
+        .to raise_error(described_class::FailedCheck, "#{path}:1: expected status 201, received 200")
       expect(File.read(path)).to include('{ "id": 2 }')
     end
 

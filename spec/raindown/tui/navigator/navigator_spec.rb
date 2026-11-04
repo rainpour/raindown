@@ -132,7 +132,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'runs the selected endpoint while showing a message, then reads the file again' do
-      allow(Raindown::Curl).to receive(:run).and_return(['{ "id": 1 }', 'json'])
+      allow(Raindown::Curl).to receive(:run).and_return(curl_response('{ "id": 1 }', 'json'))
       3.times { navigator.next_step(:down) }
 
       effect = navigator.next_step(:execute)
@@ -144,7 +144,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'runs an endpoint when its button is pressed' do
-      allow(Raindown::Curl).to receive(:run).and_return(['{ "id": 1 }', 'json'])
+      allow(Raindown::Curl).to receive(:run).and_return(curl_response('{ "id": 1 }', 'json'))
 
       navigator.next_step(click(:main, 3, :execute)).task.call
 
@@ -466,7 +466,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'runs an opened endpoint with X' do
-      allow(Raindown::Curl).to receive(:run).and_return(['{}', 'json'])
+      allow(Raindown::Curl).to receive(:run).and_return(curl_response('{}', 'json'))
       navigator.next_step(click(:nav, 6))
 
       navigator.next_step(:execute).task.call
@@ -474,7 +474,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'runs an opened endpoint with its button, and shows the response' do
-      allow(Raindown::Curl).to receive(:run).and_return(["{\n  \"id\": 1\n}", 'json'])
+      allow(Raindown::Curl).to receive(:run).and_return(curl_response("{\n  \"id\": 1\n}", 'json'))
       navigator.next_step(click(:nav, 6))
 
       navigator.next_step(click(:main, 0, :execute)).task.call
@@ -483,7 +483,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'runs the selected endpoint' do
-      allow(Raindown::Curl).to receive(:run).and_return(['{ "id": 1 }', 'json'])
+      allow(Raindown::Curl).to receive(:run).and_return(curl_response('{ "id": 1 }', 'json'))
       navigator.next_step(:left)
       4.times { navigator.next_step(:down) }
 

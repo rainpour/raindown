@@ -117,23 +117,24 @@ RSpec.describe Raindown::Curl do
     end
 
     it 'runs curl without a shell and returns pretty JSON' do
-      stub_curl("{\"id\":1}#{described_class::TYPE_MARKER}application/json; charset=utf-8")
+      stub_curl("{\"id\":1}#{described_class::Response::INFO_MARKER}201 0.142 application/json; charset=utf-8")
 
-      expect(described_class.run('curl https://203.0.113.5')).to eq(["{\n  \"id\": 1\n}", 'json'])
+      expect(described_class.run('curl https://203.0.113.5'))
+        .to eq(described_class::Response.new(body: "{\n  \"id\": 1\n}", language: 'json', status: 201, milliseconds: 142))
       expect(Open3).to have_received(:capture3).with('curl', *described_class::SAFE_OPTIONS, '--silent', '--show-error', '--max-time', '30',
                                                      'https://203.0.113.5', '--write-out', anything)
     end
 
     it 'keeps other bodies as they are' do
-      stub_curl("<p>Hi</p>#{described_class::TYPE_MARKER}text/html")
+      stub_curl("<p>Hi</p>#{described_class::Response::INFO_MARKER}200 0.05 text/html")
 
-      expect(described_class.run('curl https://203.0.113.5')).to eq(['<p>Hi</p>', 'html'])
+      expect(described_class.run('curl https://203.0.113.5')).to have_attributes(body: '<p>Hi</p>', language: 'html')
     end
 
     it 'has no language for unknown content types' do
-      stub_curl("bytes#{described_class::TYPE_MARKER}application/octet-stream")
+      stub_curl("bytes#{described_class::Response::INFO_MARKER}200 0.05 application/octet-stream")
 
-      expect(described_class.run('curl https://203.0.113.5').last).to eq('')
+      expect(described_class.run('curl https://203.0.113.5').language).to eq('')
     end
 
     it 'raises with curl\'s error when the request fails' do

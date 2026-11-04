@@ -1,6 +1,15 @@
 # frozen_string_literal: true
 
+# A response for stubbing Raindown::Curl.run, a 200 that took 142 milliseconds unless it says otherwise.
+module CurlResponses
+  def curl_response(body, language = 'json', status: 200)
+    Raindown::Curl::Response.new(body:, language:, status:, milliseconds: 142)
+  end
+end
+
 RSpec.configure do |config|
+  config.include CurlResponses
+
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = '.rspec_status'
 

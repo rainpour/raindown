@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown'
+require 'raindown/endpoint/endpoint_variables'
 require 'tmpdir'
 
 RSpec.describe Raindown::EndpointVariables do
@@ -24,6 +25,18 @@ RSpec.describe Raindown::EndpointVariables do
     expect(variables.substitute('Bearer {env.RAINDOWN_SPEC_TOKEN}')).to eq('Bearer secret')
   ensure
     ENV.delete('RAINDOWN_SPEC_TOKEN')
+  end
+
+  it 'redacts the environment variables it filled in, but not short ones that would match anywhere' do
+    ENV['RAINDOWN_SPEC_TOKEN'] = 'secret'
+    ENV['RAINDOWN_SPEC_FLAG'] = '1'
+    filled = variables
+    filled.substitute('{env.RAINDOWN_SPEC_TOKEN} {env.RAINDOWN_SPEC_FLAG}')
+
+    expect(filled.redact('secret 1')).to eq('{env.RAINDOWN_SPEC_TOKEN} 1')
+  ensure
+    ENV.delete('RAINDOWN_SPEC_TOKEN')
+    ENV.delete('RAINDOWN_SPEC_FLAG')
   end
 
   it 'remembers a response as JSON data, or else text' do
@@ -63,6 +76,22 @@ RSpec.describe Raindown::EndpointVariables do
       ENV['RAINDOWN_SPEC_TOKEN'] = 'secret'
 
       expect(variables(path: @path).substitute('{base_url} {token}')).to eq('https://staging.a.io secret')
+    end
+
+    it 'adds environments.local.yml, whose values are secrets, written back as their placeholders' do
+      File.write(File.join(File.dirname(@path, 2), '.raindown', 'environments.local.yml'), <<~YAML)
+        local:
+          token: sk-local-123
+        mine:
+          base_url: http://localhost:4000
+      YAML
+      filled = variables(path: @path)
+
+      expect(filled.substitute('{base_url} {token}')).to eq('http://localhost:3000 sk-local-123')
+      expect(filled.redact('{"token": "sk-local-123", "url": "http://localhost:3000"}'))
+        .to eq('{"token": "{token}", "url": "http://localhost:3000"}')
+      ENV['RAINDOWN_ENV'] = 'mine'
+      expect(variables(path: @path).substitute('{base_url}')).to eq('http://localhost:4000')
     end
 
     it 'raises when RAINDOWN_ENV names one that is not there' do
