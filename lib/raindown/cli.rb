@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'open3'
+require 'tmpdir'
 require 'trees'
 require_relative '../raindown'
 require_relative '../version'
@@ -32,7 +34,7 @@ module Raindown
         init [DIRECTORY]    Create a .raindown folder for the project's config and nodes (default: current directory)
         server              Keep Raindown loaded for an editor, answering a JSON request a line on stdin with its HTML,
                             or its Markdown as it would be written back, like --stdin and --stdin --rewrite
-        blueprints            Save the blueprints in Claude Code's last reply to .raindown/blueprints.md, for the terminal
+        blueprints            Save the blueprints in Claude Code's last reply to .raindown/data/blueprints.md, for the terminal
                             UI's Blueprints page, as a Stop hook that's given the hook's JSON
 
       Options:
@@ -52,12 +54,8 @@ module Raindown
       Set RAINDOWN_DEBUG=1 to show where an error happened.
     TEXT
 
-    CONFIG = <<~YAML
-      # Raindown project settings. See https://raindown.dev/docs/config
-      #
-      # Leave code blocks unhighlighted, so the browser can highlight them instead:
-      # highlight_code: false
-    YAML
+    # The files "raindown init" puts in a project's .raindown folder, like "rain new" clones raindeer-template.
+    TEMPLATE_URL = 'https://github.com/rainpour/raindown-init'
 
     # A path opens the terminal UI, or after "watch" it's watched, and with --html or --stdin it's rendered. The flags
     # are keyword arguments, in any order, like -x for x:, and --html is the OUTPUT when it's given one.
@@ -111,16 +109,20 @@ module Raindown
       abort("raindown: #{path}: #{error.message}")
     end
 
-    # Creates the .raindown folder that marks a project's root and holds its config.yml and nodes.
+    # Clones raindown-init into the .raindown folder that marks a project's root and holds its config.yml and nodes,
+    # keeping any files already there.
     def self.init(directory = nil)
       folder = File.join(directory || Dir.pwd, Nodes::FOLDER)
       config = File.join(folder, Config::FILE)
       return puts("#{config} already exists") if File.exist?(config)
 
-      FileUtils.mkdir_p(folder)
-      File.write(config, CONFIG)
-      gitignore = File.join(folder, '.gitignore')
-      File.write(gitignore, "#{EndpointVariables::LOCAL_FILE}\n") unless File.exist?(gitignore)
+      Dir.mktmpdir do |clone|
+        clone_template(clone)
+        FileUtils.mkdir_p(folder)
+        (Dir.children(clone) - ['.git']).each do |name|
+          FileUtils.cp_r(File.join(clone, name), folder) unless File.exist?(File.join(folder, name))
+        end
+      end
       puts "Created #{config}"
       puts 'Put your own nodes in the same folder. See https://raindown.dev/docs/components'
     end
@@ -135,6 +137,11 @@ module Raindown
 
     class << self
       private
+
+      def clone_template(directory)
+        output, status = Open3.capture2e('git', 'clone', '--quiet', '--depth', '1', TEMPLATE_URL, directory)
+        abort("Couldn't clone #{TEMPLATE_URL}:\n#{output}") unless status.success?
+      end
 
       # Endpoints run while formatting, which --stdin skips, so -x can't go with it. --html - prints, like --html.
       def open_path(path, html:, stdin:, bare:, execute:)

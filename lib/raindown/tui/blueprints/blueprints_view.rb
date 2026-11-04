@@ -11,7 +11,7 @@ require_relative 'filter'
 
 module Raindown
   module TUI
-    # The blueprints from Claude Code's replies, in the project's .raindown/blueprints.md, newest first, then those in its
+    # The blueprints from Claude Code's replies, in the project's .raindown/data/blueprints.md, newest first, then those in its
     # code's comments, one at a time, of
     # those its Filter's keywords match, each traced to its code: the arrows move between the boxes drawn in one, or a
     # click on one, the code each box names shows below, Space or another click moving on to

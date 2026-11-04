@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Changed
+
+- `raindown init` clones [raindown-init](https://github.com/rainpour/raindown-init), with the CodeDebt and CodeHealth nodes, and a first blueprint of how Raindown works
+- Feelings, memories and blueprints are kept in `.raindown/data/`, so move them there from `.raindown/`
+
 ## 0.11.0
 
 ### Added

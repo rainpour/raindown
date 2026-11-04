@@ -26,7 +26,7 @@ module Raindown
       end
     end
 
-    # Whether a file is a Markdown Component, by its extension and name, so .raindown/blueprints.md isn't one.
+    # Whether a file is a Markdown Component, by its extension and name, so .raindown/data/blueprints.md isn't one.
     def file?(path)
       EXTENSIONS.include?(File.extname(path)) && File.basename(path, '.*').match?(NAME)
     end

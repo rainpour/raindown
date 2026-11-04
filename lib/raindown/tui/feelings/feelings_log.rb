@@ -22,16 +22,16 @@ module Raindown
       end
     end
 
-    # The feelings everyone's sorted about the code as it is now, kept in .raindown/feelings.csv with the commit they were
+    # The feelings everyone's sorted about the code as it is now, kept in .raindown/data/feelings.csv with the commit they were
     # felt at, which a node can count, like the README's code debt. A feeling about code that's since changed, or gone, moves to
-    # .raindown/memories.csv, so the feelings stay few, and the history's kept.
+    # .raindown/data/memories.csv, so the feelings stay few, and the history's kept.
     class FeelingsLog
       TEMPERS = %w[frolic numb woe dread malice].freeze
       HEADER = %i[timestamp commit checksum location method temper note].freeze
       def initialize(root:)
         @root = root
-        @csv = File.join(root, '.raindown', 'feelings.csv')
-        @memories = File.join(root, '.raindown', 'memories.csv')
+        @csv = File.join(root, '.raindown', 'data', 'feelings.csv')
+        @memories = File.join(root, '.raindown', 'data', 'memories.csv')
       end
 
       # Adds the feeling, as the newest, in place of one about the method before, which moves to the memories if it was

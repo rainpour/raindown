@@ -22,17 +22,20 @@ RSpec.describe Raindown::TUI::BlueprintsView do
   end
 
   def write(name, content)
-    File.join(@root, name).tap { File.write(it, content) }
+    File.join(@root, name).tap do
+      FileUtils.mkdir_p(File.dirname(it))
+      File.write(it, content)
+    end
   end
 
   def blueprint(time, kind, drawing) = "## #{time} · #{kind}\n\n```#{kind}\n#{drawing}\n```\n\n"
-  def file = File.join(@root, '.raindown', 'blueprints.md')
+  def file = File.join(@root, '.raindown', 'data', 'blueprints.md')
 
   it "lists Blueprints once Claude Code's are saved, newest first, the filter moving between them, B opening them, and E editing one" do
     navigator = Raindown::TUI::Navigator.new(root: @root)
     expect(texts(navigator, :nav)).not_to include('🌀 Blueprints')
 
-    write('.raindown/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', '╭─ old ─╮') +
+    write('.raindown/data/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', '╭─ old ─╮') +
                                    blueprint('2026-10-30T02:00:00Z', 'diagram', 'A ─▶ B'))
     navigator.next_step(click(:nav, navigator.content(:nav).rows.index { it.text == '🌀 Blueprints' }))
     expect([view_name(navigator), navigator.view.selected.lines]).to eq(['BlueprintsView', ['A ─▶ B']])
@@ -61,7 +64,7 @@ RSpec.describe Raindown::TUI::BlueprintsView do
   end
 
   it 'filters the blueprints by keywords typed after f, in them or their kind, Enter keeping the filter and Esc clearing it' do
-    write('.raindown/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', 'Weather one') +
+    write('.raindown/data/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', 'Weather one') +
                                      blueprint('2026-10-30T02:00:00Z', 'diagram', 'Rain two') +
                                      blueprint('2026-10-30T03:00:00Z', 'mockup', 'weather three'))
     navigator = Raindown::TUI::Navigator.new(root: @root)
@@ -86,7 +89,7 @@ RSpec.describe Raindown::TUI::BlueprintsView do
   end
 
   it 'moves down through every match in the filter, listing the ten around the selected one' do
-    write('.raindown/blueprints.md', (1..12).map { blueprint(format('2026-10-30T%02d:00:00Z', it), 'mockup', "map #{it}\nmore") }.join)
+    write('.raindown/data/blueprints.md', (1..12).map { blueprint(format('2026-10-30T%02d:00:00Z', it), 'mockup', "map #{it}\nmore") }.join)
     navigator = Raindown::TUI::Navigator.new(root: @root)
     navigator.open_view(navigator.blueprints)
     view = navigator.view
@@ -102,8 +105,8 @@ RSpec.describe Raindown::TUI::BlueprintsView do
   end
 
   it "draws Claude Code's blueprints below the keywords they're filtered by, which open a filter like Teleport's" do
-    FileUtils.mkdir_p(File.join(@root, '.raindown'))
-    File.write(File.join(@root, '.raindown', 'blueprints.md'),
+    FileUtils.mkdir_p(File.join(@root, '.raindown', 'data'))
+    File.write(File.join(@root, '.raindown', 'data', 'blueprints.md'),
                "## 2026-10-30T03:14:07Z · mockup\n\n```mockup\n╭─ Idea ─╮\n╰────────╯\n```\n")
     navigator = Raindown::TUI::Navigator.new(root: @root)
     navigator.open_view(navigator.blueprints)
@@ -129,7 +132,7 @@ RSpec.describe Raindown::TUI::BlueprintsView do
 
   it 'shows the paragraph above a blueprint in the reply as its description, in the text colour, above the drawing' do
     described = "How the watcher\nhears saves.\n\n```mockup\n╭─ Idea ─╮\n╰────────╯\n```\n"
-    write('.raindown/blueprints.md', "## 2026-10-30T03:14:07Z · mockup\n\n#{described}")
+    write('.raindown/data/blueprints.md', "## 2026-10-30T03:14:07Z · mockup\n\n#{described}")
     navigator = Raindown::TUI::Navigator.new(root: @root)
     navigator.open_view(navigator.blueprints)
     lines = Raindown::TUI::Layout.new(navigator, width: 70, height: 22).lines
@@ -145,7 +148,7 @@ RSpec.describe Raindown::TUI::BlueprintsView do
     write('lib/workers.rb', "class Workers\n  def initialize = nil\n\n  def for(path) = path\nend\n")
     drawing = ['╭─────────╮  ╭──────────────╮  ╭──────╮', '│ Workers │──│ Workers#for  │  │ wind │',
                '╰─────────╯  ╰──────────────╯  ╰──────╯']
-    write('.raindown/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'diagram', drawing.join("\n")))
+    write('.raindown/data/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'diagram', drawing.join("\n")))
     navigator = Raindown::TUI::Navigator.new(root: @root)
     navigator.open_view(navigator.blueprints)
     view = navigator.view
@@ -172,7 +175,7 @@ RSpec.describe Raindown::TUI::BlueprintsView do
     FileUtils.mkdir_p(File.join(@root, 'lib'))
     write('lib/workers.rb', "class Workers\n  def initialize = nil\n\n  def for(path) = path\nend\n")
     drawing = "╭──────────────────╮\n│ for, then Workers │\n╰──────────────────╯"
-    write('.raindown/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'diagram', drawing))
+    write('.raindown/data/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'diagram', drawing))
     navigator = Raindown::TUI::Navigator.new(root: @root)
     navigator.open_view(navigator.blueprints)
     view = navigator.view
@@ -189,7 +192,7 @@ RSpec.describe Raindown::TUI::BlueprintsView do
   it "shows a long method's first lines, like Code feelings' code box, and the rest when how many more is clicked, or with Enter" do
     FileUtils.mkdir_p(File.join(@root, 'lib'))
     write('lib/long.rb', "class Long\n  def run\n#{(1..10).map { "    step#{it}\n" }.join}  end\nend\n")
-    write('.raindown/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', "╭──────╮\n│ Long │\n╰──────╯"))
+    write('.raindown/data/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', "╭──────╮\n│ Long │\n╰──────╯"))
     navigator = Raindown::TUI::Navigator.new(root: @root)
     navigator.open_view(navigator.blueprints)
     draw = -> { Raindown::TUI::Layout.new(navigator, width: 80, height: 30).lines }
@@ -206,7 +209,7 @@ RSpec.describe Raindown::TUI::BlueprintsView do
 
   it 'moves up and down to the nearest box above or below, and left and right in reading order' do
     drawing = "╭───╮  ╭───╮\n│ A │  │ B │\n╰───╯  ╰───╯\n╭───╮  ╭───╮\n│ C │  │ D │\n╰───╯  ╰───╯"
-    write('.raindown/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', drawing))
+    write('.raindown/data/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', drawing))
     navigator = Raindown::TUI::Navigator.new(root: @root)
     navigator.open_view(navigator.blueprints)
     view = navigator.view
@@ -220,7 +223,7 @@ RSpec.describe Raindown::TUI::BlueprintsView do
   it 'shows a blueprint on a canvas that follows the selected box, with markers where there is more, and scrolls' do
     far = "#{' ' * 80}╭───────╮\n#{' ' * 80}│ Far   │\n#{' ' * 80}╰───────╯"
     drawing = "╭──────╮\n│ Near │\n╰──────╯\n#{"\n" * 20}#{far}"
-    write('.raindown/blueprints.md',
+    write('.raindown/data/blueprints.md',
           blueprint('2026-10-30T01:00:00Z', 'mockup', drawing) + blueprint('2026-10-30T02:00:00Z', 'mockup', 'small'))
     navigator = Raindown::TUI::Navigator.new(root: @root)
     navigator.open_view(navigator.blueprints)
@@ -244,14 +247,14 @@ RSpec.describe Raindown::TUI::BlueprintsView do
   it "lists every project's saved blueprints, newest first, narrowed to a project's when one's chosen" do
     guides = File.join(@root, 'guides')
     FileUtils.mkdir_p(File.join(guides, '.raindown'))
-    write('.raindown/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', '╭─ root ─╮'))
-    write('guides/.raindown/blueprints.md', blueprint('2026-10-30T02:00:00Z', 'mockup', '╭─ guides ─╮'))
+    write('.raindown/data/blueprints.md', blueprint('2026-10-30T01:00:00Z', 'mockup', '╭─ root ─╮'))
+    write('guides/.raindown/data/blueprints.md', blueprint('2026-10-30T02:00:00Z', 'mockup', '╭─ guides ─╮'))
     view = Raindown::TUI::Navigator.new(root: @root).blueprints
     view.load
 
     expect(view.blueprints.map(&:lines)).to eq([['╭─ guides ─╮'], ['╭─ root ─╮']])
     view.project = guides
-    expect([view.blueprints.map(&:lines), view.selected.path]).to eq([[['╭─ guides ─╮']], 'guides/.raindown/blueprints.md'])
+    expect([view.blueprints.map(&:lines), view.selected.path]).to eq([[['╭─ guides ─╮']], 'guides/.raindown/data/blueprints.md'])
     view.project = nil
     expect(view.blueprints.length).to eq(2)
   end

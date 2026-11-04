@@ -34,7 +34,7 @@ RSpec.describe Raindown::MarkdownNodes do
 
   it 'is only a file named like a component, so blueprints.md is not one' do
     expect(described_class.file?('.raindown/BookCard.md')).to be(true)
-    expect(described_class.file?('.raindown/blueprints.md')).to be(false)
+    expect(described_class.file?('.raindown/data/blueprints.md')).to be(false)
     expect(described_class.file?('.raindown/BookCard.rb')).to be(false)
   end
 end

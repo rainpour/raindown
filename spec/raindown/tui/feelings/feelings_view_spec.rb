@@ -55,7 +55,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
     File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area = 1\n  def side = 4\n  def draw = 3\nend\n")
     view.load
 
-    expect([view.log.rows, File.read(File.join(@root, '.raindown', 'memories.csv'))]).to match([[], include('Square#side,frolic')])
+    expect([view.log.rows, File.read(File.join(@root, '.raindown', 'data', 'memories.csv'))]).to match([[], include('Square#side,frolic')])
     expect(view.batch.felt?(view.code_methods.find { it.name == 'side' })).to be(false)
   end
 

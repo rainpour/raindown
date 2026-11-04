@@ -156,6 +156,20 @@ RSpec.describe Raindown::CLI do
 
     describe 'init' do
       let(:config) { File.join(@dir, '.raindown', 'config.yml') }
+      let(:template) { Dir.mktmpdir }
+
+      # A local raindown-init, so cloning it doesn't need the network.
+      before do
+        File.write(File.join(template, 'config.yml'), "# highlight_code: false\n")
+        File.write(File.join(template, '.gitignore'), "environments.local.yml\n")
+        system('git', '-C', template, 'init', '--quiet', exception: true)
+        system('git', '-C', template, 'add', '-A', exception: true)
+        system('git', '-C', template, '-c', 'user.name=spec', '-c', 'user.email=spec@example.com', 'commit', '--quiet',
+               '-m', 'Template', exception: true)
+        stub_const('Raindown::CLI::TEMPLATE_URL', template)
+      end
+
+      after { FileUtils.rm_rf(template) }
 
       it 'creates a .raindown folder with a config file in the current directory' do
         Dir.chdir(@dir) { expect { described_class.run(['init']) }.to output(/Created .*config\.yml/).to_stdout }
@@ -169,6 +183,15 @@ RSpec.describe Raindown::CLI do
 
         expect(File).to exist(config)
         expect(File.read(File.join(@dir, '.raindown', '.gitignore'))).to eq("environments.local.yml\n")
+        expect(File).not_to exist(File.join(@dir, '.raindown', '.git'))
+      end
+
+      it 'keeps nodes already in the .raindown folder' do
+        FileUtils.mkdir_p(File.dirname(config))
+        File.write(File.join(@dir, '.raindown', '.gitignore'), "secrets.yml\n")
+
+        expect { described_class.run(['init', @dir]) }.to output(/Created/).to_stdout
+        expect(File.read(File.join(@dir, '.raindown', '.gitignore'))).to eq("secrets.yml\n")
       end
 
       it 'keeps an existing config file' do

@@ -132,3 +132,25 @@
              └──────────────────────┘
 ```
 
+## 2026-11-04T11:35:37Z · diagram
+
+**New blueprint** (`data/blueprints.md`): the same README before and after saving.
+
+```diagram
+╭─ README.md ────────────────╮        ╭─ README.md ────────────────╮
+│ # My project               │        │ # My project               │
+│                            │        │                            │
+│ <!-- CodeDebt: -->         │        │ <!-- CodeDebt: -->         │
+│ <!-- :CodeDebt -->         │        │ +1.0 · 2 fixes             │
+│                            │        │ <!-- :CodeDebt -->         │
+│ <!-- toc: -->              │  save  │                            │
+│ <!-- :toc -->              │ ─────▶ │ <!-- toc: -->              │
+│                            │        │ - Install                  │
+│ ## Install                 │        │ - Usage                    │
+│ ## Usage                   │        │ <!-- :toc -->              │
+│                            │        │                            │
+│                            │        │ ## Install                 │
+│                            │        │ ## Usage                   │
+╰────────────────────────────╯        ╰────────────────────────────╯
+```
+

@@ -12,9 +12,9 @@ require 'csv'
 class CodeHealth < Raindown::Stat
   SCORES = { 'frolic' => 1.0, 'numb' => 0.5, 'woe' => 1.0 / 3, 'dread' => 1.0 / 6, 'malice' => 0.0 }.freeze
 
-  # The rows of .raindown/feelings.csv or memories.csv, by name, read again only once the file's changed.
+  # The rows of .raindown/data/feelings.csv or memories.csv, by name, read again only once the file's changed.
   def self.rows(root, name)
-    csv = File.join(root, '.raindown', "#{name}.csv")
+    csv = File.join(root, '.raindown', 'data', "#{name}.csv")
     return [] unless File.exist?(csv)
 
     modified, rows = (@rows ||= {})[csv]

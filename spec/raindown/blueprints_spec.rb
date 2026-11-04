@@ -65,7 +65,7 @@ RSpec.describe Raindown::Blueprints do
     expect(described_class.last_reply(path)).to eq("Drawing.\nDone.")
   end
 
-  it "saves the last reply's blueprints with their kinds to .raindown/blueprints.md, and reads them back newest first" do
+  it "saves the last reply's blueprints with their kinds to .raindown/data/blueprints.md, and reads them back newest first" do
     FileUtils.mkdir_p(File.join(@root, '.raindown'))
     described_class.save('cwd' => @root, 'transcript_path' => transcript(said('user', 'draw'), said('assistant', text(reply))))
     chart = "```\n▁▃▅█ 9\n────\n```"

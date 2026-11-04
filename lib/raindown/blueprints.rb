@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'json'
 require 'time'
 require 'unicode/display_width'
 require_relative 'projects'
 
 module Raindown
-  # Blueprints from Claude Code's replies, kept in a project's .raindown/blueprints.md, which the terminal UI's Blueprints page
+  # Blueprints from Claude Code's replies, kept in a project's .raindown/data/blueprints.md, which the terminal UI's Blueprints page
   # shows, newest first. Each is a code block under a heading of when it was saved and its kind:
   #   ## 2026-10-30T03:14:07Z · mockup
   #
@@ -32,7 +33,7 @@ module Raindown
         "#{time.sub('T', ' ').sub(/:\d\dZ\z/, ' UTC')}#{SEPARATOR}#{kind}"
       end
 
-      # As it's saved in .raindown/blueprints.md, under when it was saved and its kind, then its description.
+      # As it's saved in .raindown/data/blueprints.md, under when it was saved and its kind, then its description.
       def markdown(saved_at)
         about = "#{description}\n\n" if description
         "## #{saved_at}#{SEPARATOR}#{kind}\n\n#{about}```#{kind}\n#{lines.join("\n")}\n```\n\n"
@@ -49,7 +50,7 @@ module Raindown
       def distance(other) = [(top - other.top).abs, (left + right - other.left - other.right).abs]
     end
 
-    FILE = File.join('.raindown', 'blueprints.md')
+    FILE = File.join('.raindown', 'data', 'blueprints.md')
     # The kinds a code block can be marked with to be a blueprint.
     KINDS = %w[mockup diagram chart table other].freeze
     # What a blueprint's drawn with: lines, like boxes' and arrows', and blocks, like charts' bars.
@@ -79,8 +80,7 @@ module Raindown
       return [] unless File.exist?(path)
 
       lines = File.readlines(path, chomp: true)
-      starts = lines.each_index.select { lines[it].start_with?('## ') }
-      starts.filter_map { |start| blueprint(lines, start) }.reverse
+      lines.each_index.select { lines[it].start_with?('## ') }.filter_map { blueprint(lines, it) }.reverse
     end
 
     # Saves the blueprints in Claude Code's last reply, from its Stop hook's JSON, to the project it's working in, if any,
@@ -91,7 +91,8 @@ module Raindown
       return if drawn.empty?
 
       time = Time.now.utc.iso8601
-      File.open(File.join(root, FILE), 'a') { |file| drawn.each { file.write(it.markdown(time)) } }
+      path = File.join(root, FILE).tap { FileUtils.mkdir_p(File.dirname(it)) }
+      File.open(path, 'a') { |file| drawn.each { file.write(it.markdown(time)) } }
     end
 
     # The text's code blocks that are blueprints, each with its kind and the paragraph above it.

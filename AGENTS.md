@@ -38,8 +38,8 @@ mise exec -- bundle exec bin/raindown README.md --html /dev/null
 
 Don't edit these by hand unless you're asked to:
 
-- `.raindown/feelings.csv` and `.raindown/memories.csv`, which Code feelings writes.
-- `.raindown/blueprints.md`, which `raindown blueprints` writes from Claude Code's replies.
+- `.raindown/data/feelings.csv` and `.raindown/data/memories.csv`, which Code feelings writes.
+- `.raindown/data/blueprints.md`, which `raindown blueprints` writes from Claude Code's replies.
 
 ## Working on Raindown
 

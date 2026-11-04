@@ -23,7 +23,7 @@ RSpec.describe Raindown::TUI::FeelingsLog do
 
   def feeling(temper, note = nil, about: method) = Raindown::TUI::Feeling.new(method: about, temper:, note:)
 
-  it 'notes each feeling down in .raindown/feelings.csv, when in UTC, with its code\'s checksum, and counts them by temper' do
+  it 'notes each feeling down in .raindown/data/feelings.csv, when in UTC, with its code\'s checksum, and counts them by temper' do
     log.add(feeling('malice', 'two negations | and a hidden @rows'))
     log.add(feeling('numb', about: other))
 
@@ -34,7 +34,8 @@ RSpec.describe Raindown::TUI::FeelingsLog do
     expect(log.rows.map { it[:timestamp] }).to all(match(/\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\z/))
   end
 
-  def memories = CSV.read(File.join(@root, '.raindown', 'memories.csv'), headers: true).map { it.to_h.values_at('method', 'temper') }
+  def memories = CSV.read(File.join(@root, '.raindown', 'data', 'memories.csv'), headers: true)
+                    .map { it.to_h.values_at('method', 'temper') }
 
   it "replaces a feeling about a method whose code hasn't changed, and moves it to the memories once the code has" do
     log.add(feeling('malice'))
@@ -62,10 +63,11 @@ RSpec.describe Raindown::TUI::FeelingsLog do
     expect(memories.length).to eq(2)
   end
 
-  it 'writes only .raindown/feelings.csv' do
+  it 'writes only .raindown/data/feelings.csv' do
     log.add(feeling('woe'))
 
-    expect(Dir.glob('**/*', File::FNM_DOTMATCH, base: @root).select { File.file?(File.join(@root, it)) }).to eq(['.raindown/feelings.csv'])
+    expect(Dir.glob('**/*', File::FNM_DOTMATCH, base: @root).select { File.file?(File.join(@root, it)) })
+      .to eq(['.raindown/data/feelings.csv'])
   end
 
   it 'asks Claude Code to refactor the method, with how it felt' do
@@ -96,7 +98,7 @@ RSpec.describe Raindown::TUI::FeelingsLogs do
     logs.add(feeling('frolic', projects.last))
 
     expect(Dir.glob('**/*.csv', File::FNM_DOTMATCH, base: @dir))
-      .to contain_exactly('docs/.raindown/feelings.csv', 'site/.raindown/feelings.csv')
+      .to contain_exactly('docs/.raindown/data/feelings.csv', 'site/.raindown/data/feelings.csv')
     expect(logs.counts.values_at('woe', 'frolic')).to eq([1, 1])
     expect(logs.temper(feeling(nil, projects.last).method)).to eq('frolic')
     expect(logs.counts(within: projects.last).values_at('woe', 'frolic')).to eq([0, 1])

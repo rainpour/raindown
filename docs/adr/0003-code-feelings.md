@@ -74,18 +74,18 @@ The grid shows one **batch** of files a week, like the files the refiners work t
 
 ### Remembering what's been felt
 
-Each feeling is a row in **`.raindown/feelings.csv`**: its `timestamp`, when it was felt, in UTC, like `2026-10-30T03:14:07Z`, the `commit`, **a `checksum` of its code** (`CodeMethod#checksum`), the method's `location`, its file and line, the `method`'s name, the `temper` and the `note`, in that order. The checksum is a CRC of its lines, leaving out indentation, trailing spaces and blank lines.
+Each feeling is a row in **`.raindown/data/feelings.csv`**: its `timestamp`, when it was felt, in UTC, like `2026-10-30T03:14:07Z`, the `commit`, **a `checksum` of its code** (`CodeMethod#checksum`), the method's `location`, its file and line, the `method`'s name, the `temper` and the `note`, in that order. The checksum is a CRC of its lines, leaving out indentation, trailing spaces and blank lines.
 
 - **A method counts as felt** when a row matches its file, name and checksum (`FeelingsLog#felt?`). Line numbers are ignored, so a method that moves within its file stays felt.
 - **When its code changes,** a method comes back into the grid to be felt again. That's what happens after `x` has Claude Code fix it.
 - **Feeling an unchanged method again replaces its row,** as the newest, so only its latest feeling counts.
-- **Feelings about code that's changed, or gone, move to `.raindown/memories.csv`** (`FeelingsLog#move_stale_to_memories`), with the same columns. It runs whenever Code feelings reads the code, when it opens and after an edit or a fix, and when a changed method is felt again. So `feelings.csv` only says how the code feels now, and the bins and the README's code debt count only that, while the memories keep the history. It isn't trimmed to the week's batch: a method felt in an earlier week, whose code hasn't changed, stays felt.
+- **Feelings about code that's changed, or gone, move to `.raindown/data/memories.csv`** (`FeelingsLog#move_stale_to_memories`), with the same columns. It runs whenever Code feelings reads the code, when it opens and after an edit or a fix, and when a changed method is felt again. So `feelings.csv` only says how the code feels now, and the bins and the README's code debt count only that, while the memories keep the history. It isn't trimmed to the week's batch: a method felt in an earlier week, whose code hasn't changed, stays felt.
 
 Nothing else is stored. Which methods are felt, and so which files a batch picks, comes from the CSV, and a team that commits it shares its progress.
 
 ### Counting the feelings
 
-The TUI writes nothing but `.raindown/feelings.csv`. The README counts it instead, with two `Raindown::Stat` nodes in `.raindown`, which the Dashboard shows as cards too. Both use one scale, so they can't disagree:
+The TUI writes nothing but `.raindown/data/feelings.csv`. The README counts it instead, with two `Raindown::Stat` nodes in `.raindown`, which the Dashboard shows as cards too. Both use one scale, so they can't disagree:
 
 | frolic | numb | woe | dread | malice |
 | ------ | ---- | --- | ----- | ------ |
@@ -148,7 +148,7 @@ Rouge is pure Ruby, ships its languages, and runs on every OS and build Raindown
 ## Consequences
 
 - **Its code lives in `lib/raindown/tui/feelings/`,** apart from the other views and renderers: its view and renderer, the renderer's bins and code box, the log, the batches, and method snippets. Its specs mirror it in `spec/raindown/tui/feelings/`. The `Highlighter` stays in `lib/raindown/tui/`, as the outline and endpoints use it too.
-- **It writes into the project it's run on:** `.raindown/feelings.csv` and `.raindown/memories.csv`. Teams will want to commit them on purpose.
+- **It writes into the project it's run on:** `.raindown/data/feelings.csv` and `.raindown/data/memories.csv`. Teams will want to commit them on purpose.
 - **Memories depend on finding the same methods.** A feeling moves when its method isn't found with the same file, name and code, so switching between Ctags and the indentation fallback, which can name methods differently, can move feelings that are still true.
 - **Rouge is a new runtime dependency** (`~> 5.1`). It's pure Ruby, so installing Raindown still needs no native code beyond curses. It takes about a third of a second to load, so the TUI loads it as it starts, rather than whenever Raindown is required, since nothing else highlights code.
 - **Universal Ctags and Claude Code are optional.** Without Ctags, the indentation fallback is rougher for code that isn't indented in blocks. Without Claude Code, `x` only shows a message.
