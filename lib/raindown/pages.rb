@@ -13,8 +13,8 @@ module Raindown
   #   folder: basics, order: 1, path: docs/_basics/_1-getting-started.md
   # Folder tags can share a folder name with "&", like docs/_1&_basics/getting-started.md.
   # An app can add its own metadata by subclassing and overriding implicit_metadata, like Raindeer's URL paths.
-  # Each file's front matter is only read once something lists the files, and it's kept for as long as the process runs,
-  # like "raindown server", until the file changes.
+  # Each file's front matter is only read once something lists the files. The listing and the front matter are kept for
+  # as long as the process runs, like "raindown server", until they change.
   class Pages
     EXTENSIONS = %w[md rd markdown raindown].freeze
     SEGMENTS = Regexp.union(['/', '&', '-'])
@@ -31,11 +31,30 @@ module Raindown
         load(root: Nodes.find_folder(file_directory)&.then { File.dirname(it) } || file_directory)
       end
 
-      # Lists the files under the root with Dirload, without loading them.
+      # Lists the files under the root, without loading them, for Dirload.
       def load(root:)
         require 'dirload'
-        file_types = Dirload.file_paths(absolute_path: root).group_by { Dirload.extension(file_path: it) }
+        file_types = file_paths(root).group_by { Dirload.extension(file_path: it) }
         new(metadata: Dirload::Metadata.new(loaded_paths: {}, missed_paths: [], file_types:), root:)
+      end
+
+      # The files under the root, outside hidden folders, like Dirload lists them. They're listed again once a folder
+      # among them has changed, which adding, removing or renaming a file or folder in it does.
+      def file_paths(root)
+        listing = listings[root]
+        return listing[:file_paths] if listing&.dig(:folders)&.all? { |folder, modified| modified_at(folder) == modified }
+
+        folders, file_paths = Dir["#{root}/**/*"].partition { File.directory?(it) }
+        listings[root] = { file_paths:, folders: [root, *folders].to_h { [it, modified_at(it)] } }
+        file_paths
+      end
+
+      def listings
+        @listings ||= {}
+      end
+
+      def modified_at(path)
+        File.mtime(path) if File.exist?(path)
       end
     end
 

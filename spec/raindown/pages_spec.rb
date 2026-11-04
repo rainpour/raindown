@@ -112,4 +112,32 @@ RSpec.describe Raindown::Pages do
     expect(File.read(path)).to start_with("files: folder: 'basics'\n- [A](docs/_basics/_1-a.md)\n")
     expect(File.read(File.join(@root, 'index.html'))).to include('<a href="docs/_basics/_1-a.md">A</a>', '<h2 id="a">A')
   end
+
+  describe 'kept listings' do
+    def paths
+      pages.list.map { it.metadata[:path] }
+    end
+
+    it 'lists files again once one is added, removed or renamed, in any folder' do
+      write('a.md', "# A\n")
+      write('notes/b.md', "# B\n")
+      expect(paths).to eq(%w[a.md notes/b.md])
+
+      write('notes/new/c.md', "# C\n")
+      File.delete(File.join(@root, 'a.md'))
+      expect(paths).to eq(%w[notes/b.md notes/new/c.md])
+
+      File.rename(File.join(@root, 'notes/b.md'), File.join(@root, 'notes/d.md'))
+      expect(paths).to eq(%w[notes/d.md notes/new/c.md])
+    end
+
+    it "reads a file's front matter again once it changes" do
+      write('a.md', "---\ntitle: First\n---\n")
+      expect(pages.list.first.title).to eq('First')
+
+      write('a.md', "---\ntitle: Second\n---\n")
+      File.utime(Time.now + 5, Time.now + 5, File.join(@root, 'a.md'))
+      expect(pages.list.first.title).to eq('Second')
+    end
+  end
 end
