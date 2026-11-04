@@ -13,11 +13,18 @@ module Raindown
   #   folder: basics, order: 1, path: docs/_basics/_1-getting-started.md
   # Folder tags can share a folder name with "&", like docs/_1&_basics/getting-started.md.
   # An app can add its own metadata by subclassing and overriding implicit_metadata, like Raindeer's URL paths.
+  # Each file's front matter is only read once something lists the files, and it's kept for as long as the process runs,
+  # like "raindown server", until the file changes.
   class Pages
     EXTENSIONS = %w[md rd markdown raindown].freeze
     SEGMENTS = Regexp.union(['/', '&', '-'])
 
     class << self
+      # Each file's front matter, by its path, with the time it was modified when it was read.
+      def front_matters
+        @front_matters ||= {}
+      end
+
       # The Markdown files under a project's root, the folder with its .raindown folder or else the file's folder.
       def for(path)
         file_directory = File.dirname(File.expand_path(path))
@@ -39,10 +46,6 @@ module Raindown
       @root = root
       @render_options = render_options
       @file_paths = metadata.file_types.values_at(*EXTENSIONS).flatten.compact
-      @metadata = {}
-      @tags = {}
-
-      @file_paths.each { |file_path| process(file_path:) }
     end
 
     # The files with any of the tags, like list(folder: 'basics') or list(tags: 'ruby'), sorted by order.
@@ -53,19 +56,44 @@ module Raindown
     end
 
     def tagged(**tags)
-      tags.flat_map { |type, tag| @tags.dig(type.to_sym, tag) || [] }.uniq
+      tags.flat_map { |type, tag| self.tags.dig(type.to_sym, tag) || [] }.uniq
     end
 
     private
 
+    def metadata
+      process_files unless @metadata
+      @metadata
+    end
+
+    def tags
+      process_files unless @tags
+      @tags
+    end
+
+    def process_files
+      @metadata = {}
+      @tags = {}
+      @file_paths.each { |file_path| process(file_path:) }
+    end
+
     def listed_page(file_path)
-      Page.new(file_path:, metadata: @metadata[file_path], render_options: @render_options)
+      Page.new(file_path:, metadata: metadata[file_path], render_options: @render_options)
     end
 
     def process(file_path:)
-      metadata = implicit_metadata(file_path:).merge(FrontMatter.parse(Utils.read_markdown(file_path)).first)
+      metadata = implicit_metadata(file_path:).merge(front_matter(file_path))
       @metadata[file_path] = metadata
       metadata.each { |type, tag| Array(tag).each { |item| tag(type:, tag: item, file_path:) } }
+    end
+
+    # The file's front matter, read again only when the file's changed since it was last read.
+    def front_matter(file_path)
+      modified = File.mtime(file_path)
+      modified_then, front_matter = self.class.front_matters[file_path]
+      return front_matter if modified_then == modified
+
+      FrontMatter.parse(Utils.read_markdown(file_path)).first.tap { self.class.front_matters[file_path] = [modified, it] }
     end
 
     # The path is relative to the root, like docs/_basics/_1-getting-started.md.
@@ -104,8 +132,8 @@ module Raindown
 
     # Files with an order come first, by order, then the rest by path.
     def sort_key(file_path)
-      order = @metadata[file_path][:order]
-      [order.is_a?(Numeric) ? 0 : 1, order.is_a?(Numeric) ? order : 0, @metadata[file_path][:path].to_s]
+      order = metadata[file_path][:order]
+      [order.is_a?(Numeric) ? 0 : 1, order.is_a?(Numeric) ? order : 0, metadata[file_path][:path].to_s]
     end
   end
 end
