@@ -7,14 +7,11 @@ require_relative 'bins'
 require_relative 'feelings_code_box'
 require_relative 'magnifier'
 require_relative 'motion'
-require_relative 'celebration/scene'
-require_relative 'waffle/waffle'
 
 module Raindown
   module TUI
     # Code feelings, right of the files: the methods as clusters of digits in a grid, with the selected one highlighted
     # and its code below, then why it felt that way while that's typed, then the five bins and how many each holds.
-    # When the batch is refined, it rains over them, then there's a waffle:
     #     0  0  2  2  2  5  5  9  9  9  9  1
     #     1  3  3  7  7  7  6  4  4  0  8  8
     #    ╭─ lib/text.rb:62 · Text#segments_between ──────────── changed 6× ─╮
@@ -29,7 +26,6 @@ module Raindown
       include FeelingsCodeBox
       include Magnifier
       include Motion
-      include Waffle
 
       # The columns a cell takes, on a line of its own, its digit small in the middle, which is magnified in a stat's block
       # digits across the cell and over the cells above and below it when the mouse is over its method.
@@ -66,7 +62,7 @@ module Raindown
         return too_small if too_small?
 
         cells = view.cells(columns, filled_rows)
-        return instead if view.code_methods.empty? || view.celebration
+        return instead if view.code_methods.empty?
 
         below = [*code_box, *bins]
         (grid(cells, below.length) + below).first(height)
@@ -76,20 +72,11 @@ module Raindown
 
       def view = navigator.view
 
-      # Instead of the grid, that there's nothing to feel, as there are no projects or no methods, or the celebration.
+      # Instead of the grid, that there's nothing to feel, as there are no projects or no methods.
       def instead
         return alert(NO_PROJECTS) if navigator.projects.empty?
-        return alert(["No functions or methods in #{File.basename(navigator.root)} to feel."]) if view.code_methods.empty?
 
-        celebration(view.celebration)
-      end
-
-      # Rain and fireworks over the pane when the batch is refined, then a waffle popping out, among confetti, balloons and
-      # sparkles.
-      def celebration(celebration)
-        return Scene.new(width:, height:).lines(celebration.frame) if celebration.raining?
-
-        waffle(Scene.new(width:, height:, animations: [Confetti, Balloons, Sparkles]).lines(celebration.popping), celebration.popping)
+        alert(["No functions or methods in #{File.basename(navigator.root)} to feel."])
       end
 
       # The rows of the grid around the selected method's, between blank lines that leave the first and last rows room to

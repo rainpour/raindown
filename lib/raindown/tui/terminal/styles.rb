@@ -2,6 +2,8 @@
 
 require 'curses'
 
+require_relative '../cloud'
+
 module Raindown
   module TUI
     # The curses attributes of a Layout's styles. Text is periwinkle where there are 256 colours, and the terminal's own
@@ -92,7 +94,7 @@ module Raindown
       def colored
         in_text_color.merge(
           title: pair(:title) | Curses::A_BOLD, directive: pair(:directive), error: pair(:error) | Curses::A_BOLD,
-          button: pair(:button) | Curses::A_BOLD, **selections, **emphasis, **dividers, **code_tokens, **bright, **files,
+          button: pair(:button) | Curses::A_BOLD, **selections, **emphasis, **dividers, **code_tokens, **bright, **cloud, **files,
           **unfocused
         )
       end
@@ -130,6 +132,8 @@ module Raindown
       # The bright colours, bold, so they're bright in 8 colours too.
       def bright = BRIGHT.keys.to_h { [it, pair(it) | Curses::A_BOLD] }
 
+      def cloud = Cloud.styles.to_h { [it, pair(it)] }
+
       # The lines between the panes and beneath the title.
       def dividers = { divider: pair(:divider) }
 
@@ -156,11 +160,19 @@ module Raindown
          *(many ? METHODS : BASIC_METHODS).map { |name, color| [:"method_#{name}", color, -1] },
          *(many ? CODE.merge(BRIGHT, FEELINGS, ACCENTS) : BASIC_CODE.merge(BASIC_BRIGHT, BASIC_FEELINGS, BASIC_ACCENTS))
            .map { |name, color| [name, color, -1] },
+         *cloud_pairs,
          [:text, text, -1],
          [:selected, white, blues[:selected]], [:felt_selected, white, blues[:felt]], [:too_small, white, many ? DARK_RED : Curses::COLOR_RED],
          [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
          [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, blues[:line], -1],
          [:shine, white, -1]]
+      end
+
+      # The rain cloud's blues while the terminal UI loads, each the 256 colour its style's named after, or cyan with 8.
+      def cloud_pairs
+        return Cloud.styles.map { [it, Curses::COLOR_CYAN, -1] } if Curses.colors < 256
+
+        Cloud.styles.map { [it, it.to_s.delete_prefix('cloud_').to_i, -1] }
       end
 
       def pair(name)

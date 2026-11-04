@@ -5,6 +5,7 @@ require_relative 'text'
 require_relative 'title'
 require_relative 'project_box'
 require_relative 'search_box'
+require_relative 'feelings/celebration/celebration_renderer'
 
 module Raindown
   module TUI
@@ -49,7 +50,7 @@ module Raindown
       def lines
         return [status].first(height) if height < CHROME_HEIGHT + 1
 
-        overlaid([title, *panes, status, button_bar])
+        celebration || overlaid([title, *panes, status, button_bar])
       end
 
       # A third of the width, within NAV_WIDTH, and never more than half of a narrow screen.
@@ -58,6 +59,12 @@ module Raindown
       end
 
       private
+
+      # Code feelings' celebration over the whole screen, while it's on.
+      def celebration
+        celebration = navigator.feelings.celebration
+        CelebrationRenderer.new(celebration, width, height).lines if celebration
+      end
 
       # The project menu or Teleport, drawn over the lines while it's open.
       def overlaid(lines)

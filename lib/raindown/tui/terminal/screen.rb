@@ -3,6 +3,7 @@
 require 'curses'
 
 require_relative 'input'
+require_relative 'loading'
 require_relative '../layout'
 require_relative 'ncurses_shim'
 require_relative 'quiet'
@@ -15,15 +16,16 @@ module Raindown
     # Only this class draws on the terminal, so another library could draw the same Layout.
     class Screen
       prepend TerminalTitle
+      prepend Loading
 
       # How often, in milliseconds, the screen's drawn, and the open file checked for changes, while no key is pressed, by
       # the view's pace, from when the last frame started drawing: every half second while it's active, at 12 frames a
       # second while it's reactive, just faster than Code feelings' digits tremble, and at 20 during an animation.
       TICKS = { active: 500, reactive: 83, animation: 50 }.freeze
 
-      def initialize(navigator)
-        @navigator = navigator
-        @zones = []
+      # Loading makes the Navigator, while the rain cloud's drawn.
+      def initialize(&loading)
+        @loading = loading
       end
 
       def run
@@ -89,8 +91,7 @@ module Raindown
         Curses.close_screen
       end
 
-      def draw
-        lines = Layout.new(@navigator, width: Curses.cols, height: Curses.lines).lines
+      def draw(lines = Layout.new(@navigator, width: Curses.cols, height: Curses.lines).lines)
         @zones = Input.zones(lines)
         window = Curses.stdscr
         window.erase

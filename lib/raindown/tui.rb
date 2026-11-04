@@ -27,12 +27,16 @@ module Raindown
       # so two projects' nodes of the same name stay apart.
       workers = Project.workers(root:, bare:, execute:)
 
-      # Rouge loads here, rather than with Raindown, which doesn't highlight code outside the TUI.
-      require 'rouge'
-      # Saved files are written back, like when the folder's watched.
-      require_relative 'tui/saves'
-      saves = Saves.new(root)
-      Screen.new(Navigator.new(root:, path: (path unless File.directory?(path)), workers:, saves:, runs_endpoints: execute)).run
+      saves = nil
+      Screen.new do
+        # Rouge loads here, rather than with Raindown, which doesn't highlight code outside the TUI, while the screen shows
+        # the rain cloud.
+        require 'rouge'
+        # Saved files are written back, like when the folder's watched.
+        require_relative 'tui/saves'
+        saves = Saves.new(root)
+        Navigator.new(root:, path: (path unless File.directory?(path)), workers:, saves:, runs_endpoints: execute)
+      end.run
       true
     ensure
       saves&.stop
