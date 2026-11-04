@@ -1,4 +1,4 @@
-<a href="https://rubygems.org/gems/raindown" title="Install gem"><img src="https://badge.fury.io/rb/raindown.svg" alt="Gem version" height="18"></a> <a href="https://github.com/raindeer-rb/raindown" title="GitHub"><img src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white" alt="GitHub repo" height="18"></a> <a href="https://codeberg.org/Iow/raindown" title="Codeberg"><img src="https://img.shields.io/badge/Codeberg-2185D0?style=for-the-badge&logo=Codeberg&logoColor=white" alt="Codeberg repo" height="18"></a>
+<a href="https://rubygems.org/gems/raindown" title="Install gem"><img src="https://badge.fury.io/rb/raindown.svg" alt="Gem version" height="18"></a> <a href="https://github.com/rainpour/raindown" title="GitHub"><img src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white" alt="GitHub repo" height="18"></a> <a href="https://codeberg.org/Iow/raindown" title="Codeberg"><img src="https://img.shields.io/badge/Codeberg-2185D0?style=for-the-badge&logo=Codeberg&logoColor=white" alt="Codeberg repo" height="18"></a>
 
 # Raindown
 
@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -185 █████████│█████████████████████▏ +440
+Total    -119 ███████████│███████████████████▏ +210
 ───────────────────────────────────────────────────
-6d5e358    -8         ▐│█▍                      +29
-06a5d98   -98     █████│███████▎               +152
-a791ed4    -5         ▕│▎                        +5
-ff00e63    -1         ▕│▏                        +1
-80f237e   -73      ▐███│████████████▏          +253
+e4b2d43    -1           ▕│█▋                    +18
+0a24319    -1           ▕│▏                      +1
+902518a   -14          ▕█│███▏                  +34
+06a5d98   -98   █████████│█████████████▉       +152
+a791ed4    -5           ▐│▌                      +5
 ```
 <!-- :Commits -->
 
@@ -230,7 +230,7 @@ author:
 tags: [ruby, markdown]
 links:
   docs: https://raindown.dev
-  code: https://github.com/raindeer-rb/raindown
+  code: https://github.com/rainpour/raindown
 draft: false
 ---
 
@@ -493,7 +493,7 @@ The [VS Code extension](vscode/) highlights syntax and previews Raindown files w
 
 ### Standalone binaries
 
-Each [GitHub release](https://github.com/raindeer-rb/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed, except on Alpine and other musl distros, which need `libgcc` and ncurses (`apk add libgcc ncurses-libs`). Other Linux binaries use the system's ncurses, which most distros include.
+Each [GitHub release](https://github.com/rainpour/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed, except on Alpine and other musl distros, which need `libgcc` and ncurses (`apk add libgcc ncurses-libs`). Other Linux binaries use the system's ncurses, which most distros include.
 
 To build one for your own machine, [install Tebako](https://github.com/tamatebako/tebako#installation) and run:
 

@@ -14,11 +14,11 @@ Gem::Specification.new do |spec|
     and an annotation framework for Markdown files.
   TEXT
 
-  spec.homepage = 'https://github.com/raindeer-rb/raindown'
+  spec.homepage = 'https://github.com/rainpour/raindown'
   spec.required_ruby_version = '>= 3.4.2'
 
   spec.metadata['homepage_uri'] = spec.homepage
-  spec.metadata['source_code_uri'] = 'https://github.com/raindeer-rb/raindown/src/branch/main'
+  spec.metadata['source_code_uri'] = 'https://github.com/rainpour/raindown/tree/main'
 
   # Specify which files should be added to the gem when it is released.
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
