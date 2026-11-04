@@ -16,6 +16,9 @@ module Raindown
   class Document
     Heading = Data.define(:level, :text, :line)
 
+    # Its Markdown, and whether it allows bare directives.
+    attr_reader :markdown, :bare
+
     # A content directive: a node, like toc: or a project's Changelog:, or an endpoint.
     # It spans line to end_line, its end tag, or the last line of a bare block.
     # Body is the lines inside it, between it and its end tag, like an endpoint's request and response.

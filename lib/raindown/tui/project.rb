@@ -46,7 +46,7 @@ module Raindown
 
       # A file's lines, headings and directives.
       def outline(path)
-        document = Document.read(path, bare: @bare)
+        document = document(path)
         Outline.new(lines: File.readlines(path, chomp: true), headings: document.headings, directives: document.directives)
       end
 
@@ -66,9 +66,12 @@ module Raindown
       # the ones whose snippet can't be read.
       def endpoints
         Projects.files(root).flat_map do |path|
-          lines = Utils.read_markdown(path).lines
-          runnable = Document.read(path, bare: @bare).directives.select { it.endpoint? && it.writes }
-          runnable.filter_map { |directive| endpoint(path, lines, directive) }
+          document = document(path)
+          # Most files have no endpoint, so they aren't parsed for one.
+          next [] unless document.markdown.include?('endpoint')
+
+          runnable = document.directives.select { it.endpoint? && it.writes }
+          runnable.filter_map { |directive| endpoint(path, document.markdown.lines, directive) }
         rescue StandardError
           []
         end
@@ -96,17 +99,26 @@ module Raindown
       end
 
       def charts_in(path)
-        content = Utils.read_markdown(path)
-        bare = @bare || BareDirectives.enabled?(path:, content:)
-        lines = content.lines
-        headings = Document.parse(content, bare:).headings
-
-        NodeBlocks.find(lines, front_matter: FrontMatter.parse(content).first, bare:)
+        document = document(path)
+        lines = document.markdown.lines
+        # Its headings are only parsed when it has a chart, as most files don't.
+        NodeBlocks.find(lines, front_matter: FrontMatter.parse(document.markdown).first, bare: document.bare)
                   .select { it[:node].respond_to?(:card_lines) }
-                  .map { |block| chart(block, path:, lines:, headings:) }
+                  .map { |block| chart(block, path:, lines:, headings: document.headings) }
       rescue StandardError => e
         @file_errors << "#{path.delete_prefix(File.join(root, ''))}: #{e.message}"
         []
+      end
+
+      # The file's Document, read and parsed again only once the file's changed, so its endpoints, charts and outline
+      # share it, and finding them again only parses the files that changed.
+      def document(path)
+        stat = File.stat(path)
+        changed = [stat.mtime, stat.size]
+        cached_at, document = (@documents ||= {})[path]
+        return document if cached_at == changed
+
+        Document.read(path, bare: @bare).tap { @documents[path] = [changed, it] }
       end
 
       def drawn
