@@ -61,10 +61,12 @@ module Raindown
     attr_reader :root
 
     # Render options, like highlight_code: false, are for rendering each listed file's content.
-    def initialize(metadata:, root:, render_options: {})
+    # Eager reads every file's front matter straight away, for an app like Raindeer that needs all of it from the start.
+    def initialize(root:, metadata:, render_options: {}, eager: false)
       @root = root
       @render_options = render_options
       @file_paths = metadata.file_types.values_at(*EXTENSIONS).flatten.compact
+      load_metadata if eager
     end
 
     # The files with any of the tags, like list(folder: 'basics') or list(tags: 'ruby'), sorted by order.
@@ -81,16 +83,16 @@ module Raindown
     private
 
     def metadata
-      process_files unless @metadata
+      load_metadata unless @metadata
       @metadata
     end
 
     def tags
-      process_files unless @tags
+      load_metadata unless @tags
       @tags
     end
 
-    def process_files
+    def load_metadata
       @metadata = {}
       @tags = {}
       @file_paths.each { |file_path| process(file_path:) }

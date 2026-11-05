@@ -17,6 +17,7 @@ Minor features that don't break backwards compatibility are released as patches.
 - The terminal UI shows Raindown's rain cloud while it loads
 - `table:` writes a CSV or TSV file as a Markdown table, and writes edits to the table back to the file
 - A node's `replace` can take `written:`, the lines it wrote last time
+- `Pages.new(eager: true)` reads every file's front matter straight away, for an app like Raindeer that needs all of it
 
 ## 0.12.0
 
