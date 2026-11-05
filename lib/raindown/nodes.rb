@@ -6,6 +6,7 @@ require_relative 'js/js_nodes'
 require_relative 'markdown_nodes'
 require_relative 'node'
 require_relative 'stat'
+require_relative 'table/table'
 require_relative 'toc'
 
 module Raindown
@@ -13,11 +14,12 @@ module Raindown
   # A project keeps them in a .raindown folder, which is loaded with Dirload, beside its JavaScript and Markdown
   # Components, if any.
   # A node writes Markdown with #replace, and HTML with #render if it has one. Either can take the keywords
-  # document: (the Markdown being rendered), metadata: and bare:, and gets the ones it asks for.
+  # document: (the Markdown being rendered), metadata:, bare: and written: (the lines it wrote last time), and gets the
+  # ones it asks for.
   module Nodes
     FOLDER = '.raindown'
-    # Lowercase directives for Raindown's own nodes. A project's own TOC, Files or Chart node replaces Raindown's.
-    BUILT_INS = { 'toc' => 'TOC', 'files' => 'Files', 'chart' => 'Chart' }.freeze
+    # Lowercase directives for Raindown's own nodes. A project's own TOC, Files, Chart or Table node replaces Raindown's.
+    BUILT_INS = { 'toc' => 'TOC', 'files' => 'Files', 'chart' => 'Chart', 'table' => 'Table' }.freeze
     # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers.
     PLACEHOLDER = /<!-- raindown:node (\d+) -->/
 

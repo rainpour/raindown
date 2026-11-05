@@ -35,7 +35,8 @@ module Raindown
     private
 
     def block_lines(lines, block)
-      markdown = Nodes.call(block[:node], :replace, document: @content, metadata: @metadata, bare: @bare).to_s.chomp
+      context = { document: @content, metadata: @metadata, bare: @bare, written: written_lines(lines, block) }
+      markdown = Nodes.call(block[:node], :replace, **context).to_s.chomp
       written = markdown.empty? ? [] : "#{markdown}\n".lines
       return [line(lines[block[:open]]), *bare(written, block)] unless block[:close]
 
@@ -52,6 +53,11 @@ module Raindown
 
       name = block[:node].class.name
       raise BlankLine, "#{name} writes blank lines, so it needs <!-- #{name}: --> and <!-- :#{name} --> around it"
+    end
+
+    # What the block's node wrote last time, between its directive and its end tag, or the next blank line.
+    def written_lines(lines, block)
+      lines[(block[:open] + 1)...(block[:close] || (block[:last] + 1))]
     end
 
     def line(line)

@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -161 ▐██████│███████████████████████▍ +574
+Total    -269 ▐████████│█████████████████████▍ +665
 ───────────────────────────────────────────────────
-ac71363   -11       ▐│██▍                       +59
-38af1d1   -43      ██│██████████████           +343
-80f68a1    -2       ▕│▏                          +2
-58e8e22   -65     ▐██│█████▍                   +133
-e1af8c6   -40      ▐█│█▌                        +37
+e78b5cc  -148     █████│████▏                  +128
+ac71363   -11         ▐│█▉                      +59
+38af1d1   -43        ▐█│███████████            +343
+80f68a1    -2         ▕│▏                        +2
+58e8e22   -65       ▕██│████▎                  +133
 ```
 <!-- :Commits -->
 
@@ -109,7 +109,7 @@ Shape how the Markdown around them renders, like Liquid or Jinja: [variables](#v
 
 #### Content directives
 
-Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [files](#files-and-lists) with `files:`, [charts](#charts) with `chart:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they only render into the HTML, and write nothing into the file.
+Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [files](#files-and-lists) with `files:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they only render into the HTML, and write nothing into the file.
 
 ### Raindown files
 
@@ -336,12 +336,27 @@ end
 
 Then `<!-- Issues: -->` and `<!-- :Issues -->` in a file write it there. An opening tag needs its colon, even without props.
 
+### Tables
+
+A `table:` block writes a CSV or TSV file, relative to the project, as a Markdown table, after a comment of how many rows it has and a hash of them:
+
+````md
+table: 'data/team.csv'
+<!-- table 2 rows · 3f2a9c -->
+| name | role     |
+| ---- | -------- |
+| Ada  | engineer |
+| Lin  | design   |
+````
+
+Edit the table, like changing a cell or adding a row, and Raindown writes its rows back to the file. Edit the file and the table's written again. The hash is of the rows as they were when the table and the file last matched, so Raindown can tell which one changed. When both did, neither is written, and the comment reads `<!-- table conflict · 3f2a9c -->` until they match again. To keep the file's rows instead, delete the comment, or empty the table. A `|` in a cell is written as `\|`, and a line break in one as a space.
+
 ### Endpoints
 
 Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, after a comment of its status, how long it took and the date it was fetched:
 
 ````md
-<!-- endpoint: -->
+endpoint:
 ```sh
 curl https://httpbin.org/uuid
 ```
@@ -351,10 +366,9 @@ curl https://httpbin.org/uuid
   "uuid": "4c9d6a2e-…"
 }
 ```
-<!-- :endpoint -->
 ````
 
-In a [Raindown file](#raindown-files) you can write `endpoint:` bare, with its curl snippet, response comment and response straight below it. Like other bare blocks, it ends at the next blank line, so there's no `<!-- :endpoint -->`. In `<{ endpoint: }>` it only renders, so it never runs.
+Bare, in a [Raindown file](#raindown-files) (`.rd`), a Markdown file with `raindown: true` front matter, or with `--bare`, it ends at the next blank line, like other bare blocks.
 
 Endpoints only run when you pass `-x` (or `--execute`), and then only the ones whose response block is missing or empty. Without it, Raindown never sends a request, so opening a file is safe. In the terminal UI, `x` or `[Run]` runs just the endpoint you pick, replacing its response.
 
@@ -392,17 +406,15 @@ Put secrets in `.raindown/environments.local.yml`, which adds to and overrides `
 Name an endpoint with `as:` and later snippets in the file can read its response, like `{login.token}` or `{users.0.id}` in JSON, or the whole response as `{login}`:
 
 `````md
-<!-- endpoint: as: login -->
+endpoint: as: login
 ```sh
 curl -d 'user=ada' {base_url}/login
 ```
-<!-- :endpoint -->
 
-<!-- endpoint: -->
+endpoint:
 ```sh
 curl -H 'Authorization: Bearer {login.token}' {base_url}/me
 ```
-<!-- :endpoint -->
 `````
 
 The response is read from the file, so running one endpoint on its own, like from the terminal UI, still uses earlier responses. Each word of the snippet is filled in after it's split, so a value can't add options, and placeholders without a value, like the braces in JSON, are left as they are.
@@ -412,11 +424,10 @@ The response is read from the file, so running one endpoint on its own, like fro
 Like tests in Postman or Bruno, an endpoint can say what its response should be, with `status:` and a [LowType](https://github.com/low-rb/lowtype) `schema:`:
 
 `````md
-<!-- endpoint: status: 200 schema: Schema[id: Integer, email: String | nil, tags: Array[String]] -->
+endpoint: status: 200 schema: Schema[id: Integer, email: String | nil, tags: Array[String]]
 ```sh
 curl {base_url}/users/1
 ```
-<!-- :endpoint -->
 `````
 
 A key whose type allows `nil` may be missing, and keys a schema doesn't name are allowed. Nest schemas, like `Schema[address: Schema[city: String]]`, and check lists, like `Array[Schema[id: Integer]]`, but write them with `Schema[]`, not `{}`, which reads as a variable. The schema is read without running it, so only types, values, `|` and `[]` on `Array`, `Hash`, `Schema`, `Enum` and `Status` are allowed.
@@ -431,7 +442,7 @@ For a bigger schema, name it with `schema:` and its fields below it, indented, t
     city: String
 -->
 
-<!-- endpoint: schema: User -->
+endpoint: schema: User
 `````
 
 The name can be quoted, like `'User'`, or not. A name can go inside a type too, like `schema: Array[User]`, and in schemas below it, like `author: User`. In a [Raindown file](#raindown-files), write `schema: User` bare, with its fields ending at the first line that isn't indented, and it shows in bold with its fields below it. In comments it's left out of the HTML.
@@ -485,7 +496,7 @@ Changelog: limit=3
 - **1.1.0** Track fetched dates
 ```
 
-Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. Bare or in comments, a word is text, like `folder: notes`, and a variable is in braces, like `{author.name}`, while in `<{ }>` a word is a variable. Like YAML, unquoted text after `name:` runs up to the next prop, so `title: Hello world limit: 3` has two, while after `name=` it's one word. Quote text with a word and colon inside, like `title: 'Read this: now'`, and words that read as values, like `'1.10'` or `'true'`. Quoted text means the same in every way a directive's written. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file, as does a `<{ Changelog: }>` block. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. Bare or in comments, a word is text, like `folder: notes`, and a variable is in braces, like `{author.name}`, while in `<{ }>` a word is a variable. Like YAML, unquoted text after `name:` runs up to the next prop, so `title: Hello world limit: 3` has two, while after `name=` it's one word. Quote text with a word and colon inside, like `title: 'Read this: now'`, and words that read as values, like `'1.10'` or `'true'`. Quoted text means the same in every way a directive's written. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and `replace` can take `written:`, the lines it wrote last time, and they get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file, as does a `<{ Changelog: }>` block. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
 
 #### JavaScript Components
 

@@ -82,12 +82,19 @@ Filter values must be quoted: `files: tags: 'intro'`.
 - `minus:` names a column charted against the values (left of the axis for bars, below it otherwise).
 - `width:` (default 40) and `height:` (default 8).
 
+## Tables
+
+`table: 'data/team.csv'` writes a CSV or TSV file as a Markdown table, after `<!-- table ROWS rows · HASH -->`.
+
+- Editing the table writes its rows back to the file, and editing the file writes the table again. HASH is of the rows when both last matched, so Raindown can tell which changed.
+- When both changed, neither is written, and the comment reads `<!-- table conflict · HASH -->` until they match. Delete the comment, or empty the table, to keep the file's rows.
+
 ## Endpoints
 
 `endpoint:` goes above a `curl` snippet in a fenced `sh` block. Raindown runs it and writes `<!-- response STATUS · DURATION · YYYY-MM-DD -->` below it, then the response in a code block, typed by content type.
 
 ````md
-<!-- endpoint: status: 200 schema: Schema[uuid: String] -->
+endpoint: status: 200 schema: Schema[uuid: String]
 ```sh
 curl https://httpbin.org/uuid
 ```
@@ -95,11 +102,10 @@ curl https://httpbin.org/uuid
 ```json
 { "uuid": "..." }
 ```
-<!-- :endpoint -->
 ````
 
 - The request runs only when the response block is missing or empty, and the CLI gets `-x` / `--execute`. Empty the response block to refresh it.
-- In bare form, `endpoint:` holds the lines straight below it, its snippet, response comment and response, up to the next blank line, with no end tag. In `<{ endpoint: }>` it only renders and never runs.
+- Bare, in a `.rd` file, a Markdown file with `raindown: true` front matter, or with `--bare`, `endpoint:` holds the lines straight below it, its snippet, response comment and response, up to the next blank line.
 - `{name}` in a snippet is filled from front matter, the `.raindown/environments.yml` environment (`--env NAME`), `{env.NAME}` environment variables, and earlier responses named with `as:`, like `endpoint: as: login` then `{login.token}`.
 - Secrets go in `.raindown/environments.local.yml`, which git ignores. A response or error that echoes one of its values, or an `{env.NAME}` value, is written with the placeholder instead.
 - `status:` and `schema:` check every response in the file, by the status in the comment above it. A schema is a LowType type written with `Schema[]`, not `{}`, like `Array[Schema[id: Integer, email: String | nil]]`. `--html` lists failures and exits with 1.

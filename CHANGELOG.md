@@ -15,6 +15,8 @@ Minor features that don't break backwards compatibility are released as patches.
 ### Added
 
 - The terminal UI shows Raindown's rain cloud while it loads
+- `table:` writes a CSV or TSV file as a Markdown table, and writes edits to the table back to the file
+- A node's `replace` can take `written:`, the lines it wrote last time
 
 ## 0.12.0
 
