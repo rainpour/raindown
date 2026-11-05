@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown/endpoint/endpoint_runner'
+require 'tmpdir'
 
 RSpec.describe Raindown::EndpointRunner do
   def rewrite(content, execute: true, **options)
@@ -12,27 +13,27 @@ RSpec.describe Raindown::EndpointRunner do
   end
 
   let(:curl) { "```sh\ncurl https://api.example.com/users\n```\n" }
-  let(:fetched) { "<!-- raindown:fetched 2026-10-14 · 200 · 142 ms -->\n" }
-  let(:response) { "```json\n{\n  \"id\": 1\n}\n```\n#{fetched}" }
+  let(:fetched) { "<!-- response 200 · 142 ms · 2026-10-14 -->\n" }
+  let(:response) { "#{fetched}```json\n{\n  \"id\": 1\n}\n```\n" }
 
   before do
     allow(Raindown::Curl).to receive(:run).and_return(curl_response("{\n  \"id\": 1\n}", 'json'))
     allow(Date).to receive(:today).and_return(Date.new(2026, 10, 14))
   end
 
-  it 'writes the response below the curl block when executing' do
-    expect(rewrite("<!-- endpoint: -->\n\n#{curl}\nAfter.\n")).to eq("<!-- endpoint: -->\n\n#{curl}\n#{response}\nAfter.\n")
+  it 'writes the response below the curl block when executing, after the date it was fetched' do
+    expect(rewrite("<!-- endpoint: -->\n\n#{curl}\nAfter.\n")).to eq("<!-- endpoint: -->\n\n#{curl}#{response}\nAfter.\n")
   end
 
   it 'writes the response inside the closing tag' do
     expect(rewrite("<!-- endpoint: -->\n#{curl}<!-- :endpoint -->\n"))
-      .to eq("<!-- endpoint: -->\n#{curl}\n#{response}<!-- :endpoint -->\n")
+      .to eq("<!-- endpoint: -->\n#{curl}#{response}<!-- :endpoint -->\n")
   end
 
   it 'runs when the next block is another curl example' do
     other = "```sh\ncurl https://api.example.com/other\n```\n"
 
-    expect(rewrite("<!-- endpoint: -->\n\n#{curl}\n#{other}")).to eq("<!-- endpoint: -->\n\n#{curl}\n#{response}\n#{other}")
+    expect(rewrite("<!-- endpoint: -->\n\n#{curl}\n#{other}")).to eq("<!-- endpoint: -->\n\n#{curl}#{response}\n#{other}")
   end
 
   it 'does not run without --execute' do
@@ -43,13 +44,13 @@ RSpec.describe Raindown::EndpointRunner do
   end
 
   it 'fills an empty output block' do
-    expect(rewrite("<!-- endpoint: -->\n\n#{curl}\n```\n```\n")).to eq("<!-- endpoint: -->\n\n#{curl}\n#{response}")
+    expect(rewrite("<!-- endpoint: -->\n\n#{curl}\n```\n```\n")).to eq("<!-- endpoint: -->\n\n#{curl}#{response}")
   end
 
   it 'replaces the fetched date when an emptied block is fetched again' do
-    content = "<!-- endpoint: -->\n\n#{curl}\n```json\n```\n<!-- raindown:fetched 2025-01-01 -->\n\nAfter.\n"
+    content = "<!-- endpoint: -->\n\n#{curl}<!-- response 2025-01-01 -->\n```json\n```\n\nAfter.\n"
 
-    expect(rewrite(content)).to eq("<!-- endpoint: -->\n\n#{curl}\n#{response}\nAfter.\n")
+    expect(rewrite(content)).to eq("<!-- endpoint: -->\n\n#{curl}#{response}\nAfter.\n")
   end
 
   it 'leaves existing output alone' do
@@ -78,14 +79,19 @@ RSpec.describe Raindown::EndpointRunner do
   end
 
   it 'reads bare directives' do
-    expect(rewrite("endpoint:\n\n#{curl}", path: 'api.rd')).to eq("endpoint:\n\n#{curl}\n#{response}")
-    expect(rewrite("endpoint:\n\n#{curl}", path: 'api.md')).to eq("endpoint:\n\n#{curl}")
+    expect(rewrite("endpoint:\n#{curl}\nAfter.\n", path: 'api.rd')).to eq("endpoint:\n#{curl}#{response}\nAfter.\n")
+    expect(rewrite("endpoint:\n#{curl}", path: 'api.md')).to eq("endpoint:\n#{curl}")
+  end
+
+  it 'leaves a snippet after a blank line below a bare endpoint, and a response after one, out of it' do
+    expect(rewrite("endpoint:\n\n#{curl}", path: 'api.rd')).to eq("endpoint:\n\n#{curl}")
+    expect(rewrite("endpoint:\n#{curl}\n```json\n{}\n```\n", path: 'api.rd')).to eq("endpoint:\n#{curl}#{response}\n```json\n{}\n```\n")
   end
 
   it 'fences the response with more backticks than it contains' do
     allow(Raindown::Curl).to receive(:run).and_return(curl_response("```\ncode\n```", 'text'))
 
-    expect(rewrite("<!-- endpoint: -->\n\n#{curl}")).to end_with("\n````text\n```\ncode\n```\n````\n#{fetched}")
+    expect(rewrite("<!-- endpoint: -->\n\n#{curl}")).to end_with("#{fetched}````text\n```\ncode\n```\n````\n")
   end
 
   it 'warns and leaves the file alone when curl fails' do
@@ -122,7 +128,7 @@ RSpec.describe Raindown::EndpointRunner do
     let(:checked) { "<!-- endpoint: status: 200 schema: Schema[id: Integer] -->\n\n#{curl}" }
 
     it 'checks the responses in the file by the status in their fetched comment, without running them' do
-      content = "#{checked}\n```json\n{\"id\": \"1\"}\n```\n<!-- raindown:fetched 2026-10-14 · 404 · 9 ms -->\n"
+      content = "#{checked}<!-- response 404 · 9 ms · 2026-10-14 -->\n```json\n{\"id\": \"1\"}\n```\n"
 
       expect(failures(content:, path: 'api.md'))
         .to eq(['api.md:1: expected status 200, received 404', 'api.md:1: id: expected Integer, received "1"'])
@@ -130,7 +136,7 @@ RSpec.describe Raindown::EndpointRunner do
     end
 
     it 'checks the status of a response with an empty body' do
-      content = "<!-- endpoint: status: 201 -->\n\n#{curl}\n```html\n\n```\n<!-- raindown:fetched 2026-10-14 · 404 · 9 ms -->\n"
+      content = "<!-- endpoint: status: 201 -->\n\n#{curl}<!-- response 404 · 9 ms · 2026-10-14 -->\n```html\n\n```\n"
 
       expect(failures(content:)).to eq(['1: expected status 201, received 404'])
     end
@@ -187,15 +193,15 @@ RSpec.describe Raindown::EndpointRunner do
   end
 
   describe 'only:' do
-    let(:content) { "<!-- endpoint: -->\n\n#{curl}\n```json\n{}\n```\n#{fetched}\n<!-- endpoint: -->\n\n#{curl}" }
+    let(:content) { "<!-- endpoint: -->\n\n#{curl}#{fetched}```json\n{}\n```\n\n<!-- endpoint: -->\n\n#{curl}" }
 
     it 'runs just the endpoint on that line, replacing its response, even without executing' do
       allow(Date).to receive(:today).and_return(Date.new(2026, 10, 20))
 
       rewritten = described_class.new(content:, only: 0).rewrite
 
-      expect(rewritten).to start_with("<!-- endpoint: -->\n\n#{curl}\n```json\n{\n  \"id\": 1\n}\n```\n" \
-                                      "<!-- raindown:fetched 2026-10-20 · 200 · 142 ms -->\n")
+      expect(rewritten).to start_with("<!-- endpoint: -->\n\n#{curl}<!-- response 200 · 142 ms · 2026-10-20 -->\n" \
+                                      "```json\n{\n  \"id\": 1\n}\n```\n")
       expect(rewritten.scan('```json').length).to eq(1)
     end
 

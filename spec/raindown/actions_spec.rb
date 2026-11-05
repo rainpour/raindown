@@ -40,7 +40,7 @@ RSpec.describe Raindown::Actions do
 
       expect(described_class.execute(path, second)).to be(true)
       expect(File.read(path).scan('{ "id": 2 }').length).to eq(1)
-      expect(File.read(path)).to end_with("```json\n{ \"id\": 2 }\n```\n<!-- raindown:fetched 2026-10-20 · 200 · 142 ms -->\n")
+      expect(File.read(path)).to end_with("<!-- response 200 · 142 ms · 2026-10-20 -->\n```json\n{ \"id\": 2 }\n```\n")
     end
 
     it 'runs bare endpoints in Raindown files' do

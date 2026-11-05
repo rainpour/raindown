@@ -78,23 +78,22 @@ RSpec.describe Raindown::Document do
       expect(directives("---\nraindown: true\n---\n\n:toc\n").length).to eq(1)
     end
 
-    it 'reads an endpoint, whose body is its request and response, and whose output is only the response and its date' do
+    it 'reads an endpoint, whose body is its request and response, and whose output is only the date it was fetched and the response' do
       markdown = <<~MARKDOWN
         <!-- endpoint: -->
 
         ```sh
         curl https://example.com
         ```
-
+        <!-- response 2026-10-14 -->
         ```json
         { "id": 1 }
         ```
-        <!-- raindown:fetched 2026-10-14 -->
         <!-- :endpoint -->
       MARKDOWN
 
       expect(directives(markdown))
-        .to eq([{ name: 'endpoint', args: '', line: 1, end_line: 11, body: 3..10, output: 7..10, writes: true }])
+        .to eq([{ name: 'endpoint', args: '', line: 1, end_line: 10, body: 3..9, output: 6..9, writes: true }])
     end
 
     it "reads an endpoint without a response yet, one in Antlers' delimiters, which never writes, and a bare endpoint" do

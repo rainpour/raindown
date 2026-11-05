@@ -84,27 +84,25 @@ Filter values must be quoted: `files: tags: 'intro'`.
 
 ## Endpoints
 
-`endpoint:` goes above a `curl` snippet in a fenced `sh` block. Raindown runs it and writes the response in a code block below, typed by content type, followed by `<!-- raindown:fetched YYYY-MM-DD · STATUS · TIME ms -->`.
+`endpoint:` goes above a `curl` snippet in a fenced `sh` block. Raindown runs it and writes `<!-- response STATUS · DURATION · YYYY-MM-DD -->` below it, then the response in a code block, typed by content type.
 
 ````md
 <!-- endpoint: status: 200 schema: Schema[uuid: String] -->
-
 ```sh
 curl https://httpbin.org/uuid
 ```
-
+<!-- response 200 · 142 ms · 2026-10-14 -->
 ```json
 { "uuid": "..." }
 ```
-<!-- raindown:fetched 2026-10-14 · 200 · 142 ms -->
 <!-- :endpoint -->
 ````
 
 - The request runs only when the response block is missing or empty, and the CLI gets `-x` / `--execute`. Empty the response block to refresh it.
-- In bare form, `endpoint:` ends after the response, with no end tag. In `<{ endpoint: }>` it only renders and never runs.
+- In bare form, `endpoint:` holds the lines straight below it, its snippet, response comment and response, up to the next blank line, with no end tag. In `<{ endpoint: }>` it only renders and never runs.
 - `{name}` in a snippet is filled from front matter, the `.raindown/environments.yml` environment (`--env NAME`), `{env.NAME}` environment variables, and earlier responses named with `as:`, like `endpoint: as: login` then `{login.token}`.
 - Secrets go in `.raindown/environments.local.yml`, which git ignores. A response or error that echoes one of its values, or an `{env.NAME}` value, is written with the placeholder instead.
-- `status:` and `schema:` check every response in the file, by the status in its fetched comment. A schema is a LowType type written with `Schema[]`, not `{}`, like `Array[Schema[id: Integer, email: String | nil]]`. `--html` lists failures and exits with 1.
+- `status:` and `schema:` check every response in the file, by the status in the comment above it. A schema is a LowType type written with `Schema[]`, not `{}`, like `Array[Schema[id: Integer, email: String | nil]]`. `--html` lists failures and exits with 1.
 - `<!-- schema: User -->` names a schema for endpoints below it, from the indented `key: Type` lines after it, up to a line of `-->` (bare, up to the first line that isn't indented). A key with no type holds the more indented fields under it. Use it like `schema: User` or `schema: Array[User]`. Schemas in `.raindown/schemas.rd`, written bare, are shared by every file.
 - Curl runs without a shell and without `~/.curlrc`: no pipes, redirects, `$VARIABLES`, `@file` values, or options like `-o`, `-F`, `-K`, or `-L` (redirects aren't followed). Link-local addresses, like cloud metadata at `169.254.169.254`, are refused.
 

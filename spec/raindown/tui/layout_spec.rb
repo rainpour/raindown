@@ -250,7 +250,7 @@ RSpec.describe Raindown::TUI::Layout do
 
     before do
       File.write(File.join(@root, 'api.md'), "<!-- endpoint: -->\n```sh\ncurl -X DELETE https://api.example.com/users/1\n```\n" \
-                                             "```json\n{}\n```\n<!-- raindown:fetched 2026-10-26 -->\n<!-- :endpoint -->\n")
+                                             "<!-- response 2026-10-26 -->\n```json\n{}\n```\n<!-- :endpoint -->\n")
     end
 
     def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
@@ -270,7 +270,7 @@ RSpec.describe Raindown::TUI::Layout do
       expect(main(lines)[2..7]).to eq([' ╭───────────────────────────────────────────────────────╮',
                                        ' │ DELETE https://api.example.com/users/1          [Run] │',
                                        ' ╰───────────────────────────────────────────────────────╯',
-                                       '', ' Response · json · fetched 2026-10-26', ' {}'])
+                                       '', ' response 2026-10-26 · json', ' {}'])
       expect(lines[3].find { it.text == '[Run]' }.then { [it.event, it.style] }).to eq([click(:main, 0, :execute), :button])
       expect(lines[3].find { it.text == 'DELETE' }.style).to eq(:method_delete)
       expect(text(lines).first).to include('› DELETE api.example.com/users/1')

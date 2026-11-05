@@ -119,19 +119,16 @@ module Raindown
       [bare.strip, true] if bare
     end
 
-    # The response and the date it was fetched are the output, while the curl snippet above them is the author's.
+    # The response and the comment above it are the output, while the curl snippet above them is the author's.
     def endpoint(open, args, writes)
-      curl, response = CodeBlocks.endpoint(@lines, open + 1)
-      output = response && (response[:open]..(fetched?(response[:close] + 1) ? response[:close] + 1 : response[:close]))
+      bare = Directives.bare?(@lines[open])
+      curl, response = CodeBlocks.endpoint(@lines, open + 1, bare:)
+      output = response && ((response[:comment] || response[:open])..response[:close])
       last = output&.end || curl&.fetch(:close) || open
-      # A bare endpoint, which isn't delimited, ends after its blocks.
-      last = end_tag(after: last) || last unless Directives.bare?(@lines[open])
+      # A bare endpoint ends at the next blank line, and one in a comment at its end tag.
+      last = bare ? CodeBlocks.last_before_blank(@lines, open) : end_tag(after: last) || last
 
       directive('endpoint', args, open..last, output:, writes:)
-    end
-
-    def fetched?(index)
-      @lines[index]&.match?(EndpointRunner::FETCHED)
     end
 
     # The end tag after the endpoint's blocks, with only blank lines between.

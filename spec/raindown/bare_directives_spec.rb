@@ -26,11 +26,11 @@ RSpec.describe Raindown::BareDirectives do
     def bold(text) = "<!-- raindown:directive #{text} -->\n"
     def curl = "```sh\ncurl x\n```\n"
 
-    it 'closes an endpoint after the code blocks it holds, in bold' do
-      content = "endpoint:\n\n#{curl}\n```json\n{}\n```\n\nAfter\n"
+    it 'closes an endpoint at the next blank line, after its snippet, fetched date and response, in bold' do
+      block = "#{curl}<!-- response 200 · 9 ms · 2026-10-14 -->\n```json\n{\n\n}\n```\n"
 
-      expect(described_class.expand(content))
-        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n\n#{curl}\n```json\n{}\n```\n<{ :endpoint }>\n#{bold(':endpoint')}\nAfter\n")
+      expect(described_class.expand("endpoint:\n#{block}\nAfter\n"))
+        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n#{block}<{ :endpoint }>\n#{bold(':endpoint')}\nAfter\n")
     end
 
     it 'shows a schema in bold, with its fields in a code block' do
@@ -38,18 +38,11 @@ RSpec.describe Raindown::BareDirectives do
         .to eq("#{bold("schema: 'User'").chomp}\n```\nname: String\naddress:\n  city: String\n```\nAfter\n")
     end
 
-    it 'only closes around code blocks directly below' do
-      content = "endpoint:\n#{curl}Text\n```\nother\n```\n"
+    it 'leaves what is after the blank line out, like another curl example' do
+      content = "endpoint:\n#{curl}\n```sh\ncurl y\n```\n"
 
       expect(described_class.expand(content))
-        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n#{curl}<{ :endpoint }>\n#{bold(':endpoint')}Text\n```\nother\n```\n")
-    end
-
-    it 'closes an endpoint before another curl example' do
-      content = "endpoint:\n\n#{curl}\n```sh\ncurl y\n```\n"
-
-      expect(described_class.expand(content))
-        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n\n#{curl}<{ :endpoint }>\n#{bold(':endpoint')}\n```sh\ncurl y\n```\n")
+        .to eq("#{bold('endpoint:')}<{ endpoint: }>\n#{curl}<{ :endpoint }>\n#{bold(':endpoint')}\n```sh\ncurl y\n```\n")
     end
 
     it 'closes an endpoint with nothing below it straight away, or at the end of the file' do

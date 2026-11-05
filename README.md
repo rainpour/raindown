@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -114 ██████████│████████████████████▏ +231
+Total    -161 ▐██████│███████████████████████▍ +574
 ───────────────────────────────────────────────────
-80f68a1    -2          ▕│▏                       +2
-58e8e22   -65     ▐█████│███████████▋          +133
-e1af8c6   -40       ▐███│███▎                   +37
-34abfe6    -3          ▕│▊                       +8
-b549f89    -4          ▐│████▍                  +51
+ac71363   -11       ▐│██▍                       +59
+38af1d1   -43      ██│██████████████           +343
+80f68a1    -2       ▕│▏                          +2
+58e8e22   -65     ▐██│█████▍                   +133
+e1af8c6   -40      ▐█│█▌                        +37
 ```
 <!-- :Commits -->
 
@@ -338,25 +338,23 @@ Then `<!-- Issues: -->` and `<!-- :Issues -->` in a file write it there. An open
 
 ### Endpoints
 
-Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched, its status and how long it took:
+Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, after a comment of its status, how long it took and the date it was fetched:
 
 ````md
 <!-- endpoint: -->
-
 ```sh
 curl https://httpbin.org/uuid
 ```
-
+<!-- response 200 · 142 ms · 2026-10-14 -->
 ```json
 {
   "uuid": "4c9d6a2e-…"
 }
 ```
-<!-- raindown:fetched 2026-10-14 · 200 · 142 ms -->
 <!-- :endpoint -->
 ````
 
-In a [Raindown file](#raindown-files) you can write `endpoint:` bare, which ends after the curl snippet and response, so there's no `<!-- :endpoint -->`. In `<{ endpoint: }>` it only renders, so it never runs.
+In a [Raindown file](#raindown-files) you can write `endpoint:` bare, with its curl snippet, response comment and response straight below it. Like other bare blocks, it ends at the next blank line, so there's no `<!-- :endpoint -->`. In `<{ endpoint: }>` it only renders, so it never runs.
 
 Endpoints only run when you pass `-x` (or `--execute`), and then only the ones whose response block is missing or empty. Without it, Raindown never sends a request, so opening a file is safe. In the terminal UI, `x` or `[Run]` runs just the endpoint you pick, replacing its response.
 
@@ -395,14 +393,12 @@ Name an endpoint with `as:` and later snippets in the file can read its response
 
 `````md
 <!-- endpoint: as: login -->
-
 ```sh
 curl -d 'user=ada' {base_url}/login
 ```
 <!-- :endpoint -->
 
 <!-- endpoint: -->
-
 ```sh
 curl -H 'Authorization: Bearer {login.token}' {base_url}/me
 ```
@@ -417,7 +413,6 @@ Like tests in Postman or Bruno, an endpoint can say what its response should be,
 
 `````md
 <!-- endpoint: status: 200 schema: Schema[id: Integer, email: String | nil, tags: Array[String]] -->
-
 ```sh
 curl {base_url}/users/1
 ```
@@ -443,7 +438,7 @@ The name can be quoted, like `'User'`, or not. A name can go inside a type too, 
 
 Schemas in `.raindown/schemas.rd`, written bare the same way, can be named by every file's endpoints, and a file's own schemas with the same name win.
 
-Every response in the file is checked, whether it's just run or was already there, by the status in its fetched comment, so checking needs no requests. Failures are listed with where they are, like `api.md:3: id: expected Integer, received "1"`. `--html` lists them and exits with `1`, so CI can check that your docs still match your API, watching lists them as the file's written back, and the terminal UI shows them after a run. To check a live API, empty the response blocks first, then run with `-x`.
+Every response in the file is checked, whether it's just run or was already there, by the status in the comment above it, so checking needs no requests. Failures are listed with where they are, like `api.md:3: id: expected Integer, received "1"`. `--html` lists them and exits with `1`, so CI can check that your docs still match your API, watching lists them as the file's written back, and the terminal UI shows them after a run. To check a live API, empty the response blocks first, then run with `-x`.
 
 ### Nodes
 

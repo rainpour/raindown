@@ -12,7 +12,7 @@ module Raindown
     #    │ GET https://httpbin.org/uuid       [Run] │
     #    ╰──────────────────────────────────────────╯
     #
-    #    Response · json · fetched 2026-10-26
+    #    response 200 · 142 ms · 2026-10-26 · json
     #    {
     #      "uuid": "48024974-f1b1-431a-a0cf-5cac0099a1a5"
     #    }
@@ -73,8 +73,9 @@ module Raindown
         return [segment(" #{view.error}", :error, width:)] if view.error
         return [segment(' No response yet. X runs the request.', :heading, width:)] if view.response.empty?
 
-        details = ['Response', view.language, ("fetched #{view.fetched}" if view.fetched)].reject { it.to_s.empty? }
-        [segment(" #{details.join(' · ')}", :heading, width:)]
+        # As its comment in the file reads, or just response when it has none, then its language.
+        heading = [view.comment || 'response', view.language].reject { it.to_s.empty? }.join(' · ')
+        [segment(" #{heading}", :heading, width:)]
       end
     end
   end

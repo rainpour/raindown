@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../../code_blocks'
 require_relative '../events'
 require_relative '../../workers/worker'
 
@@ -9,11 +10,11 @@ module Raindown
     # Worker when it's opened, which scrolls.
     # A key's next step, for the Navigator, is nil, an Open or Edit of its directive, or an Execute of it.
     class EndpointView
-      # The date a response was fetched, on the line after it.
-      FETCHED = /raindown:fetched (\S+)/
+      # The text of the comment above a response, like "response 200 · 142 ms · 2026-10-26".
+      COMMENT = /<!--\s*(.*?)\s*-->/
       FENCE = /\A\s*`{3,}(\S*)/
 
-      attr_reader :endpoint, :response, :language, :fetched, :error
+      attr_reader :endpoint, :response, :language, :comment, :error
 
       def initialize(endpoint, workers:)
         @endpoint = endpoint
@@ -36,7 +37,7 @@ module Raindown
       # Reads the response again, like after the request's run.
       def load
         lines = output_lines
-        @fetched = lines.pop[FETCHED, 1] if lines.last&.match?(FETCHED)
+        @comment = lines.shift[COMMENT, 1] if lines.first&.match?(CodeBlocks::RESPONSE_COMMENT)
         @language = lines.first.to_s[FENCE, 1]
         @response = @language ? lines[1...-1] : lines
         @error = nil

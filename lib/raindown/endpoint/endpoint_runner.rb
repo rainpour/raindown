@@ -10,17 +10,17 @@ require_relative 'endpoint_variables'
 
 module Raindown
   # Runs the curl block under an endpoint directive in a comment, or a bare one, and writes the response in the code
-  # block below it, followed by the date it was fetched, its status and how long it took.
+  # block below it, after a comment of its status, how long it took and the date it was fetched.
   # Only runs when that block is missing or empty, and --execute is passed, so a file can't run requests by itself.
   # Or with only: and a directive's line index, runs just that endpoint, replacing any response it has.
   #   <!-- endpoint: -->
   #   ```sh
   #   curl https://api.example.com
   #   ```
+  #   <!-- response 200 · 142 ms · 2026-10-14 -->
   #   ```json
   #   { "id": 1 }
   #   ```
-  #   <!-- raindown:fetched 2026-10-14 · 200 · 142 ms -->
   #   <!-- :endpoint -->
   # Its snippet's {placeholders} are filled from EndpointVariables, and with as: login, later snippets can use its
   # response, like {login.token}. With status: and schema:, each response in the file is checked, and failures are kept.
@@ -32,9 +32,7 @@ module Raindown
     DIRECTIVE = /\A {0,3}<\{\s*endpoint:(.*?)\}>[ \t]*$/
     COMMENT = /\A {0,3}<!--\s*endpoint:(.*?)-->[ \t]*$/
     END_TAG = /\A {0,3}(?:<\{\s*:endpoint\s*\}>|<!--\s*:endpoint\s*-->)[ \t]*$/
-    # The date a response was fetched, on the line after it.
-    FETCHED = /\A {0,3}<!-- raindown:fetched [^\n]*? -->[ \t]*$/
-    FETCHED_STATUS = /raindown:fetched \S+ · (\d{3}) /
+    RESPONSE_STATUS = /<!-- response (\d{3}) /
 
     attr_reader :failures
 
@@ -83,19 +81,19 @@ module Raindown
 
     # Returns the index of the last line it handled.
     def fill(index, args, directive:)
-      curl, output = CodeBlocks.endpoint(@lines, index)
+      curl, output = CodeBlocks.endpoint(@lines, index, bare: !@lines[directive].match?(COMMENT))
       return index - 1 unless curl&.dig(:body)&.lstrip&.start_with?('curl')
       return write_output(curl:, output:, args:, directive:) if run?(output, directive)
       return curl[:close] unless output
 
       @variables.remember(args.name, output[:body])
-      check(args, directive:, body: output[:body], status: fetched_status(output))
+      check(args, directive:, body: output[:body], status: response_status(output))
       curl[:close]
     end
 
-    # The status in the fetched comment after a response, which responses fetched before statuses were kept don't have.
-    def fetched_status(output)
-      @lines[output[:close] + 1]&.[](FETCHED_STATUS, 1)&.to_i
+    # The status in the comment above a response, which a comment written by hand may not have.
+    def response_status(output)
+      @lines[output[:comment]][RESPONSE_STATUS, 1]&.to_i if output[:comment]
     end
 
     # Run alone, only the endpoint that ran is checked. One without a response or a status hasn't run, so it has nothing
@@ -113,14 +111,15 @@ module Raindown
       @execute && (output.nil? || output[:body].strip.empty?)
     end
 
-    # Replaces the output block and the date it was fetched, or with no block, replaces nothing just after the curl block.
+    # Replaces everything from just after the curl block to the end of the output block, if there is one, like its
+    # comment.
     # Secrets that a response echoes are written as their placeholders.
     def write_output(curl:, output:, args:, directive:)
       response = Curl.run(curl[:body], @variables)
       body = @variables.redact(response.body)
       @variables.remember(args.name, body)
       check(args, directive:, body:, status: response.status)
-      replace_output(curl:, output:, block: [*output_block(body, response.language), fetched(response)])
+      replace_output(curl:, output:, block: [response_comment(response), *output_block(body, response.language)])
     rescue Curl::Error => e
       message = @variables.redact(e.message)
       # The one endpoint that was asked for fails for the caller to show, like in the terminal UI.
@@ -132,21 +131,13 @@ module Raindown
 
     # Returns the index of the block's last line.
     def replace_output(curl:, output:, block:)
-      block.unshift("\n") unless output
-      start = output ? output[:open] : curl[:close] + 1
-
-      @lines[start, output ? replaced_length(output) : 0] = block
+      start = curl[:close] + 1
+      @lines[start, output ? output[:close] - start + 1 : 0] = block
       start + block.length - 1
     end
 
-    # The output block, and the line after it when that's the date it was last fetched.
-    def replaced_length(output)
-      length = output[:close] - output[:open] + 1
-      @lines[output[:close] + 1]&.match?(FETCHED) ? length + 1 : length
-    end
-
-    def fetched(response)
-      "<!-- raindown:fetched #{Date.today.iso8601} · #{response.status} · #{response.milliseconds} ms -->\n"
+    def response_comment(response)
+      "<!-- response #{response.status} · #{response.milliseconds} ms · #{Date.today.iso8601} -->\n"
     end
 
     # The fence is longer than any run of backticks in the body, so the body can't close it.

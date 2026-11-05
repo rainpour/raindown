@@ -61,17 +61,15 @@ b737205  -11  ▐│██▍                            +62
 An `endpoint:` directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.
 
 endpoint:
-
 ```sh
 curl https://httpbin.org/uuid
 ```
-
+<!-- response 2026-10-26 -->
 ```json
 {
   "uuid": "3ca20551-9df0-4f92-8710-8e8df2ab9e85"
 }
 ```
-<!-- raindown:fetched 2026-10-26 -->
 
 ## Tables
 

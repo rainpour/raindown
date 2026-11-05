@@ -127,12 +127,7 @@ module Raindown
     end
 
     # A bare block holds the lines straight below it, up to the next blank line, with fenced code kept whole.
-    def bare_block(lines, open)
-      last = open
-      last = CodeBlocks.at(lines, last + 1)&.fetch(:close) || (last + 1) while lines[last + 1] && !lines[last + 1].strip.empty?
-
-      { open:, close: nil, last: }
-    end
+    def bare_block(lines, open) = { open:, close: nil, last: CodeBlocks.last_before_blank(lines, open) }
 
     # The end tag written the same way as the directive: in a comment, or in Antlers' delimiters.
     def end_tag(lines, open, name, comment:)

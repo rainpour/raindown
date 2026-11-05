@@ -479,7 +479,8 @@ RSpec.describe Raindown::TUI::Navigator do
 
       navigator.next_step(click(:main, 0, :execute)).task.call
       view = navigator.view
-      expect([view.language, view.response, view.fetched]).to eq(['json', ['{', '  "id": 1', '}'], Date.today.iso8601])
+      expect([view.language, view.response]).to eq(['json', ['{', '  "id": 1', '}']])
+      expect(view.comment).to eq("response 200 · 142 ms · #{Date.today.iso8601}")
     end
 
     it 'runs the selected endpoint' do

@@ -55,8 +55,8 @@ RSpec.describe Raindown::CLI do
     end
 
     it 'lists the endpoint responses that fail their checks with --html, and fails' do
-      File.write(path, "<!-- endpoint: status: 200 -->\n\n```sh\ncurl https://a.io\n```\n\n```json\n{}\n```\n" \
-                       "<!-- raindown:fetched 2026-11-03 · 500 · 9 ms -->\n<!-- :endpoint -->\n")
+      File.write(path, "<!-- endpoint: status: 200 -->\n\n```sh\ncurl https://a.io\n```\n" \
+                       "<!-- response 500 · 9 ms · 2026-11-03 -->\n```json\n{}\n```\n<!-- :endpoint -->\n")
 
       expect { described_class.run([path, '--html', output_path]) }
         .to raise_error(SystemExit) { expect(it.status).to eq(1) }

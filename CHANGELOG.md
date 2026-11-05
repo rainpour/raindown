@@ -7,6 +7,11 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ## Unreleased
 
+### Changed
+
+- An endpoint's `<!-- response 200 · 142 ms · 2026-10-14 -->` comment goes between its curl snippet and its response, in place of `<!-- raindown:fetched 2026-10-14 · 200 · 142 ms -->` below the response
+- A bare `endpoint:` holds the lines straight below it, up to the next blank line, like a bare node block
+
 ### Added
 
 - The terminal UI shows Raindown's rain cloud while it loads

@@ -13,17 +13,17 @@ module Raindown
   #
   # A bare schema: shows in bold, with its fields in a code block below it.
   #
-  # Bare directives have no end tag. A bare endpoint closes itself after its curl snippet and response, so where it
-  # needs more than that, write it in comments with an end tag instead:
+  # Bare directives have no end tag. A bare endpoint holds the lines straight below it, its curl snippet, the comment
+  # with its response's status, time and date, and its response, up to the next blank line, like a bare node block, so
+  # where it needs blank lines, write it in comments with an end tag instead:
   #   <!-- endpoint: -->
   #   ...
   #   <!-- :endpoint -->
   module BareDirectives
     EXTENSIONS = %w[.rd .raindown].freeze
-    # The block directives, and the method that finds the line their end tag goes after.
-    BLOCK_KEYWORDS = { 'endpoint:' => :after_endpoint }.freeze
-    # Four spaces of indent would make the line a Markdown code block.
-    LINE = /\A( {0,3})((#{BLOCK_KEYWORDS.keys.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
+    # A bare endpoint, the one bare directive with a block. Four spaces of indent would make the line a Markdown code
+    # block.
+    LINE = /\A( {0,3})(endpoint:(?:[ \t]+\S.*?)?)[ \t]*$/
 
     module_function
 
@@ -75,7 +75,7 @@ module Raindown
       return index unless match
 
       lines[index] = "#{Directives.marker(match[2], shown: true)}\n#{wrap(lines[index])}"
-      close_block(lines, index, indent: match[1], keyword: match[3])
+      close_block(lines, index, indent: match[1])
       index
     end
 
@@ -88,16 +88,10 @@ module Raindown
     end
 
     # The end tag after the block, then the end tag in bold, as a bare directive's shown.
-    def close_block(lines, index, indent:, keyword:)
-      last = public_send(BLOCK_KEYWORDS[keyword], lines, index + 1) || index
+    def close_block(lines, index, indent:)
+      last = CodeBlocks.last_before_blank(lines, index)
       lines[last] = "#{lines[last]}\n" unless lines[last].end_with?("\n")
-      name = keyword.delete_suffix(':')
-      lines.insert(last + 1, "#{indent}<{ :#{name} }>\n#{Directives.marker(":#{name}", shown: true)}\n")
-    end
-
-    # The last line of the curl snippet and response below an endpoint.
-    def after_endpoint(lines, index)
-      CodeBlocks.endpoint(lines, index).last&.fetch(:close)
+      lines.insert(last + 1, "#{indent}<{ :endpoint }>\n#{Directives.marker(':endpoint', shown: true)}\n")
     end
   end
 end
