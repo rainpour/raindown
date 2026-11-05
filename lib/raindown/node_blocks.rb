@@ -17,11 +17,17 @@ module Raindown
   #
   #   <!-- :Changelog -->
   # In Antlers' delimiters, <{ Changelog: }> to <{ :Changelog }>, or a self-closing <{ :Changelog }> or bare
-  # :Changelog, it renders the node without writing it. toc: and files: are Raindown's own nodes. A name only starts
-  # a block when it's a loaded node, so other text like "Note:" is left alone.
+  # :Changelog, the node's written in: it only renders, with its render, never its replace, and what's between its tags
+  # is its slot. toc: and files: are Raindown's own nodes. A name only starts a block when it's a loaded node, so other
+  # text like "Note:" is left alone.
   module NodeBlocks
     class MissingEndTag < StandardError; end
     class BrokenText < StandardError; end
+    class NoRender < StandardError; end
+
+    # What a document's blocks render with: its Markdown, its metadata, whether it can be bare, and its front matter's
+    # variables, for a slot's template.
+    Context = Data.define(:markdown, :metadata, :bare, :variables)
 
     NAME = "(?:#{Nodes::BUILT_INS.keys.join('|')}|[A-Z]\\w*(?:::[A-Z]\\w*)*)".freeze
     OPEN = /\A( {0,3})<\{\s*(#{NAME}):(?:\s+(.*?))?\s*\}>[ \t]*$/
@@ -71,28 +77,44 @@ module Raindown
       spans
     end
 
-    # Swaps each block for its node's HTML, through a placeholder, or for its Markdown when it has no HTML of its own.
-    # The directive and end tag become Directives markers, which also keep the node's output from joining
-    # the Markdown around it, like two lists becoming one.
+    # Swaps each block for its node's HTML, through a placeholder, or for its Markdown when it writes back and has no
+    # HTML of its own. The directive and end tag become Directives markers, which also keep the node's output from
+    # joining the Markdown around it, like two lists becoming one.
     def to_rendered(markdown, metadata: NoMetadata, bare: false)
       lines = markdown.lines
-      find(lines, front_matter: FrontMatter.parse(markdown).first, bare:).reverse_each do |block|
-        lines[block[:open]..block[:last]] = rendered_lines(lines, block, markdown:, metadata:, bare:)
+      front_matter = FrontMatter.parse(markdown).first
+      context = Context.new(markdown:, metadata:, bare:, variables: Variables.new(front_matter))
+      find(lines, front_matter:, bare:).reverse_each do |block|
+        lines[block[:open]..block[:last]] = rendered_lines(lines, block, context)
       end
       lines.join
     end
 
-    def rendered_lines(lines, block, markdown:, metadata:, bare:)
-      output = node_markdown(block[:node], markdown:, metadata:, bare:).chomp
+    def rendered_lines(lines, block, context)
+      output = node_markdown(lines, block, context).chomp
       close = marker(lines[block[:close]]) if block[:close]
 
       [marker(lines[block[:open]]), *("#{output}\n".lines unless output.empty?), *close]
     end
 
-    def node_markdown(node, markdown:, metadata:, bare:)
-      return Nodes.placeholder(node) if Nodes.html?(node)
+    def node_markdown(lines, block, context)
+      return written_in(lines, block, context) unless block[:writes]
+      return Nodes.placeholder(block[:node]) if Nodes.html?(block[:node])
 
-      Nodes.call(node, :replace, document: markdown, metadata:, bare:).to_s
+      Nodes.call(block[:node], :replace, document: context.markdown, metadata: context.metadata, bare: context.bare).to_s
+    end
+
+    # A block that doesn't write back only renders, taking the Markdown between its tags as its slot, so its node needs
+    # a render.
+    def written_in(lines, block, context)
+      node = block[:node]
+      raise NoRender, "#{node.class.name} has no render, so it can't be in <{ }>: write it bare or in comments" unless Nodes.renders?(node)
+      return Nodes.placeholder(node) unless block[:close]
+
+      require_relative 'pre_renderer'
+      markdown = lines[(block[:open] + 1)...block[:close]].join
+      slot = PreRenderer.render(markdown, variables: context.variables, metadata: context.metadata, bare: context.bare)
+      Nodes.placeholder(node, slot: Raindown.commonmark(slot))
     end
 
     def marker(line)

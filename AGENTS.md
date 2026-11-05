@@ -22,7 +22,7 @@ Template directives, like `if:`, `for:`, `list:` and variables like `{title}`, d
 
 In `.rd` and `.raindown` files, and Markdown files with `raindown: true` in their front matter, content directives can be bare, on their own line, like `toc:`, writing up to the next blank line, and `:toc` only renders.
 
-A content directive in `<{ }>`, like `<{ toc: }>` … `<{ :toc }>` or `<{ :toc }>`, only renders into the HTML, so it writes nothing, and what's between its tags is yours.
+A content directive in `<{ }>`, like `<{ toc: }>` … `<{ :toc }>` or `<{ :toc }>`, is written in: it only renders into the HTML, with its node's `render`, never `replace`, so it writes nothing. What's between its tags is yours, and it's the node's input, which `render` gets as `slot:`.
 
 ## Rendering a file again
 

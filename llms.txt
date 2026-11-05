@@ -130,17 +130,15 @@ end
 ```
 
 ```md
-<{ Changelog: limit=3 }>
-
+<!-- Changelog: limit=3 -->
 - **1.2.0** Bare directives close themselves
-
-<{ :Changelog }>
+<!-- :Changelog -->
 ```
 
 - Bare form: `Changelog: limit=3` with the output directly below, up to the next blank line (so the output can't contain blank lines).
-- `<{ :Changelog }>` or bare `:Changelog` renders the HTML without writing to the file.
+- In `<{ }>` a node is written in: `<{ :Changelog }>`, bare `:Changelog`, or a `<{ Changelog: }>` ... `<{ :Changelog }>` block only calls `render`, never `replace`, and writes nothing into the file. A block's Markdown between its tags is passed to `render` as `slot:`, in HTML. A node without `render` raises there; Raindown's own nodes have one.
 - A leading value (like `'data.csv'` in `chart: 'data.csv'`) is passed as the positional argument to `initialize`; props are keyword arguments.
-- `replace` and `render` may accept the keywords `document:`, `metadata:` and `bare:`.
+- `replace` and `render` may accept the keywords `document:`, `metadata:` and `bare:`, and `render` also `slot:`.
 - A capitalized `Name:` only starts a node block if a loaded LowNode by that name has `replace`, so prose like `Note:` is safe.
 - Built-in `toc:`, `files:` and `chart:` are nodes too, and can be overridden: `class TOC < Raindown::TOC`, `class Files < Raindown::Files`, `class Chart < Raindown::Chart`.
 

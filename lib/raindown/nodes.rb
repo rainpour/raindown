@@ -2,6 +2,7 @@
 
 require_relative 'chart/chart'
 require_relative 'files'
+require_relative 'fragments'
 require_relative 'js/js_nodes'
 require_relative 'markdown_nodes'
 require_relative 'node'
@@ -13,15 +14,17 @@ module Raindown
   # Nodes are LowNodes that a node block writes into the Markdown and renders into the HTML.
   # A project keeps them in a .raindown folder, which is loaded with Dirload, beside its JavaScript and Markdown
   # Components, if any.
-  # A node writes Markdown with #replace, and HTML with #render if it has one. Either can take the keywords
-  # document: (the Markdown being rendered), metadata:, bare: and written: (the lines it wrote last time), and gets the
-  # ones it asks for.
+  # Bare or in comments, a node writes back: its Markdown, from #replace, is written into the file, and its HTML is from
+  # #render if it has one. In <{ }> it's written in: it only renders, with #render, which takes the Markdown between its
+  # tags as slot:, in HTML. Either can take the keywords document: (the Markdown being rendered), metadata:, bare: and
+  # written: (the lines it wrote last time), and gets the ones it asks for.
   module Nodes
     FOLDER = '.raindown'
     # Lowercase directives for Raindown's own nodes. A project's own TOC, Files, Chart or Table node replaces Raindown's.
     BUILT_INS = { 'toc' => 'TOC', 'files' => 'Files', 'chart' => 'Chart', 'table' => 'Table' }.freeze
-    # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers.
-    PLACEHOLDER = /<!-- raindown:node (\d+) -->/
+    # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers, with its slot's HTML, as a
+    # fragment, when it has one.
+    PLACEHOLDER = /<!-- raindown:node (\d+)(?: slot (\d+))? -->/
 
     module_function
 
@@ -99,13 +102,20 @@ module Raindown
       list[instances[key]]
     end
 
-    def placeholder(node)
-      "<!-- raindown:node #{list.index(node)} -->"
+    def placeholder(node, slot: nil)
+      return "<!-- raindown:node #{list.index(node)} -->" unless slot
+
+      "<!-- raindown:node #{list.index(node)} slot #{Fragments.store(slot)} -->"
     end
 
-    # Swaps each placeholder for its node's HTML.
+    # Swaps each placeholder for its node's HTML, given its slot, the HTML between its tags in <{ }>, which can hold
+    # components' fragments.
     def render_placeholders(html, **context)
-      html.gsub(PLACEHOLDER) { html(list[::Regexp.last_match(1).to_i], **context) }
+      html.gsub(PLACEHOLDER) do
+        match = ::Regexp.last_match
+        slot = match[2] ? Fragments.list[match[2].to_i] : ''
+        Fragments.fill(html(list[match[1].to_i], slot:, **context))
+      end
     end
 
     def html(node, **context)
@@ -114,9 +124,16 @@ module Raindown
       call(node, :render, **context).to_s
     end
 
-    # Whether the node renders its own HTML rather than the HTML of its Markdown.
+    # Whether the node renders its own HTML rather than the HTML of its Markdown, which Raindown's nodes render by default.
     def html?(node)
-      node.respond_to?(:render) || (node.class.respond_to?(:template) && !node.class.template.nil?)
+      return true if node.class.respond_to?(:template) && !node.class.template.nil?
+
+      node.respond_to?(:render) && node.method(:render).owner != Node
+    end
+
+    # Whether the node renders at all, so it can be written in, in <{ }>.
+    def renders?(node)
+      node.respond_to?(:render) || html?(node)
     end
 
     def instances

@@ -18,8 +18,13 @@ module Raindown
     end
 
     def add(html)
+      "<!-- raindown:fragment #{store(html)} -->"
+    end
+
+    # Keeps the HTML for this render, returning its index in the list.
+    def store(html)
       list << html
-      "<!-- raindown:fragment #{list.length - 1} -->"
+      list.length - 1
     end
 
     # Fills each placeholder, again and again, since a fragment can hold others, like a component in a slot.

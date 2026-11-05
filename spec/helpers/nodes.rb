@@ -39,3 +39,12 @@ class SpecParagraphs < Raindown::Node
     "One.\n\nTwo."
   end
 end
+
+# A node that wraps the Markdown between its tags in <{ }>, and fails if it's ever asked to write back there.
+class SpecWrapper < Raindown::Node
+  def replace = raise('replace is only for writing back')
+
+  def render(slot:)
+    "<aside>#{slot}</aside>"
+  end
+end

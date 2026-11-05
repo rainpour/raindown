@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'raindown'
 require 'helpers/nodes'
+require 'tmpdir'
 
 RSpec.describe Raindown::NodeBlocks do
   def find(markdown, bare: false)
@@ -118,11 +120,28 @@ RSpec.describe Raindown::NodeBlocks do
   end
 
   describe '.to_rendered' do
+    it 'only renders a node in <{ }>, with the Markdown between its tags as its slot, and never its replace' do
+      html = Raindown.render(markdown: "<{ SpecWrapper: }>\n**Hi**\n<{ :SpecWrapper }>\n\n<{ :SpecWrapper }>\n")
+
+      expect(html).to include("<aside><p><strong>Hi</strong></p>\n</aside>", '<aside></aside>')
+    end
+
+    it 'raises when a node in <{ }> has no render' do
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.raindown'))
+        File.write(File.join(dir, '.raindown', 'spec_unrendered.rb'), "class SpecUnrendered < LowNode\n  def replace = 'Written'\nend\n")
+        Raindown::Nodes.load(File.join(dir, 'notes.md'))
+
+        expect { Raindown.render(markdown: "<{ :SpecUnrendered }>\n") }
+          .to raise_error(described_class::NoRender, /SpecUnrendered has no render/)
+      end
+    end
+
     it 'swaps a node with HTML for a placeholder, and one without for its Markdown, between markers, in bold when bare' do
       markdown = "<{ SpecReleases: limit=1 }>\n- old\n<{ :SpecReleases }>\n\nSpecHeading: title='Hi'\n"
       rendered = described_class.to_rendered(markdown, bare: true)
 
-      expect(rendered).to match(/\A<!-- raindown:hidden SpecReleases: limit=1 -->\n<!-- raindown:node \d+ -->\n/)
+      expect(rendered).to match(/\A<!-- raindown:hidden SpecReleases: limit=1 -->\n<!-- raindown:node \d+ slot \d+ -->\n/)
         .and include("<!-- raindown:hidden :SpecReleases -->\n\n")
         .and end_with("<!-- raindown:directive SpecHeading: title='Hi' -->\n## Hi\n")
     end

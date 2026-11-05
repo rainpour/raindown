@@ -75,4 +75,12 @@ RSpec.describe Raindown::Table do
     expect(rewrite("table: 'team.json'\n")).to include("Can't show \"team.json\" as a table: only CSV and TSV files can be")
     expect(rewrite("table: 'missing.csv'\n")).to include('no such file')
   end
+
+  it 'shows its file in <{ }> without writing to it' do
+    html = Raindown.render(markdown: "<{ table: 'team.csv' }>\n| name |\n|---|\n| Bea |\n<{ :table }>\n", metadata:)
+
+    expect(html).to include('<td>Ada</td>')
+    expect(html).not_to include('Bea')
+    expect(File.read(csv)).to eq("name,role\nAda,engineer\nLin,\"design | ux\"\n")
+  end
 end

@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Changed
+
+- A node in `<{ }>` is written in: it only renders, with its `render`, never its `replace`, and gets the Markdown between its tags, as HTML, as `slot:`. A node with only `replace`, like `<{ :Changelog }>`, raises until it has a `render`
+- `files:`, `chart:`, `table:`, stats and Markdown components render in `<{ }>`, and `<{ table: }>` shows its file without writing to it
+
 ## 0.13.0
 
 ### Changed

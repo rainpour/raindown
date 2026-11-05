@@ -28,14 +28,28 @@ module Raindown
 
     # Written is what it wrote last time, so it can tell which of the table and the file changed since.
     def replace(written: [], metadata: NoMetadata)
-      path = File.expand_path(@data.to_s, metadata.respond_to?(:root) ? metadata.root : Dir.pwd)
-      return "Can't show #{@data.inspect} as a table: only CSV and TSV files can be" unless SEPARATORS.key?(File.extname(path).downcase)
-      return "Can't show #{@data.inspect} as a table: no such file" unless File.file?(path)
+      path = data_path(metadata)
+      data_error(path) || synced(path, written.map(&:chomp))
+    end
 
-      synced(path, written.map(&:chomp))
+    # Written in, in <{ }>, the table only shows its file, and never writes to it.
+    def render(metadata: NoMetadata)
+      path = data_path(metadata)
+      Raindown.commonmark(data_error(path) || MarkdownTable.format(read_rows(path)))
     end
 
     private
+
+    def data_path(metadata)
+      File.expand_path(@data.to_s, metadata.respond_to?(:root) ? metadata.root : Dir.pwd)
+    end
+
+    # Why the file can't be a table, or nil when it can.
+    def data_error(path)
+      return "Can't show #{@data.inspect} as a table: only CSV and TSV files can be" unless SEPARATORS.key?(File.extname(path).downcase)
+
+      "Can't show #{@data.inspect} as a table: no such file" unless File.file?(path)
+    end
 
     def synced(path, written)
       file = read_rows(path)

@@ -11,6 +11,8 @@ module Raindown
     module_function
 
     def format(rows)
+      return '' if rows.empty?
+
       header, *body = rows.map { |row| "| #{row.map { escape(it) }.join(' | ')} |" }
       [header, "|#{Array.new(rows.first.length, '---').join('|')}|", *body].join("\n")
     end
