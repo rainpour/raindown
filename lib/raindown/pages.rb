@@ -65,7 +65,7 @@ module Raindown
     def initialize(root:, metadata:, render_options: {}, eager: false)
       @root = root
       @render_options = render_options
-      @file_paths = metadata.file_types.values_at(*EXTENSIONS).flatten.compact
+      @file_paths = filtered_paths(metadata:)
       load_metadata if eager
     end
 
@@ -81,6 +81,11 @@ module Raindown
     end
 
     private
+
+    # The Markdown files in Dirload's metadata, only those under the root path.
+    def filtered_paths(metadata:)
+      metadata.file_types.values_at(*EXTENSIONS).flatten.compact.select { it.start_with?("#{@root}/") }
+    end
 
     def metadata
       load_metadata unless @metadata
@@ -103,8 +108,7 @@ module Raindown
     end
 
     def process(file_path:)
-      metadata = implicit_metadata(file_path:).merge(front_matter(file_path))
-      @metadata[file_path] = metadata
+      metadata = @metadata[file_path] = implicit_metadata(file_path:).merge(front_matter(file_path))
       metadata.each { |type, tag| Array(tag).each { |item| tag(type:, tag: item, file_path:) } }
     end
 
