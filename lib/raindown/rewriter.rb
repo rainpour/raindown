@@ -2,7 +2,7 @@
 
 require_relative 'node_injector'
 require_relative 'endpoint/endpoint_runner'
-require_relative 'table_formatter'
+require_relative 'table/table_formatter'
 require_relative 'utils'
 
 module Raindown

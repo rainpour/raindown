@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/table_formatter'
+require 'raindown/table/table_formatter'
 
 RSpec.describe Raindown::TableFormatter do
   def rewrite(content)
