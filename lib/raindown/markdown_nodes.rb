@@ -57,10 +57,11 @@ module Raindown
 
     # Braces that the template pass hid, in its code or its props' values, are written back as braces.
     # The template pass loads here, as it loads nodes itself.
-    def replace(metadata: NoMetadata, bare: false)
+    def rewrite(document: '', metadata: NoMetadata, bare: false)
       require_relative 'pre_renderer'
       defaults, template = FrontMatter.parse(File.read(self.class.path))
-      markdown = PreRenderer.render(template, variables: Variables.new(defaults.merge(@props)), metadata:, bare:)
+      context = Context.new(document:, metadata:, bare:)
+      markdown = PreRenderer.render(template, variables: Variables.new(defaults.merge(@props)), context:)
       Variables.unwrap(markdown.sub(/\A(?:[ \t]*\n)+/, '').rstrip)
     end
   end

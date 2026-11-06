@@ -10,7 +10,7 @@ RSpec.describe Raindown::Chart do
   end
 
   def chart(data, **props)
-    described_class.new(data, **props).replace.delete_prefix("```\n").delete_suffix("\n```")
+    described_class.new(data, **props).rewrite.delete_prefix("```\n").delete_suffix("\n```")
   end
 
   describe 'data' do

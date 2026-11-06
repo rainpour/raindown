@@ -23,7 +23,7 @@ module Raindown
                '9' => ['█▀█', '▀▀█', '▀▀▀'], '-' => ['   ', '▀▀▀', '   '], '+' => [' ▄ ', '▀█▀', '   '],
                '.' => [' ', ' ', '▀'], ',' => [' ', ' ', '▀'] }.freeze
 
-    def replace(metadata: NoMetadata) = "```\n#{card_lines(metadata:).join("\n")}\n```"
+    def rewrite(metadata: NoMetadata) = "```\n#{card_lines(metadata:).join("\n")}\n```"
 
     # The number in block digits, then the label, as a card on the Dashboard shows them.
     def card_lines(metadata: NoMetadata)

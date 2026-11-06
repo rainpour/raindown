@@ -102,14 +102,14 @@ RSpec.describe Raindown::Pages do
     end
   end
 
-  it 'gives files: and list: their metadata from the CLI' do
+  it 'gives list: its metadata, bare and in a block, from the CLI' do
     write('docs/_basics/_1-a.md', "---\ntitle: A\n---\n")
-    write('index.rd', "files: folder: 'basics'\n\n<{ list: page folder: 'basics' }>\n## {page.title}\n<{ :list }>\n")
+    write('index.rd', "list: folder: 'basics'\n\n<{ list: page folder: 'basics' }>\n## {page.title}\n<{ :list }>\n")
     path = File.join(@root, 'index.rd')
 
     Raindown::CLI.run([path, '--html', File.join(@root, 'index.html')])
 
-    expect(File.read(path)).to start_with("files: folder: 'basics'\n- [A](docs/_basics/_1-a.md)\n")
+    expect(File.read(path)).to start_with("list: folder: 'basics'\n- [A](docs/_basics/_1-a.md)\n")
     expect(File.read(File.join(@root, 'index.html'))).to include('<a href="docs/_basics/_1-a.md">A</a>', '<h2 id="a">A')
   end
 

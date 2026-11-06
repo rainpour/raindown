@@ -8,7 +8,7 @@ require_relative 'front_matter'
 module Raindown
   # Raindown files (.rd/.raindown) can write a content directive, which writes its output back, bare on its own line,
   # like endpoint: or toc:, which shows in bold in the HTML. Markdown files opt in with "raindown: true" in their front
-  # matter, or with the --bare flag. Nodes like toc: and files: are handled by NodeBlocks, before the rest.
+  # matter, or with the --bare flag. Nodes like toc: and list: are handled by NodeBlocks, before the rest.
   # Template directives, like if: and for:, are always in Antlers' delimiters, so they're never bare.
   #
   # A bare schema: shows in bold, with its fields in a code block below it.

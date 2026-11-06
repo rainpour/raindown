@@ -13,7 +13,7 @@ RSpec.describe Raindown::Stat do
 
   it 'draws its value in block digits above its label, as a card shows it, and writes them as code' do
     expect(issues.new.card_lines).to eq(['▀█  ▀▀█', ' █  █▀▀', '▀▀▀ ▀▀▀', 'open issues'])
-    expect(issues.new.replace).to eq("```\n▀█  ▀▀█\n █  █▀▀\n▀▀▀ ▀▀▀\nopen issues\n```")
+    expect(issues.new.rewrite).to eq("```\n▀█  ▀▀█\n █  █▀▀\n▀▀▀ ▀▀▀\nopen issues\n```")
   end
 
   it "writes the value its own way, with a sign or a point on the digits' baseline, other characters on the middle line" do

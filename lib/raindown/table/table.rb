@@ -27,12 +27,12 @@ module Raindown
     end
 
     # Written is what it wrote last time, so it can tell which of the table and the file changed since.
-    def replace(written: [], metadata: NoMetadata)
+    def rewrite(written: [], metadata: NoMetadata)
       path = data_path(metadata)
       data_error(path) || synced(path, written.map(&:chomp))
     end
 
-    # Written in, in <{ }>, the table only shows its file, and never writes to it.
+    # Write-in, in <{ }>, the table only shows its file, and never writes to it.
     def render(metadata: NoMetadata)
       path = data_path(metadata)
       Raindown.commonmark(data_error(path) || MarkdownTable.format(read_rows(path)))

@@ -16,7 +16,7 @@ RSpec.describe Raindown::Server do
   end
 
   def shout(text)
-    File.write(File.join(@dir, '.raindown', 'shout.rb'), "class Shout < Raindown::Node\n  def replace = '#{text}'\nend\n")
+    File.write(File.join(@dir, '.raindown', 'shout.rb'), "class Shout < Raindown::Node\n  def rewrite = '#{text}'\nend\n")
   end
 
   # The server's answers to the requests, after it says it's ready.

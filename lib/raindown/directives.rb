@@ -19,7 +19,7 @@ module Raindown
 
     module_function
 
-    # A directive's line without its delimiters, like "files: folder: 'notes'" for <!-- files: folder: 'notes' -->.
+    # A directive's line without its delimiters, like "list: folder: 'notes'" for <!-- list: folder: 'notes' -->.
     def text(line)
       line = line.strip
       [COMMENT, DELIMITERS].each do |open, close|

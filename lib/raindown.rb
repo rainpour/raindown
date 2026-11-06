@@ -8,6 +8,7 @@ require_relative 'elements'
 require_relative 'raindown/bare_directives'
 require_relative 'raindown/code'
 require_relative 'raindown/config'
+require_relative 'raindown/context'
 require_relative 'raindown/directives'
 require_relative 'raindown/fragments'
 require_relative 'raindown/front_matter'
@@ -32,7 +33,7 @@ module Raindown
   # Without highlighting, code blocks are left for the browser to highlight, like <pre><code class="language-ruby">.
   UNHIGHLIGHTED_OPTIONS = { render: { **HTML_OPTIONS[:render], github_pre_lang: false } }.freeze
 
-  # Stands in for an app's metadata when there isn't any, so list: and files: list nothing.
+  # Stands in for an app's metadata when there isn't any, so list: lists nothing.
   module NoMetadata
     def self.list(**) = []
   end
@@ -49,13 +50,12 @@ module Raindown
   # Bare directives like "toc:" show in bold in the HTML, and the rest stay hidden, as comments.
   # Code blocks are highlighted, unless highlight_code is false for a site that highlights code in the browser.
   def render(markdown:, metadata: NoMetadata, bare: false, highlight_code: true)
-    bare ||= BareDirectives.front_matter?(markdown)
+    context = Context.new(document: markdown, metadata:, bare: bare || BareDirectives.front_matter?(markdown))
 
     highlighting(highlight_code) do
       Fragments.collect do
         # Components' HTML goes back in, then their headings get unique ids, before nodes like the TOC see it.
-        html = assembled(markdown:, metadata:, bare:)
-        html = Nodes.render_placeholders(html, document: markdown, metadata:, bare:, html:)
+        html = Nodes.render_placeholders(assembled(context), context)
 
         Directives.render("#{html.chomp}\n")
       end
@@ -77,15 +77,14 @@ module Raindown
   end
 
   # The document's HTML with its components' HTML put back, and unique heading ids.
-  def assembled(markdown:, metadata: NoMetadata, bare: false)
-    HeadingIds.unique(Fragments.fill(html(markdown:, variables: variables(markdown:), metadata:, bare:)))
+  def assembled(context)
+    HeadingIds.unique(Fragments.fill(html(context)))
   end
 
   # The document's HTML from Commonmarker, after nodes and the template pass, with components as fragments.
-  def html(markdown:, variables:, metadata: NoMetadata, bare: false)
-    markdown = NodeBlocks.to_rendered(markdown.dup.force_encoding('UTF-8'), metadata:, bare:)
-    markdown = WikiLinks.to_markdown(markdown, metadata:)
-    commonmark(PreRenderer.render(markdown, variables:, metadata:, bare:))
+  def html(context)
+    markdown = WikiLinks.to_markdown(NodeBlocks.to_rendered(context), metadata: context.metadata)
+    commonmark(PreRenderer.render(markdown, variables: context.variables, context:))
   end
 
   # Markdown to HTML, like a document's or a component's slot.
@@ -101,10 +100,6 @@ module Raindown
   # Code blocks without highlighting, with a language class for highlighting in the browser.
   def unhighlighted_html(doc:)
     doc.to_html(options: UNHIGHLIGHTED_OPTIONS, plugins: { syntax_highlighter: nil })
-  end
-
-  def variables(markdown:)
-    Variables.new(FrontMatter.parse(markdown).first)
   end
 
   # Commonmarker escapes directives, so they're hidden in HTML comments until it's done.

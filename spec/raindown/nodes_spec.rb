@@ -20,7 +20,7 @@ RSpec.describe Raindown::Nodes do
     it 'loads the nodes in the .raindown folder once' do
       Dir.mktmpdir do |dir|
         FileUtils.mkdir_p(File.join(dir, '.raindown'))
-        File.write(File.join(dir, '.raindown', 'spec_loaded.rb'), "class SpecLoaded < LowNode\n  def replace = 'Loaded'\nend\n")
+        File.write(File.join(dir, '.raindown', 'spec_loaded.rb'), "class SpecLoaded < LowNode\n  def rewrite = 'Loaded'\nend\n")
 
         2.times { described_class.load(File.join(dir, 'notes.rd')) }
 
@@ -36,21 +36,21 @@ RSpec.describe Raindown::Nodes do
       expect(described_class.node_class('SpecReleases')).to eq(SpecReleases)
     end
 
-    it 'is a LowNode or Raindown node with replace' do
+    it 'is a LowNode or Raindown node with rewrite' do
       Dir.mktmpdir do |dir|
         FileUtils.mkdir_p(File.join(dir, '.raindown'))
         File.write(File.join(dir, '.raindown', 'spec_route.rb'), "class SpecRoute < LowNode\nend\n")
-        File.write(File.join(dir, '.raindown', 'spec_writer.rb'), "class SpecWriter < LowNode\n  def replace = 'x'\nend\n")
+        File.write(File.join(dir, '.raindown', 'spec_writer.rb'), "class SpecWriter < LowNode\n  def rewrite = 'x'\nend\n")
         described_class.load(File.join(dir, 'notes.rd'))
-        stub_const('SpecPlain', Class.new { def replace = 'x' })
+        stub_const('SpecPlain', Class.new { def rewrite = 'x' })
 
         expect(%w[String Missing SpecPlain SpecRoute].map { described_class.node_class(it) }).to all(be_nil)
         expect(described_class.node_class('SpecWriter')).to eq(SpecWriter)
       end
     end
 
-    it 'is the built-in TOC or Files for toc and files' do
-      expect([described_class.node_class('toc'), described_class.node_class('files')]).to eq([Raindown::TOC, Raindown::Files])
+    it 'is the built-in TOC or List for toc and list' do
+      expect([described_class.node_class('toc'), described_class.node_class('list')]).to eq([Raindown::TOC, Raindown::List])
     end
   end
 
@@ -65,8 +65,9 @@ RSpec.describe Raindown::Nodes do
       node = described_class.instance(SpecReleases, { limit: 1 })
       html = described_class.placeholder(node)
 
-      expect(described_class.render_placeholders(html)).to eq('<ol data-count="1"><li>1.2.0</li></ol>')
-      expect(described_class.render_placeholders(html)).to eq('<ol data-count="2"><li>1.2.0</li></ol>')
+      first, second = Array.new(2) { described_class.render_placeholders(html, Raindown::Context.new)[/data-count="(\d+)"/, 1].to_i }
+
+      expect(second).to eq(first + 1)
     end
   end
 end

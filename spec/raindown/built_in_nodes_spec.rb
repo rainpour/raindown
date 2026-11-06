@@ -43,7 +43,7 @@ RSpec.describe 'Raindown built-in nodes' do
     end
   end
 
-  describe Raindown::Files do
+  describe Raindown::List do
     let(:metadata) do
       Class.new do
         def list(folder:)
@@ -53,20 +53,37 @@ RSpec.describe 'Raindown built-in nodes' do
       end.new
     end
 
+    it 'sorts its files by the metadata order: names, with files without it last' do
+      pages = [{ path: '/c', title: 'C' }, { path: '/a', created_at: 2 }, { path: '/b', created_at: 1 }].map { Raindown::Page.new(file_path: nil, metadata: it) }
+      metadata = Class.new { define_method(:list) { |**| pages } }.new
+
+      expect(Raindown::List.new(order: :created_at).files(metadata:).map(&:path)).to eq(%w[/b /a /c])
+    end
+
+    it "reads an unquoted value in <{ }> that can't be a variable's name as an unknown one" do
+      expect { Raindown.render(markdown: "<{ :list folder: a-b }>\n", metadata:) }.not_to raise_error
+    end
+
     it 'writes nothing without metadata' do
-      expect(rewrite("files: folder: 'notes'\n", path: 'notes.rd')).to eq("files: folder: 'notes'\n")
+      expect(rewrite("list: folder: 'notes'\n", path: 'notes.rd')).to eq("list: folder: 'notes'\n")
     end
 
     it 'renders a link to each file, by title or else by path' do
-      html = Raindown.render(markdown: "<!-- files: folder: 'notes' -->\n<!-- :files -->\n", metadata:)
+      html = Raindown.render(markdown: "<!-- list: folder: 'notes' -->\n<!-- :list -->\n", metadata:)
 
       expect(html).to include('<li><a href="/notes/1">notes 1</a></li>', '<li><a href="/notes/2">/notes/2</a></li>')
     end
 
-    it 'is replaced by a project Files node' do
-      stub_const('Files', Class.new(Raindown::Files) { def replace(metadata:) = files(metadata:).map { "* #{it.path}" }.join("\n") })
+    it 'renders its links in <{ }>, where folder: is its own prop' do
+      html = Raindown.render(markdown: "<{ :list folder: 'notes' }>\n", metadata:)
 
-      expect(Raindown.render(markdown: "files: folder: 'notes'\n", metadata:, bare: true)).to include('<li>/notes/1</li>')
+      expect(html).to include('<li><a href="/notes/1">notes 1</a></li>')
+    end
+
+    it 'is replaced by a project List node' do
+      stub_const('List', Class.new(Raindown::List) { def rewrite(metadata:) = files(metadata:).map { "* #{it.path}" }.join("\n") })
+
+      expect(Raindown.render(markdown: "list: folder: 'notes'\n", metadata:, bare: true)).to include('<li>/notes/1</li>')
     end
   end
 end

@@ -5,7 +5,7 @@ require_relative 'front_matter'
 
 module Raindown
   # Obsidian's links between notes, which render as Markdown links to the file they name, by its path in the project,
-  # like files: links, while the file keeps them as they are:
+  # like list: links, while the file keeps them as they are:
   #   [[Reading list]]                   [Reading list](<notes/Reading list.md>)
   #   [[Reading list|books]]             [books](<notes/Reading list.md>)
   #   [[Reading list#To read]]           [Reading list > To read](<notes/Reading list.md#to-read>)

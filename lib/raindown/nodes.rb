@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative 'chart/chart'
-require_relative 'files'
 require_relative 'fragments'
 require_relative 'js/js_nodes'
+require_relative 'list'
 require_relative 'markdown_nodes'
 require_relative 'node'
 require_relative 'stat'
@@ -14,14 +14,17 @@ module Raindown
   # Nodes are LowNodes that a node block writes into the Markdown and renders into the HTML.
   # A project keeps them in a .raindown folder, which is loaded with Dirload, beside its JavaScript and Markdown
   # Components, if any.
-  # Bare or in comments, a node writes back: its Markdown, from #replace, is written into the file, and its HTML is from
-  # #render if it has one. In <{ }> it's written in: it only renders, with #render, which takes the Markdown between its
+  # Bare or in comments, a node writes back: its Markdown, from #rewrite, is written into the file, and its HTML is from
+  # #render if it has one. In <{ }> it's write-in: it only renders, with #render, which takes the Markdown between its
   # tags as slot:, in HTML. Either can take the keywords document: (the Markdown being rendered), metadata:, bare: and
   # written: (the lines it wrote last time), and gets the ones it asks for.
   module Nodes
+    # A write-in node that has no render.
+    class NoRender < StandardError; end
+
     FOLDER = '.raindown'
-    # Lowercase directives for Raindown's own nodes. A project's own TOC, Files, Chart or Table node replaces Raindown's.
-    BUILT_INS = { 'toc' => 'TOC', 'files' => 'Files', 'chart' => 'Chart', 'table' => 'Table' }.freeze
+    # Lowercase directives for Raindown's own nodes. A project's own TOC, List, Chart or Table node replaces Raindown's.
+    BUILT_INS = { 'toc' => 'TOC', 'list' => 'List', 'chart' => 'Chart', 'table' => 'Table' }.freeze
     # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers, with its slot's HTML, as a
     # fragment, when it has one.
     PLACEHOLDER = /<!-- raindown:node (\d+)(?: slot (\d+))? -->/
@@ -66,21 +69,21 @@ module Raindown
 
     # A Ruby node of the name, or else a JavaScript one, or else a Markdown one.
     def loaded_class(name)
-      klass = Object.const_get(name) if Object.const_defined?(name)
+      klass = Object.const_get(name) if name.match?(/\A[A-Z]/) && Object.const_defined?(name)
       return klass if node?(klass)
 
       JSNodes.node_class(name) || MarkdownNodes.node_class(name)
     end
 
     # A LowNode, or one of Raindown's own nodes, that writes Markdown. In an app, LowNodes are also routes and pages,
-    # which don't have replace, so text like "Note:" only starts a block when the Note node writes something.
+    # which don't have rewrite, so text like "Note:" only starts a block when the Note node writes something.
     def node?(klass)
-      return false unless klass.is_a?(Class) && klass.method_defined?(:replace)
+      return false unless klass.is_a?(Class) && klass.method_defined?(:rewrite)
 
       klass < Node || (defined?(::LowNode) && klass < ::LowNode) || false
     end
 
-    # Calls a node's replace or render with the context keywords it takes.
+    # Calls a node's rewrite or render with the context keywords it takes.
     def call(node, name, **context)
       parameters = node.method(name).parameters
       return node.public_send(name, **context) if parameters.any? { |type, _| type == :keyrest }
@@ -102,36 +105,54 @@ module Raindown
       list[instances[key]]
     end
 
-    def placeholder(node, slot: nil)
-      return "<!-- raindown:node #{list.index(node)} -->" unless slot
+    # Renders the node where it is, as a fragment, so its headings are part of the page, or through a placeholder, once
+    # the page is HTML, when its render takes html:, the page's HTML, like TOC's.
+    def rendered(node, context, slot: '')
+      raise NoRender, "#{node.class.name} has no render, so it can't be write-in: write it bare or in comments" unless renders?(node)
+      return placeholder(node, slot:) if !template?(node.class) && takes?(node, :render, :html)
+
+      Fragments.add(html(node, context, slot:))
+    end
+
+    def takes?(node, method_name, keyword)
+      node.method(method_name).parameters.any? { |_, name| name == keyword }
+    end
+
+    # Whether the node's class has a template, like a Raindeer .rbx component, which renders in place of render.
+    def template?(klass)
+      klass.respond_to?(:template) && !klass.template.nil?
+    end
+
+    def placeholder(node, slot: '')
+      return "<!-- raindown:node #{list.index(node)} -->" if slot.empty?
 
       "<!-- raindown:node #{list.index(node)} slot #{Fragments.store(slot)} -->"
     end
 
-    # Swaps each placeholder for its node's HTML, given its slot, the HTML between its tags in <{ }>, which can hold
-    # components' fragments.
-    def render_placeholders(html, **context)
-      html.gsub(PLACEHOLDER) do
+    # Swaps each placeholder for its node's HTML, given the page's HTML and its slot, the HTML between its tags in <{ }>,
+    # which can hold components' fragments.
+    def render_placeholders(page_html, context)
+      page_html.gsub(PLACEHOLDER) do
         match = ::Regexp.last_match
         slot = match[2] ? Fragments.list[match[2].to_i] : ''
-        Fragments.fill(html(list[match[1].to_i], slot:, **context))
+        Fragments.fill(html(list[match[1].to_i], context, slot:, html: page_html))
       end
     end
 
-    def html(node, **context)
-      return node.render_template(props: {}).to_s if node.class.respond_to?(:template) && node.class.template
+    def html(node, context, **keywords)
+      return node.render_template(props: {}).to_s if template?(node.class)
 
-      call(node, :render, **context).to_s
+      call(node, :render, **context.to_h, **keywords).to_s
     end
 
     # Whether the node renders its own HTML rather than the HTML of its Markdown, which Raindown's nodes render by default.
     def html?(node)
-      return true if node.class.respond_to?(:template) && !node.class.template.nil?
+      return true if template?(node.class)
 
       node.respond_to?(:render) && node.method(:render).owner != Node
     end
 
-    # Whether the node renders at all, so it can be written in, in <{ }>.
+    # Whether the node renders at all, so it can be write-in, in <{ }>.
     def renders?(node)
       node.respond_to?(:render) || html?(node)
     end

@@ -16,24 +16,20 @@ module Raindown
   #   - **1.2.0** Bare directives
   #
   #   <!-- :Changelog -->
-  # In Antlers' delimiters, <{ Changelog: }> to <{ :Changelog }>, or a self-closing <{ :Changelog }> or bare
-  # :Changelog, the node's written in: it only renders, with its render, never its replace, and what's between its tags
-  # is its slot. toc: and files: are Raindown's own nodes. A name only starts a block when it's a loaded node, so other
-  # text like "Note:" is left alone.
+  # A bare :Changelog is write-in: it only renders, with its render, never its rewrite. In Antlers' delimiters, like
+  # <{ Changelog }>, it's write-in too, and the template pass renders it, as a WriteInNode, so it's only found here
+  # for a document's outline. toc: and list: are Raindown's own nodes. A name only starts a block when it's a loaded
+  # node, so other text like "Note:" is left alone.
   module NodeBlocks
     class MissingEndTag < StandardError; end
     class BrokenText < StandardError; end
-    class NoRender < StandardError; end
-
-    # What a document's blocks render with: its Markdown, its metadata, whether it can be bare, and its front matter's
-    # variables, for a slot's template.
-    Context = Data.define(:markdown, :metadata, :bare, :variables)
 
     NAME = "(?:#{Nodes::BUILT_INS.keys.join('|')}|[A-Z]\\w*(?:::[A-Z]\\w*)*)".freeze
     OPEN = /\A( {0,3})<\{\s*(#{NAME}):(?:\s+(.*?))?\s*\}>[ \t]*$/
     COMMENT_OPEN = /\A( {0,3})<!--\s*(#{NAME}):(?:\s+(.*?))?\s*-->[ \t]*$/
     BARE_OPEN = /\A( {0,3})(#{NAME}):(?:[ \t]+(.*?))?[ \t]*$/
-    SELF_CLOSING = /\A( {0,3})<\{\s*:(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
+    # <{ Card }>, or <{ :Card }>, which a lowercase name like toc needs, as <{ toc }> is a variable.
+    SELF_CLOSING = /\A( {0,3})<\{\s*(?::|(?=[A-Z]))(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
     BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
     # Unquoted text after name:, like YAML's, runs up to the next prop, so title: Hello world limit: 3 has two.
     UNQUOTED = /.+?(?=[ \t]+\w+(?:=|:[ \t])|[ \t]*\z)/
@@ -46,12 +42,15 @@ module Raindown
     module_function
 
     # Each block outside code and front matter as { open:, close:, last:, writes:, node: }, where close is nil for a
-    # bare block, and writes is whether its output's written into the file. A self-closing node is a block of one line
-    # with self_closing: true.
+    # bare block, and writes is whether its output's written into the file. A self-closing node is a block of one line.
     def find(lines, front_matter: {}, bare: false)
+      with_nodes(spans(lines, bare:), front_matter)
+    end
+
+    def with_nodes(spans, front_matter)
       variables = Variables.new(front_matter)
 
-      spans(lines, bare:).map do |span|
+      spans.map do |span|
         node = Nodes.instance(span[:class], *args(span[:args], variables, antlers: span[:antlers]))
         span.except(:name, :class, :args, :antlers).merge(node:)
       end
@@ -77,44 +76,29 @@ module Raindown
       spans
     end
 
-    # Swaps each block for its node's HTML, through a placeholder, or for its Markdown when it writes back and has no
-    # HTML of its own. The directive and end tag become Directives markers, which also keep the node's output from
-    # joining the Markdown around it, like two lists becoming one.
-    def to_rendered(markdown, metadata: NoMetadata, bare: false)
-      lines = markdown.lines
-      front_matter = FrontMatter.parse(markdown).first
-      context = Context.new(markdown:, metadata:, bare:, variables: Variables.new(front_matter))
-      find(lines, front_matter:, bare:).reverse_each do |block|
+    # Swaps each bare block or block in comments for its node's Markdown, or its HTML when it has its own, or only renders,
+    # as a fragment or a placeholder. The directive and end tag become Directives markers, which also keep the node's
+    # output from joining the Markdown around it, like two lists becoming one. Ones in <{ }> are left to Antlers.
+    def to_rendered(context)
+      lines = context.document.dup.force_encoding('UTF-8').lines
+      spans = spans(lines, bare: context.bare).reject { it[:antlers] }
+      with_nodes(spans, FrontMatter.parse(context.document).first).reverse_each do |block|
         lines[block[:open]..block[:last]] = rendered_lines(lines, block, context)
       end
       lines.join
     end
 
     def rendered_lines(lines, block, context)
-      output = node_markdown(lines, block, context).chomp
+      output = node_markdown(block, context).chomp
       close = marker(lines[block[:close]]) if block[:close]
 
       [marker(lines[block[:open]]), *("#{output}\n".lines unless output.empty?), *close]
     end
 
-    def node_markdown(lines, block, context)
-      return written_in(lines, block, context) unless block[:writes]
-      return Nodes.placeholder(block[:node]) if Nodes.html?(block[:node])
+    def node_markdown(block, context)
+      return Nodes.rendered(block[:node], context) if !block[:writes] || Nodes.html?(block[:node])
 
-      Nodes.call(block[:node], :replace, document: context.markdown, metadata: context.metadata, bare: context.bare).to_s
-    end
-
-    # A block that doesn't write back only renders, taking the Markdown between its tags as its slot, so its node needs
-    # a render.
-    def written_in(lines, block, context)
-      node = block[:node]
-      raise NoRender, "#{node.class.name} has no render, so it can't be in <{ }>: write it bare or in comments" unless Nodes.renders?(node)
-      return Nodes.placeholder(node) unless block[:close]
-
-      require_relative 'pre_renderer'
-      markdown = lines[(block[:open] + 1)...block[:close]].join
-      slot = PreRenderer.render(markdown, variables: context.variables, metadata: context.metadata, bare: context.bare)
-      Nodes.placeholder(node, slot: Raindown.commonmark(slot))
+      Nodes.call(block[:node], :rewrite, **context.to_h).to_s
     end
 
     def marker(line)
@@ -131,7 +115,7 @@ module Raindown
         end_tag(lines, index, found[2], comment: pattern == :comment_open)
           .then { |close| { open: index, close:, last: close, writes: pattern == :comment_open, **span } }
       when :bare_open then { **bare_block(lines, index), writes: true, **span }
-      else { open: index, close: nil, last: index, writes: false, self_closing: true, **span }
+      else { open: index, close: nil, last: index, writes: false, **span }
       end
     end
 
@@ -178,7 +162,7 @@ module Raindown
     end
 
     # A value, like 'text', 3, true, nil or :draft, or else a variable. In Antlers' delimiters a word is a variable, like
-    # author.name, while bare or in a comment, which read like Markdown, it's text, like notes in files: folder: notes,
+    # author.name, while bare or in a comment, which read like Markdown, it's text, like notes in list: folder: notes,
     # and only one in braces is a variable, like {author.name}.
     def value(value, variables, antlers: true)
       Lowkey::ValueParser.parse(value) do

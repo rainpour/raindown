@@ -2,6 +2,7 @@
 
 require 'raindown'
 require 'helpers/components'
+require 'helpers/nodes'
 
 RSpec.describe 'Raindown render tree' do
   let(:page) do
@@ -60,5 +61,25 @@ RSpec.describe 'Raindown render tree' do
     html = Raindown.render(markdown: "<{ SpecCard: name='outer' }>\n<{ SpecCard name='inner' }>\n<{ :SpecCard }>\n")
 
     expect(html).to include('<section data-name="outer"><section data-name="inner"></section>')
+  end
+
+  it 'gives a node in <{ }> its loop variables as props' do
+    markdown = "---\nlimits: [1, 2]\n---\n\n<{ for: limit in: limits }>\n<{ SpecReleases limit=limit }>\n<{ :for }>\n"
+
+    expect(Raindown.render(markdown:).scan('<li>').length).to eq(3)
+  end
+
+  it 'renders a component with only render like a node, with the document, keeping its instance between renders' do
+    markdown = "<{ SpecDocumentLength }>\n"
+    first, second = Array.new(2) { Raindown.render(markdown:).match(/data-count="(\d+)">(\d+)/).captures.map(&:to_i) }
+
+    expect(first.last).to eq(markdown.length)
+    expect(second.first).to eq(first.first + 1)
+  end
+
+  it 'lists the headings a node renders in <{ }> in the table of contents' do
+    html = Raindown.render(markdown: "<{ :toc }>\n\n<{ SpecWrapper: }>\n## Inside\n<{ :SpecWrapper }>\n")
+
+    expect(html).to include("<a href='#inside'>Inside</a>", '<aside><h2 id="inside">')
   end
 end

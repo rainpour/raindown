@@ -5,9 +5,9 @@ require 'raindown/directives'
 RSpec.describe Raindown::Directives do
   describe '.marker' do
     it 'marks a bare directive to show in bold, and one in delimiters or a comment to be left out' do
-      expect(described_class.marker("files: folder: 'notes'")).to eq("<!-- raindown:directive files: folder: 'notes' -->")
-      expect(described_class.marker("<{ :files }>\n")).to eq('<!-- raindown:hidden :files -->')
-      expect(described_class.marker("<!-- files: folder: 'notes' -->\n")).to eq("<!-- raindown:hidden files: folder: 'notes' -->")
+      expect(described_class.marker("list: folder: 'notes'")).to eq("<!-- raindown:directive list: folder: 'notes' -->")
+      expect(described_class.marker("<{ :list }>\n")).to eq('<!-- raindown:hidden :list -->')
+      expect(described_class.marker("<!-- list: folder: 'notes' -->\n")).to eq("<!-- raindown:hidden list: folder: 'notes' -->")
       expect(described_class.marker(':endpoint', shown: false)).to eq('<!-- raindown:hidden :endpoint -->')
     end
 

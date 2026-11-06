@@ -6,28 +6,27 @@ module Raindown
   class Elements
     include Plugs
 
-    # Antlers' prop and slot directives, rendered as components in the template pass.
-    plug(:prop_component) do
+    # Write-in nodes, in <{ }>, like <{ Card }>, <{ :toc }> or <{ Card: }>...<{ :Card }>, rendered in the template pass.
+    plug(:write_in) do
       plug(:lexeme) do
-        require 'lexemes/prop_lexeme'
-        Antlers::PropLexeme
+        require_relative 'lexemes/node_lexeme'
+        NodeLexeme
+      end
+
+      # A list: block loops over its files, so it comes before other nodes' blocks.
+      plug(:node) do
+        require_relative 'nodes/list_node'
+        ListNode
       end
 
       plug(:node) do
-        require_relative 'nodes/component_nodes'
-        PropComponentNode
-      end
-    end
-
-    plug(:slot_component) do
-      plug(:lexeme) do
-        require 'lexemes/slot_lexeme'
-        Antlers::SlotLexeme
+        require_relative 'nodes/write_in_node'
+        WriteInNode
       end
 
       plug(:node) do
-        require_relative 'nodes/component_nodes'
-        SlotComponentNode
+        require_relative 'nodes/write_in_node'
+        SoloWriteInNode
       end
     end
 
@@ -40,18 +39,6 @@ module Raindown
       plug(:node) do
         require_relative 'nodes/endpoint_node'
         EndpointNode
-      end
-    end
-
-    plug(:list) do
-      plug(:lexeme) do
-        require_relative 'lexemes/list_lexeme'
-        ListLexeme
-      end
-
-      plug(:node) do
-        require_relative 'nodes/list_node'
-        ListNode
       end
     end
   end

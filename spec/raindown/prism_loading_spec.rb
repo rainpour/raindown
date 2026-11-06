@@ -39,7 +39,7 @@ RSpec.describe 'Loading Prism' do
 
   it "is loaded to load a project's nodes" do
     FileUtils.mkdir_p(File.join(@dir, '.raindown'))
-    File.write(File.join(@dir, '.raindown', 'shout.rb'), "class Shout < Raindown::Node\n  def replace = 'Loud'\nend\n")
+    File.write(File.join(@dir, '.raindown', 'shout.rb'), "class Shout < Raindown::Node\n  def rewrite = 'Loud'\nend\n")
 
     html, prism = render('notes.rd', "# Notes\n\nShout:\n")
 

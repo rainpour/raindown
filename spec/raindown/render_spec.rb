@@ -100,6 +100,15 @@ RSpec.describe Raindown do
       expect(html).to eq("<p>After</p>\n")
     end
 
+    it 'translates a symbol in braces, while in Antlers delimiters it is a self-closing node' do
+      Antlers::Translations.load('symbols' => { 'app_name' => 'Raindown' })
+
+      expect(text(described_class.render(markdown: "{:app_name}\n"))).to include('Raindown')
+      expect { described_class.render(markdown: "<{ :app_name }>\n") }.to raise_error(NameError, /No node is named app_name/)
+    ensure
+      Antlers::Translations.load({})
+    end
+
     it 'keeps directives in code blocks as-is' do
       html = described_class.render(markdown: "```\n<{ :toc }>\n```\n")
 

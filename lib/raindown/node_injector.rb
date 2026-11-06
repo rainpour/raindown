@@ -36,7 +36,7 @@ module Raindown
 
     def block_lines(lines, block)
       context = { document: @content, metadata: @metadata, bare: @bare, written: written_lines(lines, block) }
-      markdown = Nodes.call(block[:node], :replace, **context).to_s.chomp
+      markdown = Nodes.call(block[:node], :rewrite, **context).to_s.chomp
       written = markdown.empty? ? [] : "#{markdown}\n".lines
       return [line(lines[block[:open]]), *bare(written, block)] unless block[:close]
 

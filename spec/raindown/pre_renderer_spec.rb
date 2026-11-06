@@ -88,7 +88,18 @@ RSpec.describe Raindown::PreRenderer do
       end.new
       markdown = "<{ list: page folder: 'notes' }>\n- {page.title}\n<{ :list }>\n"
 
-      expect(described_class.render(markdown, variables: Raindown::Variables.new({}), metadata:)).to eq("- notes 1\n- notes 2\n")
+      context = Raindown::Context.new(metadata:)
+      expect(described_class.render(markdown, variables: Raindown::Variables.new({}), context:)).to eq("- notes 1\n- notes 2\n")
+    end
+
+    it "lists by any tag, with props from variables, like list:'s links" do
+      metadata = Class.new do
+        def list(**tags) = [Raindown::Page.new(file_path: nil, metadata: { title: tags[:tags] })]
+      end.new
+      markdown = "<{ list: page tags: topic }>\n- {page.title}\n<{ :list }>\n"
+
+      context = Raindown::Context.new(metadata:)
+      expect(described_class.render(markdown, variables: Raindown::Variables.new(topic: 'ruby'), context:)).to eq("- ruby\n")
     end
   end
 end

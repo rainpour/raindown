@@ -4,8 +4,8 @@ require 'raindown/bare_directives'
 
 RSpec.describe Raindown::BareDirectives do
   describe '.expand' do
-    it 'leaves nodes like toc:, :toc and files: to NodeBlocks' do
-      content = "toc:\n\n:toc\n\nfiles: folder: 'notes'\n"
+    it 'leaves nodes like toc:, :toc and list: to NodeBlocks' do
+      content = "toc:\n\n:toc\n\nlist: folder: 'notes'\n"
 
       expect(described_class.expand(content)).to eq(content)
     end

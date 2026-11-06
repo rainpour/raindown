@@ -32,7 +32,7 @@ module Raindown
     end
 
     # The data is read every time, so the chart follows changes to its file.
-    def replace(metadata: NoMetadata)
+    def rewrite(metadata: NoMetadata)
       points = points(metadata:)
       return '' if points.empty?
 

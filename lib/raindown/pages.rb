@@ -5,7 +5,7 @@ require_relative 'page'
 require_relative 'utils'
 
 module Raindown
-  # The metadata of a project's Markdown files, which list: and files: list by tag.
+  # The metadata of a project's Markdown files, which list: lists by tag.
   # Ported from Raindeer's Rain::Pages, and takes the same Dirload metadata.
   #
   # Each file is tagged with its front matter, like "tags: [ruby, docs]" or "date: 2099", and by its path,

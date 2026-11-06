@@ -9,8 +9,14 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ### Changed
 
-- A node in `<{ }>` is written in: it only renders, with its `render`, never its `replace`, and gets the Markdown between its tags, as HTML, as `slot:`. A node with only `replace`, like `<{ :Changelog }>`, raises until it has a `render`
-- `files:`, `chart:`, `table:`, stats and Markdown components render in `<{ }>`, and `<{ table: }>` shows its file without writing to it
+- **Breaking:** a node's `replace` is `rewrite`, in Ruby and JavaScript nodes, as it rewrites what the node wrote into the file, and a node in `<{ }>` is write-in, which only renders
+- **Breaking:** `files:` is `list:`, one node that writes its links bare or in comments, like `<!-- list: folder: 'notes' -->`, renders them with `<{ :list folder: 'notes' }>`, and repeats its template for each file in `<{ list: page folder: 'notes' }>` ... `<{ :list }>`, which can filter by any tag, like `tags: 'ruby'`, and sort by any metadata, like `order: :created_at`. A project's `Files` node is a `List` node, like `class List < Raindown::List`
+- A node in `<{ }>` is write-in: it only renders, with its `render`, never its `rewrite`, and gets the Markdown between its tags, as HTML, as `slot:`. A node with only `rewrite`, like `<{ Changelog }>`, raises until it has a `render`
+- `list:`, `chart:`, `table:`, stats and Markdown components render in `<{ }>`, and `<{ table: }>` shows its file without writing to it
+- A node in `<{ }>` renders in the template pass, so its props can be loop variables, like `<{ Changelog limit=n }>` in a `for:`, it can be in another node's slot, and a component like `<{ Card }>` gets every prop, like any node, so one it doesn't take is an error
+- In `<{ }>` a name with a colon is always a node, so `<{ :app_name }>` is a self-closing tag rather than a translation, which is `{:app_name}`, and a capitalized name without one, like `<{ Card }>`, is self-closing too
+- A node whose `rewrite` takes `written:`, so takes edits back to its source, needs its own `render` to be write-in, so rendering never writes to its source
+- A component with only `render`, like `<{ Card }>`, renders like any node in `<{ }>`: one instance for its props, with the `document:`, `metadata:` and `bare:` it asks for. A node's HTML renders where it is, so its headings are in the table of contents, unless its `render` takes the page's `html:`, like the TOC's
 
 ## 0.13.0
 

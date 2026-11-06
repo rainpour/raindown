@@ -19,7 +19,7 @@ RSpec.describe Raindown::JSNodes do
     project('spec_js_list.mjs' => <<~JS)
       export class SpecJsList {
         constructor({ limit = 5 }) { this.limit = limit }
-        replace() { return Array.from({ length: this.limit }, (_, index) => `- ${index + 1}`).join('\\n') }
+        rewrite() { return Array.from({ length: this.limit }, (_, index) => `- ${index + 1}`).join('\\n') }
       }
     JS
 
@@ -31,23 +31,23 @@ RSpec.describe Raindown::JSNodes do
   it 'renders the HTML of a JavaScript Component with render, and is given the document' do
     project('spec_js_card.js' => <<~JS)
       export default class SpecJsCard {
-        replace() { return 'Card' }
+        rewrite() { return 'Card' }
         async render({ document }) { return `<aside>${document.length}</aside>` }
       }
     JS
 
-    expect(Raindown.render(markdown: "<{ :SpecJsCard }>\n")).to include('<aside>18</aside>')
+    expect(Raindown.render(markdown: "<{ SpecJsCard }>\n")).to include('<aside>18</aside>')
   end
 
   it 'leaves a Ruby node of the same name in place' do
-    project('spec_releases.js' => "export class SpecReleases { replace() { return 'JS' } }\n")
+    project('spec_releases.js' => "export class SpecReleases { rewrite() { return 'JS' } }\n")
     require 'helpers/nodes'
 
     expect(Raindown::Nodes.node_class('SpecReleases')).to eq(SpecReleases)
   end
 
   it 'raises the error a JavaScript Component throws' do
-    project('spec_js_broken.js' => "export class SpecJsBroken { replace() { throw new Error('Broken') } }\n")
+    project('spec_js_broken.js' => "export class SpecJsBroken { rewrite() { throw new Error('Broken') } }\n")
 
     expect { Raindown::NodeInjector.rewrite(content: "<!-- SpecJsBroken: -->\n<!-- :SpecJsBroken -->\n") }
       .to raise_error(Raindown::JSNodes::Error, 'Broken')

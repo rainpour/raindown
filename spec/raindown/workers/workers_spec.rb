@@ -27,7 +27,7 @@ RSpec.describe Raindown::Workers do
   end
 
   def node(root, shout)
-    File.write(File.join(root, '.raindown', 'shout.rb'), "class WorkersShout < Raindown::Node\n  def replace = '#{shout}'\nend\n")
+    File.write(File.join(root, '.raindown', 'shout.rb'), "class WorkersShout < Raindown::Node\n  def rewrite = '#{shout}'\nend\n")
   end
 
   it "sends a file's requests to the worker of the project it's in, the nearest one above it" do

@@ -6,7 +6,7 @@ require 'open3'
 require_relative '../node'
 
 module Raindown
-  # JavaScript Components, the .js and .mjs files in a project's .raindown folder, which export classes with replace and
+  # JavaScript Components, the .js and .mjs files in a project's .raindown folder, which export classes with rewrite and
   # optionally render, like Ruby nodes. They run in a NodeJS process of Raindown's own, started when a folder has them,
   # so only projects with JavaScript Components need NodeJS.
   module JSNodes
@@ -57,7 +57,7 @@ module Raindown
     end
   end
 
-  # A JavaScript Component, made in the NodeJS process with its props, where its replace and render are sent.
+  # A JavaScript Component, made in the NodeJS process with its props, where its rewrite and render are sent.
   class JSNode < Node
     # A class for each JavaScript Component, which renders its own HTML when the component has render.
     def self.for(name:, render:)
@@ -72,8 +72,8 @@ module Raindown
       JSNodes.host.request(op: 'new', id: object_id, name: self.class.name, args:, props:)
     end
 
-    def replace(**context)
-      js_output(:replace, context)
+    def rewrite(**context)
+      js_output(:rewrite, context)
     end
 
     private

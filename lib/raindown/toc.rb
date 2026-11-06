@@ -14,7 +14,7 @@ module Raindown
     IGNORED = %r{<!--.*?-->|<script\b.*?</script\s*>}mi
     TAG = /<[^>]*>/
 
-    def replace(document:, metadata: nil, bare: false)
+    def rewrite(document:, metadata: nil, bare: false)
       headings = headings(markdown: document, metadata:, bare:)
       return '' if headings.empty?
 
@@ -45,7 +45,7 @@ module Raindown
 
     # The document's headings, from its final HTML, or else by rendering it with its components.
     def headings(markdown:, html: nil, metadata: nil, bare: false)
-      html ||= Fragments.collect { Raindown.assembled(markdown:, metadata: metadata || NoMetadata, bare:) }
+      html ||= Fragments.collect { Raindown.assembled(Context.new(document: markdown, metadata: metadata || NoMetadata, bare:)) }
 
       html.gsub(IGNORED, '').scan(HEADING).map do |level, *ids, content|
         { level: level.to_i, text: CGI.unescapeHTML(content.gsub(TAG, '')).strip, id: CGI.unescapeHTML(ids.compact.first) }

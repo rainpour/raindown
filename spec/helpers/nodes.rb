@@ -11,7 +11,7 @@ class SpecReleases < Raindown::Node
     @count = 0
   end
 
-  def replace
+  def rewrite
     @releases.map { |version, summary| "- **#{version}** #{summary}" }.join("\n")
   end
 
@@ -28,23 +28,30 @@ class SpecHeading < Raindown::Node
     @title = title
   end
 
-  def replace
+  def rewrite
     "## #{@title}"
   end
 end
 
 # A node that writes two paragraphs, which only fit in a delimited block.
 class SpecParagraphs < Raindown::Node
-  def replace
+  def rewrite
     "One.\n\nTwo."
   end
 end
 
 # A node that wraps the Markdown between its tags in <{ }>, and fails if it's ever asked to write back there.
 class SpecWrapper < Raindown::Node
-  def replace = raise('replace is only for writing back')
+  def rewrite = raise('rewrite is only for writing back')
 
   def render(slot:)
     "<aside>#{slot}</aside>"
+  end
+end
+
+# A node that takes edits to what it wrote, like Table, but has no render of its own, so it can't be write-in.
+class SpecSynced < Raindown::Node
+  def rewrite(written: [])
+    raise "rewrite wrote back #{written}"
   end
 end

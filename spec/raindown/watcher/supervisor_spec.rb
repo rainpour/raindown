@@ -25,7 +25,7 @@ RSpec.describe Raindown::Watcher::Supervisor do
   end
 
   def node(root, shout)
-    File.write(File.join(root, '.raindown', 'shout.rb'), "class Shout < Raindown::Node\n  def replace = '#{shout}'\nend\n")
+    File.write(File.join(root, '.raindown', 'shout.rb'), "class Shout < Raindown::Node\n  def rewrite = '#{shout}'\nend\n")
   end
 
   # Forked workers update files in the background.
@@ -67,7 +67,7 @@ RSpec.describe Raindown::Watcher::Supervisor do
 
     it "doesn't hold up a project while another's write-back is slow, like an endpoint's request" do
       slow = project('raindeer', shout: 'Slow')
-      slow_node = "class Shout < Raindown::Node\n  def replace = sleep(3) && 'Slow'\nend\n"
+      slow_node = "class Shout < Raindown::Node\n  def rewrite = sleep(3) && 'Slow'\nend\n"
       File.write(File.join(@dir, 'raindeer', '.raindown', 'shout.rb'), slow_node)
       fast = project('raindown', shout: 'Fast')
 
@@ -83,7 +83,7 @@ RSpec.describe Raindown::Watcher::Supervisor do
       # The node leaves a mark as it stops its worker, so it's not changed back before the worker's loaded it.
       crashed = File.join(@dir, 'crashed')
       File.write(File.join(@dir, 'raindeer', '.raindown', 'shout.rb'),
-                 "class Shout < Raindown::Node\n  def replace = File.write('#{crashed}', '') && exit!(1)\nend\n")
+                 "class Shout < Raindown::Node\n  def rewrite = File.write('#{crashed}', '') && exit!(1)\nend\n")
 
       expect do
         supervisor.handle([raindeer])
