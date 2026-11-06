@@ -19,10 +19,12 @@ module Raindown
       Listen.to(directory, ignore: IGNORE) { |modified, added, removed| yield(modified + added + removed) }
     end
 
-    # The changes among the paths, by the project each is in, the nearest one above it, or else the root, when there is
-    # one, leaving out files that are neither nodes nor Markdown, or are in ignored folders.
-    def self.changes(paths, root: nil)
+    # The changes among the paths in the directory, by the project each is in, the nearest one above it, or else the
+    # root, when there is one, leaving out files that are neither nodes nor Markdown, or are in ignored folders or vaults.
+    def self.changes(paths, directory:, root: nil)
       paths.filter_map do |path|
+        next if Projects.vault_below?(path, directory)
+
         project = Projects.root(path) || root || next
         next Change.new(root: project, path:, nodes: true) if Projects.node?(path, root: project)
 

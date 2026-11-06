@@ -10,6 +10,11 @@ Minor features that don't break backwards compatibility are released as patches.
 ### Fixed
 
 - Raindown reads Markdown as UTF-8 without a locale, so a note with a table no longer crashes the server for an editor opened from the Dock, like Obsidian
+- The terminal UI on a folder of projects, like `~/dev`, no longer writes back to files outside them
+
+### Changed
+
+- An Obsidian vault below a folder Raindown's watching is left alone, as its plugin runs a Raindown of its own
 
 ## 0.14.0
 

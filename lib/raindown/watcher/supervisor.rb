@@ -42,7 +42,7 @@ module Raindown
       # endpoint's request with -x, only holds up its own project. Without fork, the projects share this process, so
       # they're taken in turn.
       def handle(paths)
-        Watcher.changes(paths).each do |change|
+        Watcher.changes(paths, directory:).each do |change|
           next unless change.nodes? || change.saved?
           next take(change) unless fork?
 

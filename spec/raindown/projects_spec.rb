@@ -32,6 +32,15 @@ RSpec.describe Raindown::Projects do
       expect(described_class.roots(File.join(docs, 'pages'))).to eq([docs])
     end
 
+    it 'skips a vault below the directory, but finds it from inside' do
+      vault = project('notes')
+      FileUtils.mkdir_p(File.join(vault, '.obsidian'))
+      docs = project('docs')
+
+      expect(described_class.roots(@dir)).to eq([docs])
+      expect(described_class.roots(vault)).to eq([vault])
+    end
+
     it 'skips dependency, build and hidden folders' do
       %w[node_modules/pkg vendor/gem build/site .cache/x].each { project(it) }
 

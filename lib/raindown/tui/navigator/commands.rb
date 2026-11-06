@@ -90,7 +90,7 @@ module Raindown
       # and the files and endpoints are read again for the files added, removed or changed. When endpoints run as files
       # are written back, like with -x, the screen says so while they do, as they can take a while.
       def watched(paths)
-        changes = Watcher.changes(paths, root:)
+        changes = Watcher.changes(paths, directory: root, root: plain_root)
         return reload if changes.any?(&:nodes?)
         return if changes.empty?
 
@@ -98,6 +98,12 @@ module Raindown
         return write_back_all(saved) unless @runs_endpoints && saved.any?
 
         Wait.new(message: "Writing back #{relative(saved.first)}...", task: -> { write_back_all(saved) })
+      end
+
+      # A file outside a project belongs to the folder only when it has no projects, as in a folder of notes. In one
+      # like ~/dev, only its projects are written back to, as they're all that's shown.
+      def plain_root
+        root if @workers.roots.empty?
       end
 
       def write_back_all(files)

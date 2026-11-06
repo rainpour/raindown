@@ -13,6 +13,7 @@ module Raindown
     IGNORED = %w[node_modules vendor tmp pkg build dist coverage].freeze
     # Ruby nodes and JavaScript Components.
     NODE_EXTENSIONS = ['.rb', '.rbx', *JSNodes::EXTENSIONS].freeze
+    VAULT_FOLDER = '.obsidian'
 
     module_function
 
@@ -23,11 +24,11 @@ module Raindown
     end
 
     # The folders below a directory with a .raindown folder. Only folders are walked, leaving out ignored, linked and
-    # gitignored ones, so it stays quick in a big folder like ~/dev.
+    # gitignored ones, so it stays quick in a big folder like ~/dev, and vaults, which their editor writes back to.
     def project_folders(directory, gitignore = Gitignore.new(directory))
       Dir.glob('*/', base: directory).flat_map do |folder|
         path = File.join(directory, folder.chomp('/'))
-        next [] if ignored?(folder.chomp('/')) || File.symlink?(path) || gitignore.ignores?(path)
+        next [] if ignored?(folder.chomp('/')) || File.symlink?(path) || gitignore.ignores?(path) || vault?(path)
 
         inside = project_folders(path, Gitignore.new(path, gitignore))
         next inside unless project?(path)
@@ -44,13 +45,13 @@ module Raindown
     end
 
     # The project's Markdown files, sorted, leaving out ignored folders. The projects inside it are left out too,
-    # since they have nodes of their own.
+    # since they have nodes of their own, and vaults, which their editor writes back to.
     def files(root)
       files = []
 
       Find.find(root) do |path|
         if File.directory?(path)
-          Find.prune if path != root && (ignored?(File.basename(path)) || project?(path))
+          Find.prune if path != root && (ignored?(File.basename(path)) || project?(path) || vault?(path))
         elsif markdown?(path, root:)
           files << path
         end
@@ -80,6 +81,25 @@ module Raindown
 
     def project?(folder)
       File.directory?(File.join(folder, Nodes::FOLDER))
+    end
+
+    # Whether a folder's an Obsidian vault, whose plugin runs a Raindown of its own, so one watching a folder above it
+    # leaves it alone, while one pointed at the vault itself doesn't.
+    def vault?(folder)
+      File.directory?(File.join(folder, VAULT_FOLDER))
+    end
+
+    # Whether a path's in a vault below the directory, which isn't the directory itself.
+    def vault_below?(path, directory)
+      tops = [File.expand_path(directory), File.realpath(directory)]
+      folders = []
+      folder = File.dirname(File.expand_path(path))
+      until tops.include?(folder) || folder == File.dirname(folder)
+        folders << folder
+        folder = File.dirname(folder)
+      end
+
+      tops.include?(folder) && folders.any? { vault?(it) }
     end
 
     def ignored?(folder)
