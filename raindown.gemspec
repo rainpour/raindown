@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   spec.bindir = 'bin'
   spec.executables = ['raindown']
 
-  spec.add_dependency 'antlers', '>= 1.4.0'
+  spec.add_dependency 'antlers', '>= 1.5.0'
   spec.add_dependency 'commonmarker'
   spec.add_dependency 'csv'
   spec.add_dependency 'curses', '~> 1.7'
