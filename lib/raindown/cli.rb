@@ -76,6 +76,8 @@ module Raindown
     end
 
     def self.run(argv)
+      # Markdown is UTF-8 whatever the locale, as an app opened from the Dock, like Obsidian, starts Raindown without one.
+      Encoding.default_external = Encoding::UTF_8
       return if command(argv)
 
       # Without a path, like "raindown", "raindown -x" or "raindown watch", it's the current directory.

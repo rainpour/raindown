@@ -4,6 +4,22 @@ require 'raindown/cli'
 require 'tmpdir'
 
 RSpec.describe Raindown::CLI do
+  it 'reads Markdown as UTF-8 without a locale, like an editor opened from the Dock starts it' do
+    locale = { 'LC_ALL' => 'C', 'LANG' => 'C' }
+    bin = File.expand_path('../../bin/raindown', __dir__)
+    output, status = Open3.capture2e(locale, RbConfig.ruby, bin, 'note.md', '--stdin', '--rewrite', stdin_data: "# Café · 東京\n")
+
+    expect([output, status.success?]).to eq(["# Café · 東京\n", true])
+  end
+
+  it 'answers an editor without a locale, with UTF-8 in the request' do
+    request = JSON.generate(id: 1, path: 'note.md', markdown: "# Café ·\n", rewrite: true)
+    bin = File.expand_path('../../bin/raindown', __dir__)
+    output, = Open3.capture2e({ 'LC_ALL' => 'C', 'LANG' => 'C' }, RbConfig.ruby, bin, 'server', stdin_data: "#{request}\n")
+
+    expect(JSON.parse(output.force_encoding('UTF-8').lines.last)).to include('id' => 1, 'output' => "# Café ·\n")
+  end
+
   around do |example|
     Dir.mktmpdir do |dir|
       @dir = dir

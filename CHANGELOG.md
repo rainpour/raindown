@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Fixed
+
+- Raindown reads Markdown as UTF-8 without a locale, so a note with a table no longer crashes the server for an editor opened from the Dock, like Obsidian
+
 ## 0.14.0
 
 ### Changed
