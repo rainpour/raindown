@@ -2,6 +2,7 @@
 
 require 'raindown'
 require 'raindown/node_injector'
+require 'raindown/rewriter'
 require 'tmpdir'
 
 RSpec.describe Raindown::Table do
@@ -69,6 +70,79 @@ RSpec.describe Raindown::Table do
   it 'writes the file again into an emptied table, without emptying the file' do
     expect(rewrite(table(synced.lines[1].chomp))).to eq(synced)
     expect(File.read(csv)).to include('Ada,engineer')
+  end
+
+  describe 'total: true' do
+    let(:sales) { File.join(@root, 'sales.csv') }
+    let(:totalled) { rewrite("table: 'sales.csv' total: true\n") }
+
+    before { File.write(sales, "item,units,price,note\nTea,3,1.5,hot\nCake,,2.25,\nJam,2,0.1,\n") }
+
+    it 'sums its columns of numbers in a bold row below it, to their most decimal places' do
+      expect(totalled).to include("| Jam | 2 | 0.1 |  |\n| **Total** | **5** | **3.85** |  |\n").and include('3 rows')
+    end
+
+    it 'writes edits back to its file without the total, and sums them again' do
+      edited = totalled.sub('| Tea | 3 |', '| Tea | 30 |').sub(/\| \*\*Total\*\*.*\n/, "\\0| Bun | 1 | 1 | |\n")
+
+      expect(rewrite(edited)).to include("| Bun | 1 | 1 |  |\n| **Total** | **33** | **4.85** |  |\n")
+      expect(CSV.read(sales).map { it.take(2) }).to eq([%w[item units], %w[Tea 30], ['Cake', ''], %w[Jam 2], %w[Bun 1]])
+    end
+
+    it 'shows its total in <{ }>' do
+      expect(Raindown.render(markdown: "<{ :table 'sales.csv' total: true }>\n", metadata:)).to include('<strong>3.85</strong>')
+    end
+  end
+
+  describe 'formula cells' do
+    let(:sales) { File.join(@root, 'sales.csv') }
+    let(:shown) { rewrite("table: 'sales.csv'\n") }
+
+    def aligned(content)
+      Raindown::Rewriter.rewrite(content:, path: 'sales.rd', metadata:).content
+    end
+
+    before { File.write(sales, "item,units,price\nTea,3,1.5\nCake,x,2.25\nTotal,=Sum(b),=sum(PRICE)\nNone,=SUM(Q),=AVG(B)\n") }
+
+    it 'shows =SUM by column letter or header, in any case, as its value, skipping text and formulas, and others as written' do
+      expect(shown).to include("| Total | 3 | 3.75 |\n| None | =SUM(Q) | =AVG(B) |\n")
+    end
+
+    it 'keeps formulas whose values are left alone, and writes edited ones back' do
+      edited = aligned("table: 'sales.csv'\n").sub(/^\| Tea +\| 3 +\|/, '| Tea | 30 |').sub(/^\| None .*$/, '| None | 1 | =SUM(C) |')
+
+      expect(aligned(edited)).to match(/^\| Total +\| 31 +\| 3\.75 +\|\n\| None +\| 1 +\| 3\.75 +\|$/)
+      expect(File.read(sales)).to end_with("Total,=Sum(b),=sum(PRICE)\nNone,1,=SUM(C)\n")
+    end
+
+    describe 'with its padding deleted' do
+      let(:revealed) { aligned(aligned("table: 'sales.csv'\n").sub(/^(\| Total +)\| 3 +\|/, '\1|3|')) }
+
+      it 'shows its formula, until the formula changes, ignoring whitespace' do
+        expect(revealed).to match(/^\| Total +\| =Sum\(b\) +\| 3\.75 +\|$/)
+        expect(aligned(revealed)).to eq(revealed)
+        expect(aligned(revealed.sub('=Sum(b)', '= Sum( b )'))).to eq(revealed)
+        expect(File.read(sales)).to include("Total,=Sum(b),=sum(PRICE)\n")
+      end
+
+      it 'writes a changed formula back to its file, and shows its value' do
+        expect(aligned(revealed.sub('=Sum(b)', '=SUM(C)'))).to match(/^\| Total +\| 3\.75 +\| 3\.75 +\|$/)
+        expect(File.read(sales)).to include("Total,=SUM(C),=sum(PRICE)\n")
+      end
+    end
+
+    it 'reads a row being typed as the file will, so finishing it is no conflict' do
+      table = aligned("#{aligned("table: 'sales.csv'\n")}|\n")
+
+      ['|  | =s', '|  | =sum(c) |'].each { |row| table = aligned(table.sub(/[^\n]*\n\z/, "#{row}\n")) }
+
+      expect(table).not_to include('conflict')
+      expect(File.read(sales)).to end_with(%("",=sum(c),""\n))
+    end
+
+    it 'shows values in <{ }>' do
+      expect(Raindown.render(markdown: "<{ :table 'sales.csv' }>\n", metadata:)).to include('<td>3.75</td>')
+    end
   end
 
   it "says when its data isn't a CSV or TSV file" do

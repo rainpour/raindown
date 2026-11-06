@@ -11,10 +11,16 @@ Minor features that don't break backwards compatibility are released as patches.
 
 - Raindown reads Markdown as UTF-8 without a locale, so a note with a table no longer crashes the server for an editor opened from the Dock, like Obsidian
 - The terminal UI on a folder of projects, like `~/dev`, no longer writes back to files outside them
+- `table:` reads a row still being typed as its file will, so finishing it isn't a conflict
 
 ### Changed
 
 - An Obsidian vault below a folder Raindown's watching is left alone, as its plugin runs a Raindown of its own
+
+### Added
+
+- `table:` with `total: true` sums its columns of numbers in a bold row below it, which isn't written to its file
+- `table:` shows `=SUM(B)` and `=sum(Price)` formula cells in its file as their values, keeping the formulas when edits are written back, and shows a cell's formula, to edit, when the spaces around its value are deleted
 
 ## 0.14.0
 

@@ -19,13 +19,19 @@ module Raindown
 
     # The rows of the table in the lines, leaving out its separator, or none when they aren't a table.
     def parse(lines)
-      return [] unless lines[1]&.strip&.match?(SEPARATOR)
-
-      [lines[0], *lines.drop(2)].take_while { it.strip.start_with?('|') }.map { cells(it.strip) }
+      padded_rows(lines).map { |row| row.map { cell(it) } }
     end
 
-    def cells(line)
-      line.delete_prefix('|').delete_suffix('|').split(PIPE, -1).map { it.strip.gsub('\|', '|') }
+    # The rows of the table in the lines, their cells as written, padding and all, leaving out its separator.
+    def padded_rows(lines)
+      return [] unless lines[1]&.strip&.match?(SEPARATOR)
+
+      table_lines = [lines[0], *lines.drop(2)].take_while { it.strip.start_with?('|') }
+      table_lines.map { it.strip.delete_prefix('|').delete_suffix('|').split(PIPE, -1) }
+    end
+
+    def cell(padded)
+      padded.strip.gsub('\|', '|')
     end
 
     def escape(cell)

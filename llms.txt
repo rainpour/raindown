@@ -88,6 +88,8 @@ Filter values must be quoted: `files: tags: 'intro'`.
 
 - Editing the table writes its rows back to the file, and editing the file writes the table again. HASH is of the rows when both last matched, so Raindown can tell which changed.
 - When both changed, neither is written, and the comment reads `<!-- table conflict · HASH -->` until they match. Delete the comment, or empty the table, to keep the file's rows.
+- `total: true` adds a bold row below the table summing its columns of numbers. It's never written to the file.
+- Formula cells in the file, like `=SUM(B)` or `=sum(Price)`, in any case, show their values. Edits keep a formula whose cell still shows its value. Deleting the spaces around a formula cell's value shows its formula, to edit, until it's changed.
 
 ## Endpoints
 
