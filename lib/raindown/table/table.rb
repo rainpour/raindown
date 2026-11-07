@@ -64,7 +64,7 @@ module Raindown
       synced_hash = written.first&.[](COMMENT, 1)
       table = WrittenTable.new(written_rows(written), file)
       return markdown(file, table.revealed) if unchanged?(table.rows, synced_hash, shown)
-      return markdown(write_rows(path, with_formulas(table.rows, file, shown)), table.revealed) if hash_rows(shown) == synced_hash
+      return markdown(write_rows(path, with_file_cells(table.rows, file, shown)), table.revealed) if hash_rows(shown) == synced_hash
 
       warn "raindown: #{@data} and its table both changed, so neither is written until they match"
       ["<!-- table conflict · #{synced_hash} -->", *written.drop(1)].join("\n")
@@ -95,12 +95,13 @@ module Raindown
       revealed.each_with_object(values.map(&:dup)) { |(row, column), shown| shown[row][column] = rows[row][column] }
     end
 
-    # The table's rows, keeping the file's formula in each cell still showing its value.
-    def with_formulas(table, file, shown)
+    # The table's rows, keeping the file's cell where the table still shows it, like a formula as its value, or a cell
+    # with line breaks on one line.
+    def with_file_cells(table, file, shown)
       table.each_with_index.map do |row, row_index|
         row.each_with_index.map do |cell, column|
-          formula = file.dig(row_index, column)
-          next formula if TableFormulas.formula?(formula) && shown.dig(row_index, column) == cell
+          kept = file.dig(row_index, column)
+          next kept if kept && MarkdownTable.one_line(shown.dig(row_index, column).to_s) == cell
 
           cell
         end
@@ -146,8 +147,9 @@ module Raindown
       rows
     end
 
+    # As the table shows them, so a cell with line breaks hashes the same in both.
     def hash_rows(rows)
-      Digest::SHA256.hexdigest(JSON.generate(rows))[0, 6]
+      Digest::SHA256.hexdigest(JSON.generate(rows.map { |row| row.map { MarkdownTable.one_line(it.to_s) } }))[0, 6]
     end
   end
 end

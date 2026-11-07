@@ -72,6 +72,27 @@ RSpec.describe Raindown::Table do
     expect(File.read(csv)).to include('Ada,engineer')
   end
 
+  describe 'a cell with a line break' do
+    before { File.write(csv, "name,note\nAda,\"one\ntwo\"\nLin,short\n") }
+
+    it "leaves the file alone when the table's only been written again" do
+      expect(rewrite(synced)).to include('| Ada | one two |')
+      expect(File.read(csv)).to eq("name,note\nAda,\"one\ntwo\"\nLin,short\n")
+    end
+
+    it 'keeps its line break when another cell is edited' do
+      rewrite(synced.sub('| Lin | short |', '| Lin | long |'))
+
+      expect(File.read(csv)).to eq("name,note\nAda,\"one\ntwo\"\nLin,long\n")
+    end
+
+    it 'writes the cell when it is edited' do
+      rewrite(synced.sub('| Ada | one two |', '| Ada | three |'))
+
+      expect(File.read(csv)).to eq("name,note\nAda,three\nLin,short\n")
+    end
+  end
+
   describe 'total: true' do
     let(:sales) { File.join(@root, 'sales.csv') }
     let(:totalled) { rewrite("table: 'sales.csv' total: true\n") }

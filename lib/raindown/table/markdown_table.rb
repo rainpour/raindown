@@ -35,7 +35,12 @@ module Raindown
     end
 
     def escape(cell)
-      cell.gsub('|', '\|').gsub(/\s*\R\s*/, ' ')
+      one_line(cell).gsub('|', '\|')
+    end
+
+    # The cell as a table shows it, on one line.
+    def one_line(cell)
+      cell.gsub(/\s*\R\s*/, ' ')
     end
   end
 end
