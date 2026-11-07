@@ -25,10 +25,11 @@ module Raindown
         @front_matters ||= {}
       end
 
-      # The Markdown files under a project's root, the folder with its .raindown folder or else the file's folder.
+      # The Markdown files under a project's root, the folder with its .raindown folder, or a vault, or else the file's
+      # folder.
       def for(path)
-        file_directory = File.dirname(File.expand_path(path))
-        load(root: Nodes.find_folder(file_directory)&.then { File.dirname(it) } || file_directory)
+        require_relative 'projects'
+        load(root: Projects.content_root(path) || File.dirname(File.expand_path(path)))
       end
 
       # Lists the files under the root, without loading them, for Dirload.

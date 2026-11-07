@@ -44,6 +44,18 @@ module Raindown
       folder && File.dirname(folder)
     end
 
+    # The folder a file's paths are relative to: the nearest with a .raindown folder or that's a vault, or nil without one.
+    # A vault doesn't need a .raindown folder, as Obsidian's links and a table's path are from its top.
+    def content_root(path)
+      folder = File.dirname(File.expand_path(path))
+      until project?(folder) || vault?(folder)
+        return if folder == File.dirname(folder)
+
+        folder = File.dirname(folder)
+      end
+      folder
+    end
+
     # The project's Markdown files, sorted, leaving out ignored folders. The projects inside it are left out too,
     # since they have nodes of their own, and vaults, which their editor writes back to.
     def files(root)

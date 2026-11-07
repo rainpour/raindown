@@ -2,6 +2,7 @@
 
 require 'raindown'
 require 'raindown/cli'
+require 'open3'
 require 'tmpdir'
 
 RSpec.describe Raindown::Pages do
@@ -122,6 +123,45 @@ RSpec.describe Raindown::Pages do
 
       expect(described_class.for(File.join(@root, 'docs', 'index.rd')).list.length).to eq(2)
       expect(described_class.for(File.join(Dir.tmpdir, 'no-project', 'index.rd')).list).to eq([])
+    end
+  end
+
+  describe '.for in an Obsidian vault' do
+    before do
+      FileUtils.mkdir_p(File.join(@root, '.obsidian'))
+      write('books/dune.md', "---\ntags: [book]\n---\n")
+    end
+
+    it 'loads the files under the vault, for a note in a folder of it' do
+      expect(described_class.for(File.join(@root, 'projects/2026/note.md')).root).to eq(@root)
+    end
+
+    it 'keeps to the nearest of a vault and a .raindown folder' do
+      FileUtils.mkdir_p(File.join(@root, 'site/.raindown'))
+
+      expect(described_class.for(File.join(@root, 'site/docs/note.md')).root).to eq(File.join(@root, 'site'))
+    end
+
+    it 'keeps to a vault inside a project' do
+      FileUtils.mkdir_p(File.join(@root, 'vault/.obsidian'))
+      FileUtils.mkdir_p(File.join(@root, '.raindown'))
+
+      expect(described_class.for(File.join(@root, 'vault/notes/note.md')).root).to eq(File.join(@root, 'vault'))
+    end
+
+    it "works with only Raindown's main file loaded, like in Raindeer" do
+      script = "require 'raindown'; print Raindown::Pages.for(ARGV.first).root"
+      output, status = Open3.capture2e(RbConfig.ruby, '-Ilib', '-e', script, File.join(@root, 'notes/note.md'))
+
+      expect([output, status.success?]).to eq([@root, true])
+    end
+
+    it 'finds a CSV file from the vault, for a table in a note in a folder of it' do
+      write('data/books.csv', "title\nDune\n")
+      note = File.join(@root, 'projects/note.md')
+      markdown = "<!-- table: 'data/books.csv' -->\n<!-- :table -->\n"
+
+      expect(Raindown::Editing.rewrite_markdown(markdown, path: note)[:output]).to include('| Dune')
     end
   end
 

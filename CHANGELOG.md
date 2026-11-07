@@ -11,6 +11,7 @@ Minor features that don't break backwards compatibility are released as patches.
 
 - Writing a table again no longer changes a CSV cell with a line break, and editing another cell keeps it
 - A file with front matter that can't be read no longer stops `list:` in other files, and a warning names it
+- A note in a folder of an Obsidian vault without a `.raindown` folder now finds the whole vault, for `list:`, `table:` and `chart:`
 - `list:` with an `order:` no longer fails when files have values of different types
 
 ## 0.16.0

@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -37 ██│████████████████████████████▏ +554
+Total    -17 ████│██████████████████████████  +112
 ──────────────────────────────────────────────────
-14d9fef   -9  ▐│▍                               +8
-2ccf4d5   -0   │████                           +78
-e798251  -18  █│███████████████▌              +306
-5423835  -10  ▐│███████                       +138
-d1320cc   -0   │█▎                             +24
+7d30bff   -4    █│████████████▌                +54
+2ccc904   -7   ▐█│█████████▌                   +41
+d025578   -3    █│███                          +13
+f049700   -1    ▕│▌                             +2
+02a0e4f   -2    ▐│▌                             +2
 ```
 <!-- :Commits -->
 
@@ -202,7 +202,7 @@ Like in [Obsidian](https://obsidian.md), `[[Reading list]]` links to the file na
 
 ### Metadata
 
-`list:` lists the Markdown files in your project by their metadata. The project is the folder with your [`.raindown`](#nodes) folder, or else the folder of the file being rendered.
+`list:` lists the Markdown files in your project by their metadata. The project is the folder with your [`.raindown`](#nodes) folder, or the top of your Obsidian vault, whichever's nearest, or else the folder of the file being rendered.
 
 A file's front matter is its metadata, and a list like `tags: [ruby, intro]` tags it with each item:
 
