@@ -52,6 +52,13 @@ RSpec.describe 'Raindown built-in nodes' do
       end.new
     end
 
+    it 'links a file without a title by its name' do
+      pages = [{ path: 'projects/2026/Hyperion.md' }, { path: 'Dune.md', title: 'The Dune' }]
+      metadata = Class.new { define_method(:list) { |**| pages.map { Raindown::Page.new(file_path: nil, metadata: it) } } }.new
+
+      expect(Raindown::List.new.rewrite(metadata:)).to eq("- [Hyperion](projects/2026/Hyperion.md)\n- [The Dune](Dune.md)")
+    end
+
     it 'sorts its files by the metadata order: names, with files without it last' do
       pages = [{ path: '/c', title: 'C' }, { path: '/a', created_at: 2 }, { path: '/b', created_at: 1 }].map { Raindown::Page.new(file_path: nil, metadata: it) }
       metadata = Class.new { define_method(:list) { |**| pages } }.new
@@ -74,10 +81,10 @@ RSpec.describe 'Raindown built-in nodes' do
       expect(rewrite("list: folder: 'notes'\n", path: 'notes.rd')).to eq("list: folder: 'notes'\n")
     end
 
-    it 'renders a link to each file, by title or else by path' do
+    it 'renders a link to each file, by title or else by name' do
       html = Raindown.render(markdown: "<!-- list: folder: 'notes' -->\n<!-- :list -->\n", metadata:)
 
-      expect(html).to include('<li><a href="/notes/1">notes 1</a></li>', '<li><a href="/notes/2">/notes/2</a></li>')
+      expect(html).to include('<li><a href="/notes/1">notes 1</a></li>', '<li><a href="/notes/2">2</a></li>')
     end
 
     it 'renders its links in <{ }>, where folder: is its own prop' do

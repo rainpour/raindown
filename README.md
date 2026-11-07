@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -17 ████│██████████████████████████  +112
+Total    -30 ▕████│█████████████████████████▊ +179
 ──────────────────────────────────────────────────
-7d30bff   -4    █│████████████▌                +54
-2ccc904   -7   ▐█│█████████▌                   +41
-d025578   -3    █│███                          +13
-f049700   -1    ▕│▌                             +2
-02a0e4f   -2    ▐│▌                             +2
+570f7de   -6     █│█                            +7
+02dcb6b  -10    ▐█│█████████▏                  +64
+7d30bff   -4     ▐│███████▊                    +54
+2ccc904   -7     █│█████▉                      +41
+d025578   -3     ▐│█▉                          +13
 ```
 <!-- :Commits -->
 
@@ -175,7 +175,7 @@ The block needs `<!-- :toc -->` after it. In a [Raindown file](#raindown-files) 
 
 ### Lists
 
-`list:` lists the files in a folder, or with any other [metadata](#metadata), from your project's Markdown files. Bare or in comments it writes a link to each, by its title, into the Markdown, and renders them as a list in the HTML:
+`list:` lists the files in a folder, or with any other [metadata](#metadata), from your project's Markdown files. Bare or in comments it writes a link to each, by its title or else its file name, into the Markdown, and renders them as a list in the HTML:
 
 ```md
 <!-- list: folder: 'notes' -->

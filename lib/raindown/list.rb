@@ -25,7 +25,7 @@ module Raindown
     end
 
     def rewrite(metadata: NoMetadata)
-      files(metadata:).map { |file| "- [#{file.title || file.path}](#{file.path})" }.join("\n")
+      files(metadata:).map { |file| "- [#{file.title || File.basename(file.path, '.*')}](#{file.path})" }.join("\n")
     end
 
     private

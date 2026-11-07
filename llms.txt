@@ -66,7 +66,7 @@ Templates render before Markdown, like Liquid in Jekyll, so a loop's lines join 
 
 Files in the project are listed by their metadata: front matter keys, plus underscored folders in the path. `docs/_basics/_1-getting-started.md` has `folder: basics`, `order: 1` and `path: docs/_basics/_1-getting-started.md`. Several folder tags in one segment are separated with `&`, like `_1&_basics`. A front matter list like `tags: [ruby, intro]` tags the file with each item. Files sort by `order`. The project root is the folder holding the `.raindown` folder, or else the rendered file's folder.
 
-- `<!-- list: folder: 'notes' -->` ... `<!-- :list -->` (bare: `list: folder: 'notes'`): writes a link to each matching file, by title, into the Markdown and renders it as a list.
+- `<!-- list: folder: 'notes' -->` ... `<!-- :list -->` (bare: `list: folder: 'notes'`): writes a link to each matching file, by title or else file name, into the Markdown and renders it as a list.
 - `[[Note]]`, `[[Note#Heading]]` and `[[Note|text]]` render as links to the file named Note, anywhere in the project.
 - `<{ list: page folder: 'notes' }>` ... `<{ :list }>`: repeats its template for each matching file, with the file bound to `page` (`{page.title}`). HTML only, nothing is written to the file.
 
