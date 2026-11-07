@@ -607,7 +607,7 @@ The [VS Code extension](vscode/) highlights syntax and previews Raindown files w
 
 ### Obsidian
 
-The [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) writes back to your notes as you save them, like `raindown watch`, with the [editor server](#editor-server), or `raindown NOTE --stdin --rewrite`, which prints the note as it would be written back without writing it. So tables of contents, components and `list:` fill in as you write, in plain Markdown that reads the same outside Obsidian. Endpoints only run from its **Run the endpoints in this note** command. If Raindown isn't installed, it offers to download the standalone binary.
+The [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) writes back to your notes as you save them, like `raindown watch`, with the [editor server](#editor-server), or `raindown NOTE --stdin --rewrite`, which prints the note as it would be written back without writing it. So tables of contents, components and `list:` fill in as you write, in plain Markdown that reads the same outside Obsidian. Endpoints only run from its **Run the endpoints in this note** command. It needs Raindown installed, and shows you how if it can't find it.
 
 ### Editor server
 
