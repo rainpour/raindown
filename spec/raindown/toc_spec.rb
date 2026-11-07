@@ -38,4 +38,37 @@ RSpec.describe Raindown::TOC do
       expect(headings(%(<h2 id="long">\n  Long\n  heading\n</h2>))).to eq([{ level: 2, text: "Long\n  heading", id: 'long' }])
     end
   end
+
+  describe '#rewrite' do
+    def rewrite(document) = described_class.new.rewrite(document:)
+
+    it 'leaves out a lone top-level heading, and moves the rest up a level' do
+      expect(rewrite("# Books\n\n## Reading\n\n### Sci-fi\n\n## Finished\n")).to eq(
+        "- [Reading](#reading)\n  - [Sci-fi](#sci-fi)\n- [Finished](#finished)"
+      )
+    end
+
+    it 'keeps top-level headings when there are several' do
+      expect(rewrite("# Books\n\n## Reading\n\n# Films\n")).to eq(
+        "- [Books](#books)\n  - [Reading](#reading)\n- [Films](#films)"
+      )
+    end
+
+    it "keeps a top-level heading that doesn't start the document" do
+      expect(rewrite("## Reading\n\n# Films\n")).to eq("  - [Reading](#reading)\n- [Films](#films)")
+    end
+
+    it 'keeps the title of a note with no other headings' do
+      expect(rewrite("# Books\n")).to eq('- [Books](#books)')
+    end
+  end
+
+  describe '#render' do
+    it 'leaves out a lone top-level heading' do
+      html = described_class.new.render(document: "# Books\n\n## Reading\n")
+
+      expect(html).to include('Reading')
+      expect(html).not_to include('Books')
+    end
+  end
 end

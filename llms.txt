@@ -60,7 +60,7 @@ Templates render before Markdown, like Liquid in Jekyll, so a loop's lines join 
 ## Table of contents
 
 - `<{ :toc }>` (bare: `:toc`): renders a TOC of the file's headings in the HTML only.
-- `<{ toc: }>` ... `<{ :toc }>` (bare: `toc:` with the list directly below): also writes the TOC into the file as a nested list of `[Heading](#id)` links, regenerated on every render.
+- `<{ toc: }>` ... `<{ :toc }>` (bare: `toc:` with the list directly below): also writes the TOC into the file as a nested list of `[Heading](#id)` links, regenerated on every render. A single `#` heading at the start of the file is left out when there are headings below it.
 
 ## Files and lists
 

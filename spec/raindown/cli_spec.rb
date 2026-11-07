@@ -129,7 +129,7 @@ RSpec.describe Raindown::CLI do
         markdown = "# Title\n\n<!-- toc: -->\n<!-- :toc -->\n\n## Section\n"
 
         expect { run_with_stdin(markdown, [path, '--stdin', '--rewrite']) }
-          .to output("# Title\n\n<!-- toc: -->\n- [Title](#title)\n  - [Section](#section)\n<!-- :toc -->\n\n## Section\n").to_stdout
+          .to output("# Title\n\n<!-- toc: -->\n- [Section](#section)\n<!-- :toc -->\n\n## Section\n").to_stdout
         expect(File.read(path)).to eq("# Title\n")
       end
 

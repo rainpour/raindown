@@ -48,7 +48,7 @@ RSpec.describe 'Raindown render tree' do
   end
 
   it "lists the components' headings in the table of contents" do
-    expect(html).to include("<a href='#team'>Team</a>", "<a href='#ann'>Ann</a>", "<a href='#bob'>Bob</a>")
+    expect(html).to include("<a href='#ann'>Ann</a>", "<a href='#bob'>Bob</a>")
   end
 
   it 'makes heading ids unique across components' do

@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -403  ███████████│███████████████████ +690
-───────────────────────────────────────────────────
-a3858ca    -2            ▕│▏                     +2
-223b930  -348   ▐█████████│██████████████▍     +524
-dd65061   -48           ▐█│████▎               +155
-260eb06    -3            ▕│▎                     +7
-b0af7ac    -2            ▕│▏                     +2
+Total    -37 ██│████████████████████████████▏ +554
+──────────────────────────────────────────────────
+14d9fef   -9  ▐│▍                               +8
+2ccf4d5   -0   │████                           +78
+e798251  -18  █│███████████████▌              +306
+5423835  -10  ▐│███████                       +138
+d1320cc   -0   │█▎                             +24
 ```
 <!-- :Commits -->
 
@@ -158,14 +158,14 @@ raindown watch README.md --bare
 
 ### Table of contents
 
-`<{ :toc }>` renders a table of contents of the file's headings in the HTML.
+`<{ :toc }>` renders a table of contents of the file's headings in the HTML. A single `#` heading at the start of the file is its title, so it's left out when there are headings below it.
 
 A `<!-- toc: -->` block does that too, and also writes the table of contents into the Markdown below it as a list of links, updated whenever the file is rendered. That way people and agents reading the file see it as well, and on GitHub only the list shows:
 
 ```md
 <!-- toc: -->
-- [Notes](#notes)
-  - [Setup](#setup)
+- [Setup](#setup)
+  - [Install](#install)
 <!-- :toc -->
 ```
 

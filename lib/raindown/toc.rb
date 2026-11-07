@@ -15,7 +15,7 @@ module Raindown
     TAG = /<[^>]*>/
 
     def rewrite(document:, metadata: nil, bare: false)
-      headings = headings(markdown: document, metadata:, bare:)
+      headings = headings_below_title(markdown: document, metadata:, bare:)
       return '' if headings.empty?
 
       min_level = headings.map { |heading| heading[:level] }.min
@@ -27,7 +27,7 @@ module Raindown
 
     # With the document's final HTML, the headings include ones its components render.
     def render(document:, html: nil, metadata: nil, bare: false)
-      items = headings(markdown: document, html:, metadata:, bare:).map do |heading|
+      items = headings_below_title(markdown: document, html:, metadata:, bare:).map do |heading|
         "<li class='h#{heading[:level]}'><a href='##{heading[:id]}'>#{CGI.escapeHTML(heading[:text])}</a></li>"
       end
 
@@ -41,6 +41,14 @@ module Raindown
           </details>
         </div>
       HTML
+    end
+
+    # A lone top-level heading that starts the document is its title, so it's left out when there are headings below it.
+    def headings_below_title(**)
+      title, *below = headings = headings(**)
+      return headings if below.empty? || title[:level] != 1 || below.any? { it[:level] == 1 }
+
+      below
     end
 
     # The document's headings, from its final HTML, or else by rendering it with its components.

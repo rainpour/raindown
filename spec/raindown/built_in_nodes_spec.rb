@@ -14,8 +14,7 @@ RSpec.describe 'Raindown built-in nodes' do
         # Title
 
         <!-- toc: -->
-        - [Title](#title)
-          - [Section](#section)
+        - [Section](#section)
         <!-- :toc -->
 
         ## Section
@@ -24,14 +23,14 @@ RSpec.describe 'Raindown built-in nodes' do
 
     it 'writes a bare toc: straight below it' do
       expect(rewrite("# Title\n\ntoc:\n\n## Section\n", path: 'notes.rd'))
-        .to eq("# Title\n\ntoc:\n- [Title](#title)\n  - [Section](#section)\n\n## Section\n")
+        .to eq("# Title\n\ntoc:\n- [Section](#section)\n\n## Section\n")
     end
 
     it 'lists headings with their variables rendered, and headings written by other nodes' do
       require 'helpers/nodes'
-      content = rewrite("---\nname: Mark\n---\n\n# Notes for {name}\n\ntoc:\n\nSpecHeading: title='Written'\n", path: 'notes.rd')
+      content = rewrite("---\nname: Mark\n---\n\n# Notes for {name}\n\n# Other\n\ntoc:\n\nSpecHeading: title='Written'\n", path: 'notes.rd')
 
-      expect(content).to include("toc:\n- [Notes for Mark](#notes-for-mark)\n  - [Written](#written)\n")
+      expect(content).to include("toc:\n- [Notes for Mark](#notes-for-mark)\n- [Other](#other)\n  - [Written](#written)\n")
     end
 
     it 'leaves a self-closing :toc alone when writing, and renders it in the HTML' do

@@ -9,13 +9,12 @@ Run `raindown examples/markdown.md` and edit this file to see Raindown write bac
 This is a Markdown file (`.md`) with `raindown: true` front matter, so its directives are written bare on their own line, like in a Raindown file.
 
 toc:
-- [Raindown Example](#raindown-example)
-  - [Directives](#directives)
-  - [Charts](#charts)
-    - [Commits](#commits)
-  - [Endpoints](#endpoints)
-  - [Tables](#tables)
-    - [Nested heading](#nested-heading)
+- [Directives](#directives)
+- [Charts](#charts)
+  - [Commits](#commits)
+- [Endpoints](#endpoints)
+- [Tables](#tables)
+  - [Nested heading](#nested-heading)
 
 ## Directives
 

@@ -5,13 +5,12 @@ Run `raindown examples/raindown.rd` and edit this file to see Raindown write bac
 This is a Raindown file (`.rd`), so directives can be written bare on their own line.
 
 toc:
-- [Raindown Example](#raindown-example)
-  - [Directives](#directives)
-  - [Charts](#charts)
-    - [Commits](#commits)
-  - [Endpoints](#endpoints)
-  - [Tables](#tables)
-    - [Nested heading](#nested-heading)
+- [Directives](#directives)
+- [Charts](#charts)
+  - [Commits](#commits)
+- [Endpoints](#endpoints)
+- [Tables](#tables)
+  - [Nested heading](#nested-heading)
 
 ## Directives
 
