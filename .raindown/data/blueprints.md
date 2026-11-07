@@ -154,3 +154,100 @@
 ╰────────────────────────────╯        ╰────────────────────────────╯
 ```
 
+## 2026-11-07T07:41:08Z · diagram
+
+**Today, each run replaces the last:**
+
+```diagram
+ GitHub API ───▶ endpoint: ───▶ open issues: 6
+                                only the latest, yesterday's is gone
+```
+
+## 2026-11-07T07:41:08Z · mockup
+
+**With a reservoir, each run adds a row:**
+
+```mockup
+ GitHub API          Stripe API         Your API        channels
+     ┊                   ┊                  ┊
+     ┊                   ┊                  ┊           one drop per run
+     ▼                   ▼                  ▼
+ ┌────────────┐     ┌────────────┐     ┌────────────┐
+ │            │     │            │     │            │
+ │▒▒▒▒▒▒▒▒▒▒▒▒│     │            │     │▒▒▒▒▒▒▒▒▒▒▒▒│   reservoirs fill
+ │▒▒▒▒▒▒▒▒▒▒▒▒│     │▒▒▒▒▒▒▒▒▒▒▒▒│     │▒▒▒▒▒▒▒▒▒▒▒▒│   up over time
+ └─────┬──────┘     └─────┬──────┘     └─────┬──────┘
+   issues.csv        revenue.csv        signups.csv     plain files
+       ┊                  ┊                  ┊
+       ▼                  ▼                  ▼
+    chart:             table:             chart:        release on demand
+```
+
+## 2026-11-07T09:30:33Z · diagram
+
+Here's a mock-up of a single frame. It's a terminal game, so it's drawn the way it would look there. It uses your real commits from this week, and each repo is a channel they fall down:
+
+```diagram
+ RAINDOWN · catch your week           score 1,240   streak x4   ♥ ♥ ♥
+ ─────────────────────────────────────────────────────────────────────
+   raindown        plugin          vscode          docs
+      ┊               ┊               ┊               ┊
+      ┊               ●               ┊               ┊
+      ┊            410acdd            ┊               ┊
+      ●               ┊               ┊               ◆
+   e3918aa            ┊               ┊            v0.16.1
+      ┊               ┊               ✖               ┊
+      ┊               ┊            conflict           ┊
+      ┊               ●               ┊               ┊
+      ┊            7bb54ec            ┊               ┊
+      ┊               ┊               ┊               ┊
+      ┊            \_____/            ┊               ┊
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+ ← → move    space dash                 Tue · 14 drops caught · 3 missed
+```
+
+## 2026-11-07T09:30:33Z · mockup
+
+At the end, you get a summary of your real work:
+
+```mockup
+ ─────────────────── WEEK OF NOV 2 ───────────────────
+
+   Caught     63 of 71 drops        Best streak    x12
+   Releases   ◆ ◆ ◆                 Hail dodged    4
+
+   Mon  ▂▂
+   Tue  ▅▅▅▅▅▅
+   Wed  ▂
+   Thu  ▃▃▃
+   Fri  █████████      "A proper storm."
+
+   Wettest repo: raindown      Longest drought: 2 days
+ ───────────────────────────────────────────────────────
+```
+
+## 2026-11-07T09:50:38Z · diagram
+
+A pre-commit hook has problems, though. It would delete the output from your working file on every commit, and `--no-verify` skips it. A **git clean filter** fixes the first of those: git stores the stripped version, while your file keeps its output on disk. `nbstripout` does the same for Jupyter notebooks.
+
+```diagram
+ on disk                         in git
+ ─────────────────────           ─────────────────────
+ <!-- Stripe: -->                <!-- Stripe: -->
+ | Nov | $14,100 |      ──▶      <!-- :Stripe -->
+ <!-- :Stripe -->
+```
+
+## 2026-11-07T09:50:38Z · mockup
+
+Markdown has no CSS, so what's written into the file can't have real borders. There are two options:
+
+```mockup
+ written into the file            rendered in HTML
+ ╭─────────────────────╮
+ │ Contents            │          a styled card with
+ │ Reading             │          real, clickable links
+ │ Finished            │
+ ╰─────────────────────╯
+```
+

@@ -572,6 +572,35 @@ Code blocks are highlighted in the HTML. For a site that highlights code in the 
 highlight_code: false
 ```
 
+### Skeleton files
+
+A file with `skeleton: true` in its front matter keeps its directives in git, but not what they write. Use it for dashboards that are always changing, which would otherwise fill your history, and for sensitive reports:
+
+```md
+---
+skeleton: true
+---
+
+<!-- Revenue: -->
+| Month | MRR     |
+| ----- | ------- |
+| Nov   | $14,100 |
+<!-- :Revenue -->
+```
+
+The file on disk keeps its output, while git only ever sees the directive and its end tag, so its diffs stay quiet. A clone writes the output again when it's rendered, and a `table:` fills in from its CSV file, which is still committed. An endpoint keeps its request, and its response is fetched again with `-x`.
+
+Run this once in each clone, as git keeps a filter's command out of the repo. It sets up the filter and adds it to `.gitattributes`:
+
+```sh
+raindown skeleton
+```
+
+- **A file that can't be stripped stops the commit**, like one missing an end tag, rather than committing its output. So does `raindown` not being on your `PATH`.
+- **A clone without the filter would commit output**, so run `raindown skeleton --check` in CI. It fails, naming the files, if any have output staged.
+- **It doesn't change history.** Output that's already committed stays there, and after setting it up on a file, `git add --renormalize .` strips what's staged.
+- **Bare directives** are stripped in `.rd` and `.raindown` files, and in `.md` files with `raindown: true`, but not ones only allowed by `--bare`.
+
 ### VS Code
 
 The [VS Code extension](vscode/) highlights syntax and previews Raindown files with the [editor server](#editor-server), or `--stdin` with a Raindown from before it, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.

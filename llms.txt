@@ -57,6 +57,10 @@ This is a draft.
 
 Templates render before Markdown, like Liquid in Jekyll, so a loop's lines join into one list or table, and values may contain Markdown. `if:` tests truthiness; there is no `else`.
 
+## Skeleton files
+
+`skeleton: true` in front matter keeps a file's directives in git, but not what they write, with a git clean filter. The file on disk keeps its output. `raindown skeleton` sets it up in a clone, and `raindown skeleton --check` fails if a file has output staged, for CI.
+
 ## Table of contents
 
 - `<{ :toc }>` (bare: `:toc`): renders a TOC of the file's headings in the HTML only.

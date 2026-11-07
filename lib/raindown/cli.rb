@@ -10,6 +10,7 @@ require_relative 'blueprints'
 require_relative 'editing'
 require_relative 'rewriter'
 require_relative 'server'
+require_relative 'skeleton'
 require_relative 'watcher/file_watcher'
 require_relative 'watcher/supervisor'
 
@@ -32,6 +33,8 @@ module Raindown
                             PATH is a file, or a directory (default: current directory) whose projects with a
                             .raindown folder are watched
         init [DIRECTORY]    Create a .raindown folder for the project's config and nodes (default: current directory)
+        skeleton            Set this repo up to commit directives without what they write, in files with "skeleton: true"
+        skeleton --check    Exit with 1, naming any such file with output staged, for CI
         server              Keep Raindown loaded for an editor, answering a JSON request a line on stdin with its HTML,
                             or its Markdown as it would be written back, like --stdin and --stdin --rewrite
         blueprints            Save the blueprints in Claude Code's last reply to .raindown/data/blueprints.md, for the terminal
@@ -78,15 +81,20 @@ module Raindown
     def self.run(argv)
       # Markdown is UTF-8 whatever the locale, as an app opened from the Dock, like Obsidian, starts Raindown without one.
       Encoding.default_external = Encoding::UTF_8
-      return if command(argv)
+      return if command(argv) || Skeleton.run_command(argv)
 
-      # Without a path, like "raindown", "raindown -x" or "raindown watch", it's the current directory.
-      argv = ['watch', '.', *argv.drop(1)] if argv.first == 'watch' && (argv.size == 1 || argv[1].start_with?('-'))
-      argv = ['.', *argv] if argv.empty? || argv.first.start_with?('-')
-
+      argv = with_path(argv)
       super || abort("Unknown arguments: #{argv.join(' ')}\n\n#{USAGE}")
     rescue StandardError => e
       report(e, path: argv.first)
+    end
+
+    # Without a path, like "raindown", "raindown -x" or "raindown watch", it's the current directory.
+    def self.with_path(argv)
+      return ['watch', '.', *argv.drop(1)] if argv.first == 'watch' && (argv.size == 1 || argv[1].start_with?('-'))
+      return ['.', *argv] if argv.empty? || argv.first.start_with?('-')
+
+      argv
     end
 
     # The :path line would match help, version and init as the file, so they're checked first.

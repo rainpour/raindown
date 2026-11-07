@@ -26,6 +26,8 @@ A content directive in `<{ }>`, like `<{ toc: }>` … `<{ :toc }>` or `<{ :toc }
 
 A colon after the name opens a block, like `toc:` or `<{ Card: }>`, and a colon before the name closes the block, which could be an end tag, like `<!-- :toc -->`, or a self-closing tag, like a bare `:toc` or `<{ :toc }>`. A capitalized node is self-closing without one, like `<{ Card }>`, while `<{ title }>` is a variable and `{:app_name}` a translation.
 
+A file with `skeleton: true` in its front matter has what its directives write left out of git, so a commit of it won't show that output. It's still in the file.
+
 ## Rendering a file again
 
 Rendering a file writes its directives' output back to it:
