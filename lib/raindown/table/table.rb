@@ -5,6 +5,7 @@ require 'digest'
 require 'json'
 
 require_relative '../node'
+require_relative '../utils'
 require_relative 'markdown_table'
 require_relative 'table_formulas'
 require_relative 'written_table'
@@ -36,24 +37,31 @@ module Raindown
     # Written is what it wrote last time, so it can tell which of the table and the file changed since.
     def rewrite(written: [], metadata: NoMetadata)
       path = data_path(metadata)
-      data_error(path) || synced(path, written.map(&:chomp))
+      data_error(path, metadata) || synced(path, written.map(&:chomp))
     end
 
     # Write-in, in <{ }>, the table only shows its file, and never writes to it.
     def render(metadata: NoMetadata)
       path = data_path(metadata)
-      Raindown.commonmark(data_error(path) || MarkdownTable.format(with_total(TableFormulas.evaluate(read_rows(path)))))
+      Raindown.commonmark(data_error(path, metadata) || MarkdownTable.format(with_total(TableFormulas.evaluate(read_rows(path)))))
     end
 
     private
 
     def data_path(metadata)
-      File.expand_path(@data.to_s, metadata.respond_to?(:root) ? metadata.root : Dir.pwd)
+      File.expand_path(@data.to_s, data_root(metadata))
+    end
+
+    def data_root(metadata)
+      return metadata.root if metadata.respond_to?(:root)
+
+      Dir.pwd
     end
 
     # Why the file can't be a table, or nil when it can.
-    def data_error(path)
+    def data_error(path, metadata)
       return "Can't show #{@data.inspect} as a table: only CSV and TSV files can be" unless SEPARATORS.key?(File.extname(path).downcase)
+      return "Can't show #{@data.inspect} as a table: it's outside the project" unless Utils.inside?(path, data_root(metadata))
 
       "Can't show #{@data.inspect} as a table: no such file" unless File.file?(path)
     end

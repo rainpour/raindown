@@ -5,6 +5,7 @@ require 'json'
 require 'yaml'
 
 require_relative '../node'
+require_relative '../utils'
 
 module Raindown
   class Chart < Node
@@ -43,6 +44,7 @@ module Raindown
         return numbers(numbers) if numbers.any? && numbers.all? { number(it) }
 
         path = File.expand_path(string, @root)
+        raise Error, "it's outside the project" unless Utils.inside?(path, @root)
         raise Error, 'no such file' unless File.file?(path)
 
         from(read(path))

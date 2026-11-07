@@ -59,6 +59,7 @@ RSpec.describe Raindown::Chart do
     end
 
     it "writes why it can't chart a file" do
+      expect(rewrite("chart: '../outside.csv'\n", metadata:)).to include("it's outside the project")
       expect(rewrite("chart: 'missing.csv'\n", metadata:)).to eq(%(chart: 'missing.csv'\nCan't chart "missing.csv": no such file\n))
     end
 

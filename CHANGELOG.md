@@ -14,6 +14,7 @@ Minor features that don't break backwards compatibility are released as patches.
 - A note in a folder of an Obsidian vault without a `.raindown` folder now finds the whole vault, for `list:`, `table:` and `chart:`
 - `list:` with an `order:` no longer fails when files have values of different types
 - `list:` links a file without a title by its name, rather than its whole path
+- `table:` and `chart:` no longer read or write files outside the project
 - `llms.txt` uses `list:` rather than the old `files:`, and writes directives that write into the file in comments
 
 ## 0.16.0

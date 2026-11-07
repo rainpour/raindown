@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -30 ▕████│█████████████████████████▊ +179
+Total    -38 ▕█████│████████████████████████▉ +185
 ──────────────────────────────────────────────────
-570f7de   -6     █│█                            +7
-02dcb6b  -10    ▐█│█████████▏                  +64
-7d30bff   -4     ▐│███████▊                    +54
-2ccc904   -7     █│█████▉                      +41
-d025578   -3     ▐│█▉                          +13
+1220b64  -11     ▐█│██▌                        +19
+570f7de   -6      █│█                           +7
+02dcb6b  -10     ▐█│████████▋                  +64
+7d30bff   -4      ▐│███████▎                   +54
+2ccc904   -7      █│█████▌                     +41
 ```
 <!-- :Commits -->
 
@@ -344,7 +344,7 @@ Then `<!-- Issues: -->` and `<!-- :Issues -->` in a file write it there. An open
 
 ### Tables
 
-A `table:` block writes a CSV or TSV file, relative to the project, as a Markdown table, after a comment of how many rows it has and a hash of them:
+A `table:` block writes a CSV or TSV file, relative to the project and inside it, as a Markdown table, after a comment of how many rows it has and a hash of them:
 
 ````md
 table: 'data/team.csv'

@@ -4,6 +4,11 @@ module Raindown
   module Utils
     module_function
 
+    # Whether a path is below a folder, so a note can't reach a file outside its project, like '../../secrets.csv'.
+    def inside?(path, folder)
+      File.expand_path(path).start_with?(File.join(File.expand_path(folder), ''))
+    end
+
     # A Markdown file's text, with its line endings as LF, "\n", whatever they are in the file.
     #
     # Windows ends lines with CRLF, "\r\n", and Git for Windows checks files out that way, so a file written or cloned on

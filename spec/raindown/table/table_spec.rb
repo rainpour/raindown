@@ -93,6 +93,29 @@ RSpec.describe Raindown::Table do
     end
   end
 
+  describe 'a file outside the project' do
+    let(:outside) { File.join(File.dirname(@root), "outside-#{File.basename(@root)}.csv") }
+    let(:content) { "table: '../#{File.basename(outside)}'\n<!-- table 1 row · 09ae51 -->\n| a |\n|---|\n| 9 |\n" }
+
+    before { File.write(outside, "a\n1\n") }
+    after { FileUtils.rm_f(outside) }
+
+    it 'is neither shown nor written to' do
+      expect(rewrite(content)).to include("as a table: it's outside the project")
+      expect(File.read(outside)).to eq("a\n1\n")
+    end
+
+    it "isn't rendered" do
+      html = Raindown.render(markdown: "<{ :table '../#{File.basename(outside)}' }>\n", metadata:)
+
+      expect(html).to include("it's outside the project")
+    end
+
+    it 'can be named by its full path inside the project' do
+      expect(rewrite("table: '#{csv}'\n")).to include('| Ada | engineer |')
+    end
+  end
+
   describe 'total: true' do
     let(:sales) { File.join(@root, 'sales.csv') }
     let(:totalled) { rewrite("table: 'sales.csv' total: true\n") }
