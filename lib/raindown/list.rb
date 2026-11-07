@@ -14,18 +14,26 @@ module Raindown
       @tags = tags
     end
 
-    # Each file has its front matter, its path and its content. Sorted by an order, files without it come last, and ones
-    # with the same value stay in the order they're listed.
+    # Each file has its front matter, its path and its content. Sorted by an order, numbers come first, then other values
+    # as text, then files without it, and ones with the same value stay in the order they're listed.
     def files(metadata: NoMetadata)
       files = metadata.list(**@tags)
       return files unless @order
 
       sorted, unsorted = files.partition { it[@order] }
-      sorted.sort_by.with_index { |file, index| [file[@order], index] } + unsorted
+      sorted.sort_by.with_index { |file, index| [*order_key(file[@order]), index] } + unsorted
     end
 
     def rewrite(metadata: NoMetadata)
       files(metadata:).map { |file| "- [#{file.title || file.path}](#{file.path})" }.join("\n")
+    end
+
+    private
+
+    def order_key(value)
+      return [0, value, ''] if value.is_a?(Numeric)
+
+      [1, 0, value.to_s]
     end
   end
 end

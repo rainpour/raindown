@@ -59,6 +59,13 @@ RSpec.describe 'Raindown built-in nodes' do
       expect(Raindown::List.new(order: :created_at).files(metadata:).map(&:path)).to eq(%w[/b /a /c])
     end
 
+    it 'sorts numbers first, then other values as text, when a metadata order has both' do
+      pages = [{ path: '/a', rank: 'first' }, { path: '/b', rank: 2 }, { path: '/c', rank: true }, { path: '/d', rank: 1.5 }]
+      metadata = Class.new { define_method(:list) { |**| pages } }.new
+
+      expect(Raindown::List.new(order: :rank).files(metadata:).map { it[:path] }).to eq(%w[/d /b /a /c])
+    end
+
     it "reads an unquoted value in <{ }> that can't be a variable's name as an unknown one" do
       expect { Raindown.render(markdown: "<{ :list folder: a-b }>\n", metadata:) }.not_to raise_error
     end

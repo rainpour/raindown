@@ -10,6 +10,8 @@ Minor features that don't break backwards compatibility are released as patches.
 ### Fixed
 
 - Writing a table again no longer changes a CSV cell with a line break, and editing another cell keeps it
+- A file with front matter that can't be read no longer stops `list:` in other files, and a warning names it
+- `list:` with an `order:` no longer fails when files have values of different types
 
 ## 0.16.0
 

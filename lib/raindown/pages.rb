@@ -118,7 +118,7 @@ module Raindown
       modified_then, front_matter = self.class.front_matters[file_path]
       return front_matter if modified_then == modified
 
-      FrontMatter.parse(Utils.read_markdown(file_path)).first.tap { self.class.front_matters[file_path] = [modified, it] }
+      FrontMatter.read(file_path).tap { self.class.front_matters[file_path] = [modified, it] }
     end
 
     # The path is relative to the root, like docs/_basics/_1-getting-started.md.

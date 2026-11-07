@@ -91,6 +91,29 @@ RSpec.describe Raindown::Pages do
     end
   end
 
+  describe 'a file it can\'t read the front matter of' do
+    before { write('_notes/good.md', "---\ntags: [book]\n---\n# Good\n") }
+
+    {
+      'invalid YAML' => "---\ntitle: Foo: bar\n---\n# Bad\n",
+      'a YAML alias' => "---\na: &x 1\nb: *x\n---\n# Bad\n",
+      'text that is not UTF-8' => "caf\xE9\n"
+    }.each do |problem, content|
+      it "lists the other files, and names the one with #{problem}" do
+        write('_notes/bad.md', content)
+
+        expect { expect(pages.list(tags: 'book').map(&:path)).to eq(['_notes/good.md']) }.to output(%r{_notes/bad\.md}).to_stderr
+      end
+    end
+
+    it 'warns once until the file changes' do
+      write('_notes/bad.md', "---\ntitle: Foo: bar\n---\n")
+      expect { pages.list(tags: 'book') }.to output(/bad\.md/).to_stderr
+
+      expect { pages.list(tags: 'book') }.not_to output.to_stderr
+    end
+  end
+
   describe '.for' do
     it 'loads the files under the folder with .raindown, or else the file\'s folder' do
       write('.raindown/.keep', '')
