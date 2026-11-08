@@ -58,6 +58,12 @@ RSpec.describe Raindown::Chart do
       expect(described_class.new('a.csv', label: 'sales', value: 'visits').points(metadata:)).to eq([['3', 10], ['4', 20]])
     end
 
+    it "reads a file's header without its byte order mark" do
+      File.binwrite(File.join(@root, 'bom.csv'), "\xEF\xBB\xBFname,visits\nA,3\n")
+
+      expect(described_class.new('bom.csv', label: 'name', value: 'visits').points(metadata:)).to eq([['A', 3]])
+    end
+
     it "writes why it can't chart a file" do
       expect(rewrite("chart: '../outside.csv'\n", metadata:)).to include("it's outside the project")
       expect(rewrite("chart: 'missing.csv'\n", metadata:)).to eq(%(chart: 'missing.csv'\nCan't chart "missing.csv": no such file\n))

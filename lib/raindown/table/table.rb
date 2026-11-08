@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'csv'
 require 'digest'
 require 'json'
 
 require_relative '../node'
 require_relative '../utils'
 require_relative 'markdown_table'
+require_relative 'table_file'
 require_relative 'table_formulas'
 require_relative 'written_table'
 
@@ -26,7 +26,6 @@ module Raindown
   # the padding around one's value and it shows its formula, to edit, until it's changed.
   class Table < Node
     COMMENT = /\A<!-- table (?:conflict|\d+ rows?) · (\h+) -->\z/
-    SEPARATORS = { '.csv' => ',', '.tsv' => "\t" }.freeze
     BOLD = /\A\*\*.*\*\*\z/
 
     def initialize(data, total: false)
@@ -43,7 +42,7 @@ module Raindown
     # Write-in, in <{ }>, the table only shows its file, and never writes to it.
     def render(metadata: NoMetadata)
       path = data_path(metadata)
-      Raindown.commonmark(data_error(path, metadata) || MarkdownTable.format(with_total(TableFormulas.evaluate(read_rows(path)))))
+      Raindown.commonmark(data_error(path, metadata) || MarkdownTable.format(with_total(TableFormulas.evaluate(TableFile.read(path)))))
     end
 
     private
@@ -60,19 +59,19 @@ module Raindown
 
     # Why the file can't be a table, or nil when it can.
     def data_error(path, metadata)
-      return "Can't show #{@data.inspect} as a table: only CSV and TSV files can be" unless SEPARATORS.key?(File.extname(path).downcase)
+      return "Can't show #{@data.inspect} as a table: only CSV and TSV files can be" unless TableFile.supported?(path)
       return "Can't show #{@data.inspect} as a table: it's outside the project" unless Utils.inside?(path, data_root(metadata))
 
       "Can't show #{@data.inspect} as a table: no such file" unless File.file?(path)
     end
 
     def synced(path, written)
-      file = read_rows(path)
+      file = TableFile.read(path)
       shown = TableFormulas.evaluate(file)
       synced_hash = written.first&.[](COMMENT, 1)
       table = WrittenTable.new(written_rows(written), file)
       return markdown(file, table.revealed) if unchanged?(table.rows, synced_hash, shown)
-      return markdown(write_rows(path, with_file_cells(table.rows, file, shown)), table.revealed) if hash_rows(shown) == synced_hash
+      return markdown(TableFile.write(path, with_file_cells(table.rows, file, shown)), table.revealed) if hash_rows(shown) == synced_hash
 
       warn "raindown: #{@data} and its table both changed, so neither is written until they match"
       ["<!-- table conflict · #{synced_hash} -->", *written.drop(1)].join("\n")
@@ -142,17 +141,6 @@ module Raindown
     # The total row it wrote, its cells bold or blank, which isn't one of the file's rows.
     def total_row?(row)
       row.any? { !it.empty? } && row.all? { it.empty? || it.match?(BOLD) }
-    end
-
-    def read_rows(path)
-      rows = CSV.read(path, col_sep: SEPARATORS[File.extname(path).downcase], skip_blanks: true, encoding: Encoding::UTF_8)
-      width = rows.map(&:length).max.to_i
-      rows.map { |row| Array.new(width) { row[it].to_s.strip } }
-    end
-
-    def write_rows(path, rows)
-      File.write(path, rows.map { CSV.generate_line(it, col_sep: SEPARATORS[File.extname(path).downcase]) }.join)
-      rows
     end
 
     # As the table shows them, so a cell with line breaks hashes the same in both.

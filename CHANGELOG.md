@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Fixed
+
+- Editing a table keeps its file's line endings and byte order mark, and leaves empty cells empty, rather than `""`
+- A byte order mark, like Excel's, no longer shows in a table or a chart's labels
+
 ## 0.17.1
 
 ### Fixed

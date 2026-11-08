@@ -93,6 +93,39 @@ RSpec.describe Raindown::Table do
     end
   end
 
+  describe "the file's format, when a cell's edited" do
+    def edit(from, to)
+      rewrite(synced.sub(from, to))
+      File.binread(csv)
+    end
+
+    it 'keeps its line endings' do
+      File.binwrite(csv, "name,role\r\nAda,engineer\r\n")
+
+      expect(edit('| Ada | engineer |', '| Ada | lead |')).to eq("name,role\r\nAda,lead\r\n".b)
+    end
+
+    it 'keeps a byte order mark out of the table, and in the file' do
+      File.binwrite(csv, "\xEF\xBB\xBFname,role\nAda,engineer\n")
+
+      expect(synced).to include('| name | role |')
+      expect(edit('| Ada | engineer |', '| Ada | lead |')).to eq("\xEF\xBB\xBFname,role\nAda,lead\n".b)
+    end
+
+    it 'leaves empty cells empty' do
+      File.binwrite(csv, "name,role\nAda,\n,ops\n")
+
+      expect(edit('| Ada |  |', '| Eve |  |')).to eq("name,role\nEve,\n,ops\n".b)
+    end
+
+    it "keeps a row with one empty cell, which would otherwise be a blank line that isn't read" do
+      File.binwrite(csv, "name\nAda\n\"\"\nLin\n")
+
+      expect(edit('| Ada |', '| Eve |')).to eq("name\nEve\n\"\"\nLin\n".b)
+      expect(rewrite("table: 'team.csv'\n")).to include('3 rows')
+    end
+  end
+
   describe 'a file outside the project' do
     let(:outside) { File.join(File.dirname(@root), "outside-#{File.basename(@root)}.csv") }
     let(:content) { "table: '../#{File.basename(outside)}'\n<!-- table 1 row · 09ae51 -->\n| a |\n|---|\n| 9 |\n" }
@@ -130,7 +163,7 @@ RSpec.describe Raindown::Table do
       edited = totalled.sub('| Tea | 3 |', '| Tea | 30 |').sub(/\| \*\*Total\*\*.*\n/, "\\0| Bun | 1 | 1 | |\n")
 
       expect(rewrite(edited)).to include("| Bun | 1 | 1 |  |\n| **Total** | **33** | **4.85** |  |\n")
-      expect(CSV.read(sales).map { it.take(2) }).to eq([%w[item units], %w[Tea 30], ['Cake', ''], %w[Jam 2], %w[Bun 1]])
+      expect(CSV.read(sales).map { it.take(2) }).to eq([%w[item units], %w[Tea 30], ['Cake', nil], %w[Jam 2], %w[Bun 1]])
     end
 
     it 'shows its total in <{ }>' do
@@ -181,7 +214,7 @@ RSpec.describe Raindown::Table do
       ['|  | =s', '|  | =sum(c) |'].each { |row| table = aligned(table.sub(/[^\n]*\n\z/, "#{row}\n")) }
 
       expect(table).not_to include('conflict')
-      expect(File.read(sales)).to end_with(%("",=sum(c),""\n))
+      expect(File.read(sales)).to end_with(",=sum(c),\n")
     end
 
     it 'shows values in <{ }>' do

@@ -51,7 +51,7 @@ module Raindown
       end
 
       def read(path)
-        text = File.read(path, encoding: Encoding::UTF_8)
+        text = File.read(path, encoding: 'bom|utf-8')
 
         case File.extname(path).downcase
         when '.csv' then CSV.parse(text, skip_blanks: true)
