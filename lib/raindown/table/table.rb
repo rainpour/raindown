@@ -75,7 +75,7 @@ module Raindown
 
     # Why the file can't be a table, or nil when it can.
     def data_error(path, metadata)
-      return "Can't show #{@data.inspect} as a table: only CSV and TSV files can be" unless TableFile.supported?(path)
+      return "#{@data.inspect} must be a file path to a CSV/TSV that exists or will be created" unless TableFile.supported?(path)
       return "Can't show #{@data.inspect} as a table: it's outside the project" unless Utils.inside?(path, data_root(metadata))
 
       "Can't show #{@data.inspect} as a table: no such file" unless File.file?(path)

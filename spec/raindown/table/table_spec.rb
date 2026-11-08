@@ -254,7 +254,7 @@ RSpec.describe Raindown::Table do
   end
 
   it "says when its data isn't a CSV or TSV file" do
-    expect(rewrite("table: 'team.json'\n")).to include("Can't show \"team.json\" as a table: only CSV and TSV files can be")
+    expect(rewrite("table: 'team.json'\n")).to include('"team.json" must be a file path to a CSV/TSV that exists or will be created')
     expect(Raindown.render(markdown: "<{ :table 'missing.csv' }>\n", metadata:)).to include('no such file')
   end
 
