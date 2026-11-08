@@ -30,7 +30,7 @@ module Raindown
       def update(path)
         rewrite = Rewriter.update(path:, bare: @bare, execute: @execute, metadata: Pages.for(path))
         puts "[#{name}] Updated #{relative(path)}" if rewrite.changed?
-        rewrite.failures.each { warn "[#{name}] Endpoint check failed: #{it}" }
+        report(rewrite, path)
       rescue StandardError => e
         raise if ENV['RAINDOWN_DEBUG']
 
@@ -39,6 +39,12 @@ module Raindown
       end
 
       private
+
+      # What writing back found wrong: failed endpoint checks, and directives that couldn't run, written in their place.
+      def report(rewrite, path)
+        rewrite.failures.each { warn "[#{name}] Endpoint check failed: #{it}" }
+        rewrite.problems.each { warn "[#{name}] raindown: #{relative(path)}: #{it}" }
+      end
 
       def relative(path)
         File.expand_path(path).delete_prefix(File.join(root, ''))

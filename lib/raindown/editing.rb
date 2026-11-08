@@ -18,7 +18,7 @@ module Raindown
     def rewrite_markdown(markdown, path:, bare: false, execute: false)
       Nodes.load(path)
       rewrite = Rewriter.rewrite(content: markdown, path:, bare:, execute:, metadata: Pages.for(path))
-      { output: rewrite.content, warnings: rewrite.failures.map { "Endpoint check failed: #{it}" } }
+      { output: rewrite.content, warnings: rewrite.failures.map { "Endpoint check failed: #{it}" } + rewrite.problems }
     end
   end
 end

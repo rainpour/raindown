@@ -16,8 +16,13 @@ module Raindown
       new(content:, path:, bare:, metadata:).call
     end
 
+    # Warnings for the directives that couldn't run, written in their place, each with its line, like
+    # "line 6: toc: takes no value".
+    attr_reader :problems
+
     def initialize(content:, path: nil, bare: false, metadata: NoMetadata)
       @content = content
+      @problems = []
       @bare = BareDirectives.enabled?(path:, content:, bare:)
       @metadata = metadata
     end
@@ -28,7 +33,9 @@ module Raindown
                          .select { |block| block[:writes] }
       return @content if blocks.empty?
 
+      # From the bottom up, so the lines above each block stay where they are, so its problems are put back in order.
       blocks.reverse_each { |block| lines[block[:open]..block[:last]] = block_lines(lines, block) }
+      @problems.reverse!
       lines.join
     end
 
@@ -36,11 +43,21 @@ module Raindown
 
     def block_lines(lines, block)
       context = { document: @content, metadata: @metadata, bare: @bare, written: written_lines(lines, block) }
-      markdown = Nodes.call(block[:node], :rewrite, **context).to_s.chomp
+      markdown = node_markdown(block, context)
       written = markdown.empty? ? [] : "#{markdown}\n".lines
       return [line(lines[block[:open]]), *bare(written, block)] unless block[:close]
 
       delimited(lines, block, written)
+    end
+
+    # A node that raises writes why in its place, like a Problem, so the rest of the file still writes back.
+    def node_markdown(block, context)
+      @problems << block[:node].warning if block[:node].is_a?(Problem)
+      Nodes.call(block[:node], :rewrite, **context).to_s.chomp
+    rescue StandardError => e
+      problem = Problem.new("Couldn't write: #{e.message}", block[:open] + 1)
+      @problems << problem.warning
+      problem.rewrite
     end
 
     # The directive, what the node wrote and the end tag, straight after each other, as a comment on its own line ends

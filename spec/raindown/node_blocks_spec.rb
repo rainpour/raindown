@@ -2,6 +2,8 @@
 
 require 'fileutils'
 require 'raindown'
+require 'raindown/editing'
+require 'raindown/rewriter'
 require 'helpers/nodes'
 require 'tmpdir'
 
@@ -60,6 +62,55 @@ RSpec.describe Raindown::NodeBlocks do
       expect(nodes[0]).to be(nodes[1])
       expect(nodes[0]).not_to be(nodes[2])
     end
+  end
+
+  describe 'values a node takes' do
+    it "names the directive and its line when it's missing a value, rather than Ruby's wrong number of arguments" do
+      stub_const('SpecNeedsTwo', Class.new(Raindown::Node) do
+        def initialize(first, second = nil); end
+
+        def rewrite
+          ''
+        end
+      end)
+
+      node = described_class.find("# A\n\n<!-- SpecNeedsTwo: -->\n<!-- :SpecNeedsTwo -->\n".lines).first[:node]
+
+      expect(node).to be_a(Raindown::Problem)
+      expect([node.message, node.warning]).to eq(['Needs a value after it', 'line 3: SpecNeedsTwo: needs a value after it'])
+      expect(find("<!-- SpecNeedsTwo: 'a' -->\n<!-- :SpecNeedsTwo -->\n").first[:node]).to eq(SpecNeedsTwo)
+    end
+
+    it 'names the directive and its line when it has a value it takes none of' do
+      node = described_class.find("# A\n\ntoc: extra\n".lines, bare: true).first[:node]
+
+      expect(node.message).to eq("Takes no value, so it can't read \"extra\"")
+    end
+  end
+
+  it 'writes why a directive can\'t run in its place, and the rest of the file as usual' do
+    stub_const('SpecBroken', Class.new(Raindown::Node) do
+      def rewrite
+        raise 'no data today'
+      end
+    end)
+    markdown = "# A\n\n<!-- toc: extra -->\n<!-- :toc -->\n\n<!-- SpecBroken: -->\n<!-- :SpecBroken -->\n\n" \
+               "<!-- toc: -->\n<!-- :toc -->\n"
+    rewrite = Raindown::Rewriter.rewrite(content: markdown, path: 'notes.md')
+
+    expect(rewrite.content).to include("<!-- toc: extra -->\n> [!WARNING]\n> Takes no value, so it can't read \"extra\"\n")
+      .and include("<!-- SpecBroken: -->\n> [!WARNING]\n> Couldn't write: no data today\n")
+      .and include("<!-- toc: -->\n- [A](#a)\n")
+    expect(rewrite.problems).to eq(["line 3: toc: takes no value, so it can't read \"extra\"", "line 6: couldn't write: no data today"])
+    expect(Raindown::Editing.rewrite_markdown(markdown, path: 'notes.md')[:warnings]).to eq(rewrite.problems)
+  end
+
+  it "writes messages that don't read as directives, once the directive above them is deleted" do
+    markdown = "# A\n\ntoc: extra\n\n## B\n"
+    written = Raindown::Rewriter.rewrite(content: markdown, path: 'notes.rd').content
+    orphaned = written.sub("toc: extra\n", '')
+
+    expect(Raindown::Rewriter.rewrite(content: orphaned, path: 'notes.rd')).to have_attributes(content: orphaned, problems: [])
   end
 
   describe '.props' do

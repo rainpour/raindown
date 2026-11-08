@@ -30,7 +30,7 @@ module Raindown
     # The table a new file starts with, when there's no table to make it from.
     STARTER = [['Column 1', 'Column 2'], ['', '']].freeze
 
-    def initialize(data, total: false)
+    def initialize(data = nil, total: false)
       @data = data
       @total = total
     end
@@ -41,13 +41,16 @@ module Raindown
       path = data_path(metadata)
       lines = written.map(&:chomp)
       create_file(path, lines) if missing_file?(path, metadata)
-      data_error(path, metadata) || synced(path, lines)
+      data_error(path, metadata)&.then { Problem.alert(it) } || synced(path, lines)
     end
 
     # Write-in, in <{ }>, the table only shows its file, and never writes to it.
     def render(metadata: NoMetadata)
       path = data_path(metadata)
-      Raindown.commonmark(data_error(path, metadata) || MarkdownTable.format(with_total(TableFormulas.evaluate(TableFile.read(path)))))
+      error = data_error(path, metadata)
+      return Raindown.commonmark(Problem.alert(error)) if error
+
+      Raindown.commonmark(MarkdownTable.format(with_total(TableFormulas.evaluate(TableFile.read(path)))))
     end
 
     private
@@ -66,15 +69,17 @@ module Raindown
       TableFile.supported?(path) && Utils.inside?(path, data_root(metadata)) && !File.exist?(path)
     end
 
-    # From the table as it's written, which has no comment yet when it's just been typed.
+    # From the table as it's written, which has no comment yet when it's just been typed, below any alert saying why
+    # there was no file.
     def create_file(path, lines)
-      rows = MarkdownTable.parse(lines.grep_v(COMMENT))
+      rows = MarkdownTable.parse(lines.grep_v(COMMENT).grep_v(/\A>/))
       rows = STARTER if rows.empty?
       TableFile.create(path, rows)
     end
 
     # Why the file can't be a table, or nil when it can.
     def data_error(path, metadata)
+      return 'Needs a file path to a CSV/TSV that exists or will be created' if @data.to_s.strip.empty?
       return "#{@data.inspect} must be a file path to a CSV/TSV that exists or will be created" unless TableFile.supported?(path)
       return "Can't show #{@data.inspect} as a table: it's outside the project" unless Utils.inside?(path, data_root(metadata))
 

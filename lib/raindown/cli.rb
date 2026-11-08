@@ -169,9 +169,10 @@ module Raindown
         Nodes.load(path)
 
         metadata = Pages.for(path)
-        failures = Rewriter.update(path:, bare:, execute:, metadata:).failures
+        rewrite = Rewriter.update(path:, bare:, execute:, metadata:)
+        warn(*rewrite.problems.map { "raindown: #{path}: #{it}" })
         write(output, Raindown.render_file(path:, bare:, metadata:))
-        check_endpoints(failures)
+        check_endpoints(rewrite.failures)
       end
 
       # Endpoint responses that fail their checks, like status: 200, are listed, and fail the command, for CI.

@@ -51,9 +51,31 @@ module Raindown
       variables = Variables.new(front_matter)
 
       spans.map do |span|
-        node = Nodes.instance(span[:class], *args(span[:args], variables, antlers: span[:antlers]))
+        node = node_for(span, args(span[:args], variables, antlers: span[:antlers]))
         span.except(:name, :class, :args, :antlers).merge(node:)
       end
+    end
+
+    # The block's node, or a Problem in its place when it can't be made, so the rest of the file still writes back.
+    def node_for(span, (props, values))
+      problem = values_problem(span, values || [])
+      return Nodes.instance(Problem, {}, [problem, span[:open] + 1, span[:name]]) if problem
+
+      Nodes.instance(span[:class], props, *[values].compact)
+    rescue StandardError => e
+      Nodes.instance(Problem, {}, ["Couldn't start: #{e.message}", span[:open] + 1, span[:name]])
+    end
+
+    # A directive with more or fewer values than its node takes, like toc: extra, rather than Ruby's wrong number of
+    # arguments, or nil when it has as many as it takes.
+    def values_problem(span, values)
+      kinds = span[:class].instance_method(:initialize).parameters.map(&:first)
+      required = kinds.count(:req)
+      return if kinds.include?(:rest) || values.length.between?(required, required + kinds.count(:opt))
+
+      return 'Needs a value after it' if values.length < required
+
+      "Takes no value, so it can't read #{values.first.inspect}"
     end
 
     # Each block like find's, with the node's name, class and props text in place of the node,
@@ -95,10 +117,13 @@ module Raindown
       [marker(lines[block[:open]]), *("#{output}\n".lines unless output.empty?), *close]
     end
 
+    # A node that raises shows why in its place, rather than stopping the page.
     def node_markdown(block, context)
       return Nodes.rendered(block[:node], context) if !block[:writes] || Nodes.html?(block[:node])
 
       Nodes.call(block[:node], :rewrite, **context.to_h).to_s
+    rescue StandardError => e
+      Problem.alert("Couldn't write: #{e.message}")
     end
 
     def marker(line)

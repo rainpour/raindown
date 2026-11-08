@@ -64,9 +64,17 @@ RSpec.describe Raindown::Chart do
       expect(described_class.new('bom.csv', label: 'name', value: 'visits').points(metadata:)).to eq([['A', 3]])
     end
 
+    it 'says it needs data when it has none' do
+      message = 'Needs a file path to a CSV, TSV, JSON or YAML file'
+
+      expect(rewrite("chart:\n", metadata:)).to include(message)
+      expect(rewrite("chart: ''\n", metadata:)).to include(message)
+    end
+
     it "writes why it can't chart a file" do
       expect(rewrite("chart: '../outside.csv'\n", metadata:)).to include("it's outside the project")
-      expect(rewrite("chart: 'missing.csv'\n", metadata:)).to eq(%(chart: 'missing.csv'\nCan't chart "missing.csv": no such file\n))
+      expect(rewrite("chart: 'missing.csv'\n", metadata:))
+        .to eq(%(chart: 'missing.csv'\n> [!WARNING]\n> Can't chart "missing.csv": no such file\n))
     end
 
     it 'reads the file a variable names' do
@@ -170,7 +178,7 @@ RSpec.describe Raindown::Chart do
 
     it 'needs a table' do
       expect(chart('1 2', minus: 'deleted'))
-        .to eq(%(Can't chart "1 2": minus: needs a table, with a column of numbers to chart against the values))
+        .to eq(%(> [!WARNING]\n> Can't chart "1 2": minus: needs a table, with a column of numbers to chart against the values))
     end
   end
 
@@ -190,6 +198,6 @@ RSpec.describe Raindown::Chart do
   end
 
   it 'is told how to draw with format:' do
-    expect(chart('1 2', format: 'pie')).to eq(%(Can't chart "1 2": format: is bars, columns, line, sparkline, not "pie"))
+    expect(chart('1 2', format: 'pie')).to eq(%(> [!WARNING]\n> Can't chart "1 2": format: is bars, columns, line, sparkline, not "pie"))
   end
 end

@@ -53,6 +53,7 @@ module Raindown
       def rewrite
         rewrite = Rewriter.update(path:, bare:, execute:, metadata: Pages.for(path))
         rewrite.failures.each { warn "Endpoint check failed: #{it}" }
+        rewrite.problems.each { warn "raindown: #{path}: #{it}" }
         rewrite.changed?
       end
     end

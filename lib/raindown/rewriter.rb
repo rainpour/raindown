@@ -9,8 +9,9 @@ module Raindown
   # Rewrites the generated parts of a Markdown file in place before it's rendered:
   # node output, like the TOC, endpoint responses and table alignment.
   module Rewriter
-    # The content written back, and the endpoint checks it failed, like "api.md:3: expected status 200, received 404".
-    Rewrite = Data.define(:original, :content, :failures) do
+    # The content written back, the endpoint checks it failed, like "api.md:3: expected status 200, received 404", and
+    # the directives that couldn't run, like "line 4: toc: takes no value", written in their place.
+    Rewrite = Data.define(:original, :content, :failures, :problems) do
       def changed?
         content != original
       end
@@ -19,9 +20,11 @@ module Raindown
     module_function
 
     def rewrite(content:, path:, bare: false, execute: false, metadata: NoMetadata)
-      injected = NodeInjector.rewrite(content:, path:, bare:, metadata:)
+      injector = NodeInjector.new(content:, path:, bare:, metadata:)
+      injected = injector.call
       endpoints = EndpointRunner.new(content: injected, path:, bare: BareDirectives.enabled?(path:, content: injected, bare:), execute:)
-      Rewrite.new(original: content, content: TableFormatter.rewrite(content: endpoints.rewrite), failures: endpoints.failures)
+      Rewrite.new(original: content, content: TableFormatter.rewrite(content: endpoints.rewrite), failures: endpoints.failures,
+                  problems: injector.problems)
     end
 
     # Writes the file only when it changed.

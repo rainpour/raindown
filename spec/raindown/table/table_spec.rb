@@ -149,6 +149,13 @@ RSpec.describe Raindown::Table do
     end
   end
 
+  it 'says it needs a file when it has none' do
+    message = 'Needs a file path to a CSV/TSV that exists or will be created'
+
+    expect(rewrite("table:\n")).to include(message)
+    expect(rewrite("table: ''\n")).to include(message)
+  end
+
   describe 'a file that is not there yet' do
     let(:new_file) { File.join(@root, 'data', 'books.csv') }
 
@@ -164,6 +171,12 @@ RSpec.describe Raindown::Table do
 
       expect(File.read(new_file)).to eq("Column 1,Column 2\n,\n")
       expect(written).to include('| Column 1 | Column 2 |')
+    end
+
+    it 'is made from a table typed below the alert saying there was no file' do
+      rewrite("table: 'data/books.csv'\n> [!WARNING]\n> Needs a file path\n| title |\n|---|\n| Dune |\n")
+
+      expect(File.read(new_file)).to eq("title\nDune\n")
     end
 
     it "isn't made outside the project" do

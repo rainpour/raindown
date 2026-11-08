@@ -33,12 +33,14 @@ module Raindown
 
     # The data is read every time, so the chart follows changes to its file.
     def rewrite(metadata: NoMetadata)
+      return Problem.alert('Needs a file path to a CSV, TSV, JSON or YAML file') if ['', nil].include?(@data)
+
       points = points(metadata:)
       return '' if points.empty?
 
       "```\n#{draw(points).map(&:rstrip).join("\n")}\n```"
     rescue Error => e
-      "Can't chart #{@data.inspect}: #{e.message}"
+      Problem.alert("Can't chart #{@data.inspect}: #{e.message}")
     end
 
     # Each value with its label, or nil for numbers alone.
