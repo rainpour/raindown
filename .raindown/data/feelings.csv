@@ -3,9 +3,9 @@ timestamp,commit,checksum,location,method,temper,note
 2026-10-27,9d0a0ac,a5f8b166,lib/raindown/tui/file_tree.rb:81,FileTree#file_row,dread,too long
 2026-10-27,e831696,d1635e95,lib/raindown/tui/file_tree.rb:86,FileTree#folder_rows,malice,"It just feels too condensed, maybe more spacing will help"
 2026-10-27,e831696,24d1b27f,lib/raindown/document.rb:25,Document#endpoint?,woe,
-2026-10-27,e831696,c109cd2,lib/raindown/pre_renderer.rb:31,PreRenderer#render_body,numb,
 2026-10-28,1d2ace2,596a2db3,lib/raindown/tui/terminal/screen.rb:25,Screen#run,woe,
 2026-10-28,1d2ace2,d7b25950,lib/raindown/tui/card.rb:34,Card#box_height,frolic,
 2026-10-28,1d2ace2,69c07625,lib/raindown/tui/views/dashboard_view.rb:49,DashboardView#charts,frolic,
 2026-10-28,84f352d,ff6d1099,.raindown/code_health.rb:24,CodeHealth#score,numb,
 2026-10-29,e85db93,661b4526,.raindown/code_health.rb:34,CodeHealth#label,numb,
+2026-11-08T07:58:33Z,8c9fb29,e80ac6c0,lib/raindown/watcher/supervisor.rb:61,Supervisor#queue,woe,i don't like threads

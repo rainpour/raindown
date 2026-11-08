@@ -38,21 +38,42 @@ module Raindown
         return local(name, args, options) unless @fork
 
         start unless alive?
-        write(@requests, [name, args, options])
+        write(@requests, [true, name, args, options])
         status, value = read(@answers) || raise(Error, "The worker for #{File.basename(root)} stopped")
         status == :ok ? value : raise(Error, value)
       end
 
-      def stop
+      # Sends the request without waiting for its answer, saying when it finds the worker stopped, like from a crash.
+      def tell(name, *args, **options)
+        return local(name, args, options) unless @fork
+
+        stopped = @pid && !alive?
+        start unless alive?
+        write(@requests, [false, name, args, options])
+        raise Error, "The worker for #{File.basename(root)} stopped" if stopped
+      end
+
+      # Closes the worker's pipes, so it ends once it's taken the requests it has, without waiting for it.
+      def finish
         [@requests, @answers].compact.each { it.close unless it.closed? }
+      end
+
+      def stop
+        finish
         return unless @pid
 
         Process.kill('TERM', @pid)
         Process.wait(@pid)
       rescue Errno::ECHILD, Errno::ESRCH
-        nil
+        # It had already ended.
       ensure
         @pid = nil
+      end
+
+      def alive?
+        @pid && Process.waitpid(@pid, Process::WNOHANG).nil?
+      rescue Errno::ECHILD
+        false
       end
 
       # Starts the worker's process, or makes what answers in this one, so it's ready before the first request.
@@ -65,8 +86,7 @@ module Raindown
           self.class.pipes.each { it.close unless it.closed? }
           serve(requests, answers)
         end
-        requests.close
-        answers.close
+        [requests, answers].each(&:close)
       end
 
       private
@@ -94,22 +114,17 @@ module Raindown
         answerer = @answering.call
 
         while (request = read(requests))
-          write(answers, answer(answerer, *request))
+          reply = answer(answerer, *request)
+          write(answers, reply) if request.first
         end
       ensure
         exit!(0)
       end
 
-      def answer(answerer, name, args, options)
+      def answer(answerer, _answering, name, args, options)
         [:ok, answerer.public_send(name, *args, **options)]
       rescue StandardError, ScriptError => e
         [:error, e.message]
-      end
-
-      def alive?
-        @pid && Process.waitpid(@pid, Process::WNOHANG).nil?
-      rescue Errno::ECHILD
-        false
       end
 
       # A message is its length, then its Marshal data.

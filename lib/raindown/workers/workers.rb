@@ -16,6 +16,7 @@ module Raindown
       @quiet = quiet
       @answering = answering
       @workers = {}
+      @finishing = []
     end
 
     def for(path) = self[Projects.root(path) || root]
@@ -35,8 +36,9 @@ module Raindown
     # The workers asked something, by their project's root.
     def started = @workers.dup
 
-    # Stops the project's worker, so its next request starts it again, loading its nodes again, and returns whether it
-    # had started. Without a project, they all stop, and the projects are found again, like ones added since.
+    # Finishes the project's worker, which takes the requests it has with the nodes it loaded, so its next request starts
+    # a new one, loading its nodes again, and returns whether it had started. Without a project, they all stop, and the
+    # projects are found again, like ones added since.
     def restart(project = nil)
       return restart_project(project) if project
 
@@ -44,10 +46,11 @@ module Raindown
       @roots = nil
     end
 
-    # Stops the workers, so the next requests start them again.
+    # Stops the workers, and those still finishing, so the next requests start them again.
     def stop
-      @workers.each_value(&:stop)
+      (@workers.values + @finishing).each(&:stop)
       @workers.clear
+      @finishing.clear
     end
 
     private
@@ -56,7 +59,8 @@ module Raindown
       worker = @workers.delete(project)
       return false unless worker
 
-      worker.stop
+      @finishing.select!(&:alive?)
+      @finishing << worker.tap(&:finish)
       true
     end
   end

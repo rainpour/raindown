@@ -20,7 +20,6 @@ module Raindown
         @workers = Workers.new(root: @directory, fork: fork?, quiet: false) do |root|
           Project.new(root:, name: name(root), bare:, execute:).tap(&:start)
         end
-        @queues = {}
       end
 
       def start
@@ -38,38 +37,25 @@ module Raindown
       end
 
       # Sends each saved file to its project, starting a worker for a new project, or restarting one when its nodes
-      # change. With fork, each project takes its changes in order in a thread of its own, so a slow write-back, like an
-      # endpoint's request with -x, only holds up its own project. Without fork, the projects share this process, so
-      # they're taken in turn.
+      # change, as the old one finishes the changes it has. Each worker takes its changes in order, so a slow write-back,
+      # like an endpoint's request with -x, only holds up its own project. Without fork, they're taken in turn.
       def handle(paths)
         Watcher.changes(paths, directory:).each do |change|
-          next unless change.nodes? || change.saved?
-          next take(change) unless fork?
-
-          queue(change.root) << change
+          take(change) if change.nodes? || change.saved?
         end
       end
 
       def stop
-        @queues.each_value(&:close)
         workers.stop
       end
 
       private
 
-      # The project's changes still to take, by the thread that takes them, until the queue's closed.
-      def queue(root)
-        @queues[root] ||= Thread::Queue.new.tap do |queue|
-          Thread.new { while (change = queue.pop) do take(change) end }
-        end
-      end
-
-      # An error, like a worker stopping partway from a crash, is shown, and the project takes its next change, its
-      # worker starting again.
+      # An error is shown, like a worker found stopped from a crash, which starts again to take the change.
       def take(change)
         return restart(change.root) if change.nodes?
 
-        workers[change.root].call(:update, change.path)
+        workers[change.root].tell(:update, change.path)
       rescue StandardError => e
         warn "[#{name(change.root)}] raindown: #{e.message}"
       end

@@ -65,6 +65,22 @@ RSpec.describe Raindown::Watcher::Supervisor do
       expect(File.read(raindeer)).to eq("# Notes\n\nShout:\nNew\n")
     end
 
+    it 'finishes a write-back with the old nodes when they change partway' do
+      raindeer = project('raindeer', shout: 'Old')
+      started = File.join(@dir, 'started')
+      File.write(File.join(@dir, 'raindeer', '.raindown', 'shout.rb'), "class Shout < Raindown::Node\n  def rewrite = " \
+                 "File.write('#{started}', '') && sleep(1) && 'Old'\nend\n")
+
+      expect do
+        supervisor.handle([raindeer])
+        eventually { File.exist?(started) }
+        node(File.join(@dir, 'raindeer'), 'New')
+        supervisor.handle([File.join(@dir, 'raindeer', '.raindown', 'shout.rb')])
+        eventually { File.read(raindeer).include?('Old') }
+      end.to output(/\[raindeer\] Reloading nodes/).to_stdout_from_any_process
+      expect(File.read(raindeer)).to eq("# Notes\n\nShout:\nOld\n")
+    end
+
     it "doesn't hold up a project while another's write-back is slow, like an endpoint's request" do
       slow = project('raindeer', shout: 'Slow')
       slow_node = "class Shout < Raindown::Node\n  def rewrite = sleep(3) && 'Slow'\nend\n"
@@ -80,16 +96,15 @@ RSpec.describe Raindown::Watcher::Supervisor do
 
     it 'says when a worker stops partway, and starts it again for the next change' do
       raindeer = project('raindeer', shout: 'Hi')
-      # The node leaves a mark as it stops its worker, so it's not changed back before the worker's loaded it.
+      # The node stops its worker the first time, leaving a mark so the next save waits for it, and is fine after.
       crashed = File.join(@dir, 'crashed')
-      File.write(File.join(@dir, 'raindeer', '.raindown', 'shout.rb'),
-                 "class Shout < Raindown::Node\n  def rewrite = File.write('#{crashed}', '') && exit!(1)\nend\n")
+      File.write(File.join(@dir, 'raindeer', '.raindown', 'shout.rb'), "class Shout < Raindown::Node\n  def rewrite = " \
+                 "File.exist?('#{crashed}') ? 'Fine' : File.write('#{crashed}', '') && exit!(1)\nend\n")
 
       expect do
         supervisor.handle([raindeer])
-        eventually { File.exist?(crashed) }
-        node(File.join(@dir, 'raindeer'), 'Fine')
-        supervisor.handle([File.join(@dir, 'raindeer', '.raindown', 'shout.rb'), raindeer])
+        eventually { File.exist?(crashed) } && sleep(0.2)
+        supervisor.handle([raindeer])
         eventually { File.read(raindeer).include?('Fine') }
       end.to output(/\[raindeer\] raindown: The worker for raindeer stopped/).to_stderr_from_any_process
       expect(File.read(raindeer)).to eq("# Notes\n\nShout:\nFine\n")
