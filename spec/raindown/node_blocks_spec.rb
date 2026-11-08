@@ -135,6 +135,18 @@ RSpec.describe Raindown::NodeBlocks do
       expect(described_class.args('Big news limit: 2', Raindown::Variables.new({}), antlers: false)).to eq([{ limit: 2 }, ['Big news']])
     end
 
+    it 'reads a comma between values like a space, as people write them' do
+      variables = Raindown::Variables.new({})
+      read = ->(text) { described_class.args(text, variables, antlers: false) }
+
+      expect(read.call('raindown/data.csv, total: true')).to eq([{ total: true }, ['raindown/data.csv']])
+      expect(read.call('"a b.csv", total: true')).to eq([{ total: true }, ['a b.csv']])
+      expect(read.call('x.csv,total: true')).to eq([{ total: true }, ['x.csv']])
+      expect(read.call('tags: book, order: rating')).to eq([{ tags: 'book', order: 'rating' }])
+      expect(read.call('limit=3, total: true')).to eq([{ limit: 3, total: true }])
+      expect(read.call('title: Hello, world')).to eq([{ title: 'Hello, world' }])
+    end
+
     it "raises on text that isn't a prop, like a word after quoted text, and on a variable with spaces" do
       expect { described_class.props("limit=3 title: 'Hello' world", Raindown::Variables.new({})) }
         .to raise_error(Raindown::NodeBlocks::BrokenText, /\ACan't read world in limit=3 title: 'Hello' world/)

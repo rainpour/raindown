@@ -13,6 +13,7 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ### Fixed
 
+- A comma between a directive's values reads like a space, like `table: data.csv, total: true`, rather than as part of the file's name
 - `table:` and `chart:` without a value say what they need, and their messages are `> [!WARNING]` alerts too
 - A directive that can't run, like one with more or fewer values than it takes, or a node that raises, writes why in its place, as a `> [!WARNING]` alert, so the rest of the file still writes back, rather than stopping it with Ruby's error. Its line's in the warning printed or given to editors
 - Editing a table keeps its file's line endings and byte order mark, and leaves empty cells empty, rather than `""`

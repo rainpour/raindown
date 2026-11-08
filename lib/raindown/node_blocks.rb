@@ -31,13 +31,15 @@ module Raindown
     # <{ Card }>, or <{ :Card }>, which a lowercase name like toc needs, as <{ toc }> is a variable.
     SELF_CLOSING = /\A( {0,3})<\{\s*(?::|(?=[A-Z]))(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
     BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
-    # Unquoted text after name:, like YAML's, runs up to the next prop, so title: Hello world limit: 3 has two.
-    UNQUOTED = /.+?(?=[ \t]+\w+(?:=|:[ \t])|[ \t]*\z)/
+    # Unquoted text after name:, like YAML's, runs up to the next prop, so title: Hello world limit: 3 has two. A comma
+    # before the next prop, like data.csv, total: true, separates them like a space, while one in text, like Hello,
+    # world, is part of it.
+    UNQUOTED = /.+?(?=(?:,[ \t]*|[ \t]+)\w+(?:=|:[ \t])|,?[ \t]*\z)/
     # A prop is name=value or name: value, where the value is quoted text, a number, true, false
-    # or a variable like author.name. After name= it's one word.
-    PROP = /(\w+)(?:=|:[ \t]+)("[^"]*"|'[^']*'|(?<==)\S+|#{UNQUOTED})/
+    # or a variable like author.name. After name= it's one word, without a comma after it.
+    PROP = /(\w+)(?:=|:[ \t]+)("[^"]*"|'[^']*'|(?<==)\S+?(?=,?(?:\s|\z))|#{UNQUOTED})/
     # A value before the props is the node's argument.
-    ARG = /\A("[^"]*"|'[^']*'|[^\s"']#{UNQUOTED}|[^\s"'])(?:\s+|\z)/
+    ARG = /\A("[^"]*"|'[^']*'|[^\s"']#{UNQUOTED}|[^\s"'])(?:,\s*|\s+|\z)/
 
     module_function
 
@@ -180,7 +182,7 @@ module Raindown
 
     # Text that isn't a prop, like world in title: 'Hello' world or tag=a b, is an error rather than left out.
     def props(text, variables, antlers: true)
-      unread = text.gsub(PROP, '').split
+      unread = text.gsub(PROP, '').delete(',').split
       raise BrokenText, "Can't read #{unread.join(' ')} in #{text.strip}. Text with spaces needs quotes" if unread.any?
 
       text.scan(PROP).to_h { |name, value| [name.to_sym, value(value, variables, antlers:)] }
