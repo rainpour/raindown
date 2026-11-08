@@ -13,7 +13,7 @@ module Raindown
   #   {"id": 1, "path": "/notes/a.md", "markdown": "<!-- toc: -->", "rewrite": true}
   #   {"id": 1, "output": "<!-- toc: -->\n- ...", "warnings": []}
   # Rewriting answers like --stdin --rewrite, with "execute" like -x, and otherwise it's HTML, like --stdin. An error's
-  # answered as {"id": 1, "error": "raindown: /notes/a.md: ..."}, like the CLI writes it.
+  # answered as {"id": 1, "error": "/notes/a.md: ..."}, like the CLI writes it.
   # Each project renders in a worker of its own, which starts again when its .raindown folder changes, so its nodes,
   # config and schemas are never stale. Without fork, as on Windows, node changes need the server started again.
   class Server
@@ -33,13 +33,14 @@ module Raindown
 
     private
 
+    # Any error is the answer, as an editor's only got its server, and one note can't be allowed to stop it.
     def answer(line)
       request = JSON.parse(line)
       { id: request['id'], **edit(request) }
-    rescue JSON::ParserError, KeyError => e
-      { id: request&.dig('id'), error: "raindown: #{e.message}" }
     rescue Workers::Worker::Error => e
-      { id: request['id'], error: "raindown: #{request['path']}: #{e.message}" }
+      { id: request['id'], error: "#{request['path']}: #{e.message}" }
+    rescue StandardError => e
+      { id: (request['id'] if request.is_a?(Hash)), error: e.message.to_s }
     end
 
     def edit(request)
@@ -59,7 +60,7 @@ module Raindown
     end
 
     def nodes_changed?(project)
-      stamp = Dir.glob(File.join(project, Nodes::FOLDER, '**', '*')).to_h { [it, File.mtime(it)] }
+      stamp = Dir.glob(File.join(project, Nodes::FOLDER, '**', '*')).to_h { [it, File.lstat(it).mtime] }
       changed = @stamps.key?(project) && @stamps[project] != stamp
       @stamps[project] = stamp
       changed

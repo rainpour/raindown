@@ -47,6 +47,26 @@ RSpec.describe Raindown::Server do
     expect(html['id']).to eq(3)
   end
 
+  it 'keeps answering with a link to nothing in the project\'s .raindown folder' do
+    File.symlink('/nowhere/gone', File.join(@dir, '.raindown', 'Gone.md'))
+
+    expect(answers(request(1, '# A', rewrite: true)).first).to include('id' => 1, 'output' => '# A')
+  end
+
+  it 'answers an error it did not expect, and keeps answering' do
+    server = described_class.new(input: StringIO.new, output: StringIO.new)
+    allow(server).to receive(:edit).and_raise(Errno::EACCES, 'note.md')
+
+    expect(server.send(:answer, JSON.generate(id: 7))).to eq(id: 7, error: 'raindown: Permission denied - note.md')
+  end
+
+  it "answers a request that isn't an object, and keeps answering" do
+    first, second = answers('[]', request(2, '# A', rewrite: true))
+
+    expect(first['error']).to start_with('raindown: ')
+    expect(second).to include('id' => 2, 'output' => '# A')
+  end
+
   it "renders with a project's nodes as they are now, after one changes", :fork do
     input, writer = IO.pipe
     # A worker closes the pipes it's given, so its fork doesn't keep the server's input open.
