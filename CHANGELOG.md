@@ -7,6 +7,10 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ## Unreleased
 
+### Added
+
+- `table:` makes its CSV or TSV file when it isn't there yet, from the table written below it, or else one to fill in
+
 ### Fixed
 
 - Editing a table keeps its file's line endings and byte order mark, and leaves empty cells empty, rather than `""`

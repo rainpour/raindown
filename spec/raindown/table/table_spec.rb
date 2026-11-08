@@ -149,6 +149,37 @@ RSpec.describe Raindown::Table do
     end
   end
 
+  describe 'a file that is not there yet' do
+    let(:new_file) { File.join(@root, 'data', 'books.csv') }
+
+    it 'is made from the table written below it, in a folder made for it' do
+      written = rewrite("table: 'data/books.csv'\n| title | rating |\n|---|---|\n| Dune | 5 |\n")
+
+      expect(File.read(new_file)).to eq("title,rating\nDune,5\n")
+      expect(written).to include('<!-- table 1 row').and include('| Dune | 5 |')
+    end
+
+    it 'is made with a table to fill in, when there is none' do
+      written = rewrite("table: 'data/books.csv'\n")
+
+      expect(File.read(new_file)).to eq("Column 1,Column 2\n,\n")
+      expect(written).to include('| Column 1 | Column 2 |')
+    end
+
+    it "isn't made outside the project" do
+      outside = File.join(File.dirname(@root), "made-#{File.basename(@root)}.csv")
+
+      expect(rewrite("table: '../#{File.basename(outside)}'\n")).to include("it's outside the project")
+      expect(File.exist?(outside)).to be(false)
+    end
+
+    it "isn't made when the table's only rendered" do
+      Raindown.render(markdown: "<{ :table 'data/books.csv' }>\n", metadata:)
+
+      expect(File.exist?(new_file)).to be(false)
+    end
+  end
+
   describe 'total: true' do
     let(:sales) { File.join(@root, 'sales.csv') }
     let(:totalled) { rewrite("table: 'sales.csv' total: true\n") }
@@ -224,7 +255,7 @@ RSpec.describe Raindown::Table do
 
   it "says when its data isn't a CSV or TSV file" do
     expect(rewrite("table: 'team.json'\n")).to include("Can't show \"team.json\" as a table: only CSV and TSV files can be")
-    expect(rewrite("table: 'missing.csv'\n")).to include('no such file')
+    expect(Raindown.render(markdown: "<{ :table 'missing.csv' }>\n", metadata:)).to include('no such file')
   end
 
   it 'shows its file in <{ }> without writing to it' do

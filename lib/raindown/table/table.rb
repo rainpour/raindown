@@ -27,16 +27,21 @@ module Raindown
   class Table < Node
     COMMENT = /\A<!-- table (?:conflict|\d+ rows?) · (\h+) -->\z/
     BOLD = /\A\*\*.*\*\*\z/
+    # The table a new file starts with, when there's no table to make it from.
+    STARTER = [['Column 1', 'Column 2'], ['', '']].freeze
 
     def initialize(data, total: false)
       @data = data
       @total = total
     end
 
-    # Written is what it wrote last time, so it can tell which of the table and the file changed since.
+    # Written is what it wrote last time, so it can tell which of the table and the file changed since. A file that's
+    # not there yet is made, from the table below it, or else one to fill in.
     def rewrite(written: [], metadata: NoMetadata)
       path = data_path(metadata)
-      data_error(path, metadata) || synced(path, written.map(&:chomp))
+      lines = written.map(&:chomp)
+      create_file(path, lines) if missing_file?(path, metadata)
+      data_error(path, metadata) || synced(path, lines)
     end
 
     # Write-in, in <{ }>, the table only shows its file, and never writes to it.
@@ -55,6 +60,17 @@ module Raindown
       return metadata.root if metadata.respond_to?(:root)
 
       Dir.pwd
+    end
+
+    def missing_file?(path, metadata)
+      TableFile.supported?(path) && Utils.inside?(path, data_root(metadata)) && !File.exist?(path)
+    end
+
+    # From the table as it's written, which has no comment yet when it's just been typed.
+    def create_file(path, lines)
+      rows = MarkdownTable.parse(lines.grep_v(COMMENT))
+      rows = STARTER if rows.empty?
+      TableFile.create(path, rows)
     end
 
     # Why the file can't be a table, or nil when it can.

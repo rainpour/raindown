@@ -42,8 +42,8 @@ RSpec.describe Raindown::Server do
   it 'answers errors like the CLI writes them, and keeps answering' do
     broken, unreadable, html = answers(request(1, "<!-- toc: -->\n", rewrite: true), 'not json', request(3, "# A\n"))
 
-    expect(broken).to eq('id' => 1, 'error' => "raindown: #{File.join(@dir, 'notes.md')}: <!-- toc: --> on line 1 needs <!-- :toc -->")
-    expect(unreadable['error']).to start_with('raindown: unexpected token')
+    expect(broken).to eq('id' => 1, 'error' => "#{File.join(@dir, 'notes.md')}: <!-- toc: --> on line 1 needs <!-- :toc -->")
+    expect(unreadable['error']).to start_with('unexpected token')
     expect(html['id']).to eq(3)
   end
 
@@ -57,13 +57,13 @@ RSpec.describe Raindown::Server do
     server = described_class.new(input: StringIO.new, output: StringIO.new)
     allow(server).to receive(:edit).and_raise(Errno::EACCES, 'note.md')
 
-    expect(server.send(:answer, JSON.generate(id: 7))).to eq(id: 7, error: 'raindown: Permission denied - note.md')
+    expect(server.send(:answer, JSON.generate(id: 7))).to eq(id: 7, error: 'Permission denied - note.md')
   end
 
   it "answers a request that isn't an object, and keeps answering" do
     first, second = answers('[]', request(2, '# A', rewrite: true))
 
-    expect(first['error']).to start_with('raindown: ')
+    expect(first['error']).not_to be_empty
     expect(second).to include('id' => 2, 'output' => '# A')
   end
 

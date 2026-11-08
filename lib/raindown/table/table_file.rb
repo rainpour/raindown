@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'csv'
+require 'fileutils'
 
 module Raindown
   # The CSV or TSV file behind a table:, as rows of cells as wide as each other, written back in its own format.
@@ -18,6 +19,12 @@ module Raindown
       rows = CSV.read(path, col_sep: separator(path), skip_blanks: true, encoding: 'bom|utf-8')
       width = rows.map(&:length).max.to_i
       rows.map { |row| Array.new(width) { row[it].to_s.strip } }
+    end
+
+    # A new file, and the folders it's in, which has no format of its own to keep yet.
+    def create(path, rows)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.binwrite(path, rows.map { CSV.generate_line(without_empty_cells(it), col_sep: separator(path)) }.join)
     end
 
     # Keeps the file's line endings and any byte order mark, like Excel's.

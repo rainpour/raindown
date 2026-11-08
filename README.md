@@ -371,6 +371,8 @@ table: 'data/sales.csv' total: true
 
 The total is worked out again whenever the table's written, and never written to the file, so edit the rows above it, or add rows below it, and it sums them.
 
+When the file isn't there yet, writing the block back makes it, and any folders it's in, from the table you've written below it, or else with a table to fill in. So you can start a table from a note, even in an editor like Obsidian that doesn't show CSV files. It's never made when the table only renders, like in `<{ }>`.
+
 Formula cells in the file, like `=SUM(B)` by its column's letter or `=sum(Price)` by its header, show their values in the table, summing the numbers in the column below its header, like a spreadsheet, and leaving out other formulas. Case doesn't matter, in `SUM` or the column, so `=Sum(b)` and `=sum(PRICE)` work too. A formula naming a column that doesn't exist shows as it's written, like other formulas, so you can keep typing it. When the table's edits are written back, a formula cell still showing its value keeps its formula, so type a new formula or value into one to replace it. To edit its formula instead, delete the spaces around its value, so it's no longer lined up with its column, and the formula shows in its place, like `=SUM(B)`. It keeps showing until you change it, ignoring spaces, and then it's written to the file and shows its value again. Adding or deleting rows above a formula cell moves it, so check it's still a formula afterwards.
 
 ### Endpoints
