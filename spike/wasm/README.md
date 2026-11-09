@@ -114,3 +114,18 @@ and platform, as bytecode only loads in the Ruby that compiled it, and packs it 
 `raindown-bytecode.wasm`. `bytecode.rb` loads it rather than the source, through `RubyVM::InstructionSequence.load_iseq`,
 as Bootsnap does, which the plugin's fourth command, **Run the write-back packed, loading bytecode**, requires first.
 Natively, it takes loading Raindown from about 145 ms to 95 ms, and adds 1.4 MB, 0.7 MB gzipped.
+
+### Results with bytecode
+
+Run one after the other in Obsidian, the same note and CSV from both:
+
+| | Source | Bytecode |
+| --- | --- | --- |
+| Module | 18.6 MB, 5.4 MB gzipped | 20.7 MB, 6.3 MB gzipped |
+| Reading and compiling it | 106 ms | 136 ms |
+| Starting Ruby | 201 ms | 223 ms |
+| Loading Raindown | 670 ms | 360 ms |
+| Each write-back, 4 steps | 81 to 113 ms | 67 to 119 ms |
+
+Bytecode compiled by the WASI build loads in the JavaScript build. About 0.7 s to the first write-back, from 1.7 s with
+the files sent and RubyGems, and 1.3 s from wasmtime.
