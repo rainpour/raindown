@@ -28,6 +28,7 @@ cat > "$ROOT/spike/wasm/obsidian/config.json" <<JSON
     "/emoji/lib"],
   "browserBundle": "$RUBY_NPM/browser.umd.js",
   "stdlibWasm": "$RUBY_NPM/ruby+stdlib.wasm",
+  "packedWasm": "$ROOT/spike/wasm/runtime/raindown.wasm",
   "pack": {
     "/stubs": "$ROOT/spike/wasm/stubs",
     "/spike/scenario.rb": "$ROOT/spike/wasm/scenario.rb",

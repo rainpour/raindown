@@ -1,9 +1,12 @@
 'use strict';
 
-// Runs in a Web Worker, after ruby.wasm's browser bundle, which gives it ruby-wasm-wasi: starts Ruby once, with the
-// files it's sent in Ruby's in-memory / folder, loads Raindown, then runs the write-back again and again on the Ruby it
-// kept running, so Obsidian never waits for it.
-self.onmessage = async ({ data: { wasm, files, includes, rounds } }) => {
+// Runs in a Web Worker, after ruby.wasm's browser bundle, which gives it ruby-wasm-wasi, with RubyVM and the WASI
+// classes the plugin adds to it: starts Ruby once, with its arguments, like --disable-gems, and the files it's sent in
+// Ruby's in-memory / folder, loads Raindown, then runs the write-back again and again on the Ruby it kept running, so
+// Obsidian never waits for it.
+const { RubyVM, WASI, OpenFile, File, PreopenDirectory, Directory } = self['ruby-wasm-wasi'];
+
+self.onmessage = async ({ data: { wasm, files, includes, rounds, args } }) => {
   try {
     const times = {};
     const time = async (name, step) => {
@@ -14,8 +17,10 @@ self.onmessage = async ({ data: { wasm, files, includes, rounds } }) => {
     };
 
     const module = await time('compile', () => WebAssembly.compile(wasm));
-    const { vm, wasi } = await time('start Ruby', () => self['ruby-wasm-wasi'].DefaultRubyVM(module, { consolePrint: false }));
-    await time('add files', () => addFiles(wasi, files));
+    const root = new PreopenDirectory('/', new Map());
+    const wasi = new WASI([], [], [...[0, 1, 2].map(() => new OpenFile(new File([]))), root], { debug: false });
+    const { vm } = await time('start Ruby', () => RubyVM.instantiateModule({ module, wasip1: wasi, args }));
+    await time('add files', () => addFiles(root.dir, files));
     await time('load Raindown', () => vm.eval([
       "require 'rbconfig'",
       `$LOAD_PATH.unshift(*${JSON.stringify(includes)})`,
@@ -35,12 +40,9 @@ self.onmessage = async ({ data: { wasm, files, includes, rounds } }) => {
   }
 };
 
-// The files, by their path inside Ruby, like /raindown/lib/raindown.rb, in the in-memory folder ruby.wasm's WASI gives
-// Ruby at /, with the folders they're in, and /work, for the note and its CSV.
-function addFiles(wasi, files) {
-  const root = wasi.fds[3].dir;
-  const Directory = root.constructor;
-  const File = wasi.fds[0].file.constructor;
+// The files, by their path inside Ruby, like /raindown/lib/raindown.rb, in the in-memory folder Ruby has at /, with the
+// folders they're in, and /work, for the note and its CSV.
+function addFiles(root, files) {
   const folder = (parts) => parts.reduce((dir, part) => {
     if (!dir.contents.has(part)) {
       const child = new Directory(new Map());

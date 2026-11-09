@@ -46,6 +46,15 @@ Ruby's files are read from disk, as with wasmtime, so it doesn't yet try packing
 build, so Obsidian doesn't wait for it. Ruby's files are sent to the worker, to an in-memory folder, rather than read
 from disk, and it starts Ruby once, then runs the write-back five times on the Ruby it kept running.
 
+**Run the write-back packed into the module, without RubyGems** does the same with Ruby's files packed into the
+module, so nothing's read from disk or sent but the scenario, as mobile would need, and Ruby started without RubyGems,
+which Raindown doesn't need there. `pack.sh` packs it, with rbwasm, from the ruby_wasm gem:
+`gem install ruby_wasm`, then
+`RUBY_WASI=spike/wasm/runtime/ruby-3.4-wasm32-unknown-wasip1-full RUBY_NPM=spike/wasm/runtime/npm spike/wasm/pack.sh`.
+
+rbwasm can't snapshot a module after Ruby's started and Raindown's loaded, which would skip both when it's run, so
+that would need Wizer, and Ruby built for it.
+
 ### Results in Obsidian
 
 Obsidian's desktop app, on the same Mac, with the same note and CSV as native Ruby's.
