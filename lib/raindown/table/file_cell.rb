@@ -34,10 +34,11 @@ module Raindown
     # clipped off back in place of the ellipsis, while it has one, like when its start's edited, or more typed after it.
     def value_from(cell)
       return value if unchanged_by?(cell)
+      return cell unless cell.include?('…')
 
-      before, after = cell.split('…', 2)
+      before, _, after = cell.partition('…')
       hidden = clipped_off(before)
-      return cell unless after && hidden
+      return cell unless hidden
 
       "#{before}#{hidden}#{after}"
     end

@@ -55,6 +55,12 @@ RSpec.describe Raindown::Table do
     expect(rewrite(table)).to match(/<!-- 1 row · \h{6} -->\n\| name \| role \|\n\|---\|---\|\n\| Ada \| lead \|\n\z/)
   end
 
+  it 'writes a cell emptied in the table to its file' do
+    rewrite(synced.sub('| Ada | engineer |', '| Ada |  |'))
+
+    expect(File.read(csv)).to start_with("name,role\nAda,\n")
+  end
+
   it 'writes neither when both changed, until they match again' do
     edited = synced.sub('engineer', 'lead')
     File.write(csv, "name,role\nAda,ops\n")
