@@ -1,0 +1,9 @@
+{
+  "id": "raindown-wasm-spike",
+  "name": "Raindown WebAssembly spike",
+  "version": "0.0.1",
+  "minAppVersion": "1.5.0",
+  "description": "Times Raindown's write-back in Ruby compiled to WebAssembly, run by Obsidian.",
+  "author": "maedi",
+  "isDesktopOnly": true
+}

@@ -29,3 +29,14 @@ Ruby 3.4, ruby.wasm 2.10.1, wasmtime 50.0.1, on an x86_64 Mac. The note and CSV 
 
 Still to try: running it in Obsidian, with V8 and a JavaScript WASI shim, the files packed into the module and the vault
 as its filesystem, and a custom Ruby build with only the extensions Raindown needs.
+
+## In Obsidian
+
+`obsidian/` is a desktop-only plugin with one command, **Run the WebAssembly write-back**, that runs the same write-back
+in Obsidian's own WebAssembly engine, with Node's WASI, and shows how long reading, compiling and running Ruby took.
+Ruby's files are read from disk, as with wasmtime, so it doesn't yet try packing them into the module, or mobile.
+
+1. Extract ruby.wasm's WASI build into `runtime/`, which git ignores, then write the plugin's `config.json`:
+   `RUBY_WASI=spike/wasm/runtime/ruby-3.4-wasm32-unknown-wasip1-full spike/wasm/obsidian/setup.sh`
+2. Link `obsidian/` into a vault's `.obsidian/plugins/` as `raindown-wasm-spike`, and turn it on.
+3. Run **Raindown WebAssembly spike: Run the WebAssembly write-back** from the command palette.
