@@ -6,7 +6,7 @@
 // Obsidian never waits for it.
 const { RubyVM, WASI, OpenFile, File, PreopenDirectory, Directory } = self['ruby-wasm-wasi'];
 
-self.onmessage = async ({ data: { wasm, files, includes, rounds, args } }) => {
+self.onmessage = async ({ data: { wasm, files, includes, rounds, args, packed = [] } }) => {
   try {
     const times = {};
     const time = async (name, step) => {
@@ -20,7 +20,7 @@ self.onmessage = async ({ data: { wasm, files, includes, rounds, args } }) => {
     const root = new PreopenDirectory('/', new Map());
     const wasi = new WASI([], [], [...[0, 1, 2].map(() => new OpenFile(new File([]))), root], { debug: false });
     const { vm } = await time('start Ruby', () => RubyVM.instantiateModule({ module, wasip1: wasi, args }));
-    await time('add files', () => addFiles(root.dir, files));
+    await time('add files', () => addFiles(root.dir, files, packed));
     await time('load Raindown', () => vm.eval([
       "require 'rbconfig'",
       `$LOAD_PATH.unshift(*${JSON.stringify(includes)})`,
@@ -41,8 +41,10 @@ self.onmessage = async ({ data: { wasm, files, includes, rounds, args } }) => {
 };
 
 // The files, by their path inside Ruby, like /raindown/lib/raindown.rb, in the in-memory folder Ruby has at /, with the
-// folders they're in, and /work, for the note and its CSV.
-function addFiles(root, files) {
+// folders they're in, and /work, for the note and its CSV. Folders packed into the module, like /raindown/lib, are
+// mounted at their own paths, but not the folders they're in, like /raindown, which Ruby looks at finding a file's real
+// path, so those are made here.
+function addFiles(root, files, packed) {
   const folder = (parts) => parts.reduce((dir, part) => {
     if (!dir.contents.has(part)) {
       const child = new Directory(new Map());
@@ -53,6 +55,7 @@ function addFiles(root, files) {
   }, root);
 
   folder(['work']);
+  packed.forEach((dir) => folder(dir.split('/').filter(Boolean).slice(0, -1)));
   for (const [file, bytes] of Object.entries(files)) {
     const parts = file.split('/').filter(Boolean);
     folder(parts.slice(0, -1)).contents.set(parts.at(-1), new File(bytes));

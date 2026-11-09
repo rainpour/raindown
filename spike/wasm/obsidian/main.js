@@ -75,11 +75,12 @@ module.exports = class RaindownWasmSpike extends Plugin {
     const config = this.config();
     const files = {};
     this.pack(files, '/spike/scenario.rb', config.pack['/spike/scenario.rb']);
-    return this.runWorker({ config, wasmPath: config.packedWasm, files, args: ['ruby.wasm', '--disable-gems', '-EUTF-8', '-e_=0'] });
+    const args = ['ruby.wasm', '--disable-gems', '-EUTF-8', '-e_=0'];
+    return this.runWorker({ config, wasmPath: config.packedWasm, files, args, packed: config.packedDirs });
   }
 
   // Starts Ruby once in a Web Worker, then runs the write-back several times on the Ruby it kept running.
-  async runWorker({ config, wasmPath, files, args }) {
+  async runWorker({ config, wasmPath, files, args, packed }) {
     new Notice('Running Raindown in a worker…');
     const started = performance.now();
     const wasm = new Uint8Array(fs.readFileSync(wasmPath));
@@ -94,7 +95,7 @@ module.exports = class RaindownWasmSpike extends Plugin {
     const result = await new Promise((resolve) => {
       worker.onmessage = ({ data }) => resolve(data);
       worker.onerror = (event) => resolve({ error: event.message });
-      worker.postMessage({ wasm: wasm.buffer, files, includes: config.includes, rounds: 5, args }, [wasm.buffer]);
+      worker.postMessage({ wasm: wasm.buffer, files, includes: config.includes, rounds: 5, args, packed }, [wasm.buffer]);
     });
     worker.terminate();
     if (result.error) {
