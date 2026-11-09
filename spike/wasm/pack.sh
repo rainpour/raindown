@@ -42,9 +42,17 @@ OUTPUT="$RUNTIME/raindown.wasm"
 
 if [ -n "$WASMTIME" ]; then
   rm -rf "$BYTECODE" && mkdir -p "$BYTECODE"
-  # /usr too, as Ruby looks at the folders a file's in, finding its real path, which wasmtime only has if they're mounted.
+  # Ruby looks at the folders a file's in, finding its real path, compiling it as loading it, and wasmtime only has the
+  # folders packed ones are in, like /raindown for /raindown/lib, if they're mounted, so empty ones are, and /usr.
+  PARENTS="--dir $RUNTIME/stdlib/usr::/usr"
+  for guest in $GUESTS; do
+    parent=$(dirname "$guest")
+    case "$parent" in /|/usr*) continue ;; esac
+    mkdir -p "$RUNTIME/parents$parent"
+    case "$PARENTS" in *"::$parent "*|*"::$parent") ;; *) PARENTS="$PARENTS --dir $RUNTIME/parents$parent::$parent" ;; esac
+  done
   # shellcheck disable=SC2086
-  "$WASMTIME" run $DIRS --dir "$RUNTIME/stdlib/usr::/usr" --dir "$ROOT/spike/wasm::/spike" --dir "$BYTECODE::/bytecode" \
+  "$WASMTIME" run $PARENTS $DIRS --dir "$ROOT/spike/wasm::/spike" --dir "$BYTECODE::/bytecode" \
     "$RUBY_WASI/usr/local/bin/ruby" \
     --disable-gems /spike/compile.rb /bytecode $GUESTS
   DIRS="$DIRS --dir $BYTECODE::/bytecode"
