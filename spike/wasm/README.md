@@ -40,3 +40,22 @@ Ruby's files are read from disk, as with wasmtime, so it doesn't yet try packing
    `RUBY_WASI=spike/wasm/runtime/ruby-3.4-wasm32-unknown-wasip1-full spike/wasm/obsidian/setup.sh`
 2. Link `obsidian/` into a vault's `.obsidian/plugins/` as `raindown-wasm-spike`, and turn it on.
 3. Run **Raindown WebAssembly spike: Run the WebAssembly write-back** from the command palette.
+
+### Results in Obsidian
+
+Obsidian's desktop app, on the same Mac, with the same note and CSV as native Ruby's.
+
+| | Obsidian |
+| --- | --- |
+| Reading the module | 24 ms |
+| Compiling it | 60 ms, as V8 compiles each function lazily, the first time it runs |
+| Instantiating it | 41 ms |
+| Loading Raindown | 783 ms |
+| Writing the table and TOC | 32 ms |
+| Fixing a column | 17.5 ms |
+| Expanding a cell | 10.1 ms |
+| Saving an edit | 21.5 ms |
+
+About 1.2 s to the first write-back, once a session, then 10 to 32 ms each. Next: keeping Ruby running between
+write-backs, with ruby.wasm's JavaScript build, in a Web Worker so Obsidian doesn't wait for it, with Raindown packed
+into the module and the vault as its filesystem, then on a phone.
