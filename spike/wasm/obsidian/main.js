@@ -67,6 +67,7 @@ module.exports = class RaindownWasmSpike extends Plugin {
     Object.entries(config.pack).forEach(([inside, outside]) => this.pack(files, inside, outside));
     const packed = Math.round(performance.now() - started);
     const wasm = new Uint8Array(fs.readFileSync(config.stdlibWasm));
+    const megabytes = (wasm.length / 1e6).toFixed(1); // Sending its bytes to the worker empties it.
     const code = `${fs.readFileSync(config.browserBundle, 'utf8')}\n${fs.readFileSync(path.join(config.here, 'worker.js'), 'utf8')}`;
     const worker = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
 
@@ -85,7 +86,7 @@ module.exports = class RaindownWasmSpike extends Plugin {
     const size = Object.values(files).reduce((sum, bytes) => sum + bytes.length, 0);
     const steps = Object.entries(result.times).map(([name, ms]) => `${name} ${ms} ms`).join(', ');
     const rounds = result.runs.map(({ total }, round) => `${round + 1}: ${total} ms`).join(', ');
-    const summary = `${(wasm.length / 1e6).toFixed(1)} MB, ${Object.keys(files).length} files (${(size / 1e6).toFixed(1)} MB) ` +
+    const summary = `${megabytes} MB, ${Object.keys(files).length} files (${(size / 1e6).toFixed(1)} MB) ` +
       `read in ${packed} ms\n${steps}\nwrite-backs, 4 steps each: ${rounds}`;
     const last = result.runs.at(-1);
     console.log(`Raindown WebAssembly spike\n${summary}\n${JSON.stringify(last.times)}\n\n${last.text}\n${last.csv}`);

@@ -64,3 +64,19 @@ Obsidian's desktop app, on the same Mac, with the same note and CSV as native Ru
 About 1.2 s to the first write-back, once a session, then 10 to 32 ms each. Next: keeping Ruby running between
 write-backs, with ruby.wasm's JavaScript build, in a Web Worker so Obsidian doesn't wait for it, with Raindown packed
 into the module and the vault as its filesystem, then on a phone.
+
+### Results in a worker
+
+Ruby kept running in a Web Worker, so Obsidian didn't wait, with the 30.6 MB npm module and 278 files (1.5 MB) sent to
+it, then the write-back run five times on it. Each wrote the same note and CSV as native Ruby's.
+
+| | In a worker |
+| --- | --- |
+| Reading the files | 123 ms |
+| Compiling the module | 85 ms |
+| Starting Ruby | 707 ms |
+| Adding the files | 4 ms |
+| Loading Raindown | 801 ms |
+| Each write-back, 4 steps | 67 to 118 ms, the first slowest |
+
+About 1.7 s to the first write-back, in the background, then about 16 to 36 ms a step.
