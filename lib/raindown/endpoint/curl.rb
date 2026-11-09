@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
-require 'ipaddr'
 require 'open3'
 require 'shellwords'
-require 'socket'
 require 'uri'
 require_relative 'curl_response'
 
@@ -162,7 +160,10 @@ module Raindown
     # Resolves each URL's host and pins curl to the address it was checked at, like --resolve api.io:443:203.0.113.5,
     # so the name can't point somewhere else by the time curl looks it up. A host that's already an IP isn't pinned,
     # and behind a proxy, which looks names up itself, only a host that's an IP is checked.
+    # Sockets are loaded only when an endpoint runs, so writing a file back loads none, as WebAssembly has none.
     def resolve_options(args)
+      require 'ipaddr'
+      require 'socket'
       args.grep(URL).flat_map { pin_option(URI.parse(it)) }
     rescue URI::InvalidURIError => e
       raise Error, "Can't read the URL: #{e.message}"
