@@ -9,8 +9,8 @@ WASMTIME=path/to/wasmtime RUBY_WASI=path/to/ruby-3.4-wasm32-unknown-wasip1-full 
 ```
 
 Only the Ruby a write-back loads is mapped in: Raindown, antlers, lowkey, plugs, csv, unicode-display_width and
-unicode-emoji. Commonmarker, a native Rust gem, is stubbed, as only HTML needs it. So is socket, which WASI doesn't have,
-for ipaddr, which only endpoints need.
+unicode-emoji. Commonmarker, a native Rust gem, is stubbed, as only HTML needs it. The results below also stubbed
+socket, which WASI doesn't have, until endpoints, which needed it for ipaddr, only loaded it when one runs.
 
 ## Results
 
