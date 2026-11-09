@@ -129,3 +129,16 @@ Run one after the other in Obsidian, the same note and CSV from both:
 
 Bytecode compiled by the WASI build loads in the JavaScript build. About 0.7 s to the first write-back, from 1.7 s with
 the files sent and RubyGems, and 1.3 s from wasmtime.
+
+## To do
+
+- Test on a phone: load the module without Node, embedded in `main.js` and unpacked with `DecompressionStream`, with
+  the vault, through Obsidian's API, as Ruby's filesystem, and time starting up and writing back, and its memory.
+- Load Commonmarker only when rendering HTML, as endpoints do sockets, so no stub's needed. Render reading view's
+  `<{ }>` sections with Obsidian's own Markdown renderer, or build Commonmarker into Ruby.
+- Pack `dirload` and `lownode`, to load a project's `.raindown` nodes, sent from the vault, and run its JavaScript nodes
+  in the plugin rather than NodeJS.
+- Make the standard library list from every directive's write-back, not just `table:` and `toc:`.
+- Compile only the files a write-back loads to bytecode, to shrink it.
+- Turn `pack.sh` into the plugin's build step, embedding the compressed module in `main.js`.
+- Ask the Obsidian team about a large embedded module before submitting, and explain it in the README.
