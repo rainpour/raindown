@@ -236,6 +236,16 @@ RSpec.describe Raindown::Table do
       expect(File.read(sales)).to end_with("Total,=Sum(b),=sum(PRICE)\nNone,1,=SUM(C)\n")
     end
 
+    it 'keeps formulas below a row that was added or removed' do
+      added = aligned(aligned("table: 'sales.csv'\n").sub(/^(\| Total)/, "| Jam | 4 | 1 |\n\\1"))
+
+      expect(added).to match(/^\| Total +\| 7 +\| 4\.75 +\|$/)
+      expect(File.read(sales)).to include("Jam,4,1\nTotal,=Sum(b),=sum(PRICE)\nNone,=SUM(Q),=AVG(B)\n")
+
+      expect(aligned(added.sub(/^\| Tea .*\n/, ''))).to match(/^\| Total +\| 4 +\| 3\.25 +\|$/)
+      expect(File.read(sales)).to eq("item,units,price\nCake,x,2.25\nJam,4,1\nTotal,=Sum(b),=sum(PRICE)\nNone,=SUM(Q),=AVG(B)\n")
+    end
+
     describe 'with its padding deleted' do
       let(:revealed) { aligned(aligned("table: 'sales.csv'\n").sub(/^(\| Total +)\| 3 +\|/, '\1|3|')) }
 
@@ -249,6 +259,11 @@ RSpec.describe Raindown::Table do
       it 'writes a changed formula back to its file, and shows its value' do
         expect(aligned(revealed.sub('=Sum(b)', '=SUM(C)'))).to match(/^\| Total +\| 3\.75 +\| 3\.75 +\|$/)
         expect(File.read(sales)).to include("Total,=SUM(C),=sum(PRICE)\n")
+      end
+
+      it 'keeps showing its formula when a row is added above it' do
+        expect(aligned(revealed.sub(/^(\| Total)/, "| Jam | 4 | 1 |\n\\1"))).to match(/^\| Total +\| =Sum\(b\) +\| 4\.75 +\|$/)
+        expect(File.read(sales)).to include("Total,=Sum(b),=sum(PRICE)\n")
       end
     end
 

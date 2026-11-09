@@ -92,7 +92,7 @@ module Raindown
       synced_hash = written.first&.[](COMMENT, 1)
       table = WrittenTable.new(written_rows(written), file)
       return markdown(file, table.revealed) if unchanged?(table.rows, synced_hash, shown)
-      return markdown(TableFile.write(path, with_file_cells(table.rows, file, shown)), table.revealed) if hash_rows(shown) == synced_hash
+      return markdown(TableFile.write(path, table.saved_rows), table.revealed) if hash_rows(shown) == synced_hash
 
       warn "raindown: #{@data} and its table both changed, so neither is written until they match"
       ["<!-- table conflict · #{synced_hash} -->", *written.drop(1)].join("\n")
@@ -121,19 +121,6 @@ module Raindown
     # The values, but for each revealed cell, which shows its formula.
     def with_revealed(values, rows, revealed)
       revealed.each_with_object(values.map(&:dup)) { |(row, column), shown| shown[row][column] = rows[row][column] }
-    end
-
-    # The table's rows, keeping the file's cell where the table still shows it, like a formula as its value, or a cell
-    # with line breaks on one line.
-    def with_file_cells(table, file, shown)
-      table.each_with_index.map do |row, row_index|
-        row.each_with_index.map do |cell, column|
-          kept = file.dig(row_index, column)
-          next kept if kept && MarkdownTable.one_line(shown.dig(row_index, column).to_s) == cell
-
-          cell
-        end
-      end
     end
 
     def with_total(rows)
