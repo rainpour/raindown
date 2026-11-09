@@ -145,12 +145,16 @@ RSpec.describe Raindown::TableFormatter do
       expect(rewrite("| name | notes |\n|-|:==-==|\n| Ada | a longer note |\n").lines[1]).to eq("| ---- | :------------ |\n")
     end
 
-    it 'lines up rows starting with + like the others, keeping their +' do
-      expect(rewrite("| name | notes |\n|-|=====|\n| Ada | Tag the |\n+ | build |\n|Lin|ok|\n")).to eq(<<~MARKDOWN)
+    it 'reads a cell starting with + as a cell, as a row carrying one on starts |+ with no space' do
+      expect(rewrite("| a | b |\n|-|-|\n| +1 555 | x |\n").lines.last).to eq("| +1 555 | x   |\n")
+    end
+
+    it 'lines up rows starting with |+ like the others, keeping their |+ in place of "| "' do
+      expect(rewrite("| name | notes |\n|-|=====|\n| Ada | Tag the |\n|+| build |\n|Lin|ok|\n")).to eq(<<~MARKDOWN)
         | name | notes |
         | ---- | ===== |
         | Ada  | Tag the |
-        +      | build |
+        |+     | build |
         | Lin  | ok    |
       MARKDOWN
     end
@@ -163,8 +167,8 @@ RSpec.describe Raindown::TableFormatter do
   end
 
   describe '.gfm' do
-    it 'turns equals signs into dashes and joins + rows into the row above, outside code' do
-      markdown = "  | a | b |\n  |-|:==:|\n  | x | Tag the |\n  + | build |\n  + more | |\n\n```\n|a|\n|=|\n```\n"
+    it 'turns equals signs into dashes and joins |+ rows into the row above, outside code' do
+      markdown = "  | a | b |\n  |-|:==:|\n  | x | Tag the |\n  |+  | build |\n  |+more | |\n\n```\n|a|\n|=|\n```\n"
 
       expect(described_class.gfm(markdown)).to eq("  | a | b |\n  | - | :--: |\n  | x more | Tag the build |\n\n```\n|a|\n|=|\n```\n")
     end

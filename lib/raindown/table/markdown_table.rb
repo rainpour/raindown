@@ -2,7 +2,7 @@
 
 module Raindown
   # Rows of cells as a Markdown table, its first row the header, and back again. A | in a cell is escaped as \|, and
-  # a line break is written as a space, as a table's cells are one line. A row starting with +, carrying on the row
+  # a line break is written as a space, as a table's cells are one line. A row starting with |+, carrying on the row
   # above, is read as part of it. The TableFormatter lines up its columns.
   module MarkdownTable
     SEPARATOR = /\A\|?(\s*:?[-=]+:?\s*\|)*\s*:?[-=]+:?\s*\|?\z/
@@ -12,7 +12,7 @@ module Raindown
     module_function
 
     # With the delimiter's cells, like ':===', when it has one for each column, keeping their alignment and widths. A
-    # cell can be lines, wrapped onto + rows below its row.
+    # cell can be lines, wrapped onto |+ rows below its row.
     def format(rows, delimiter = nil)
       return '' if rows.empty?
 
@@ -23,8 +23,8 @@ module Raindown
 
     def row_lines(row)
       lines = row.map { Array(it) }
-      starts = ['|', *Array.new(lines.map(&:length).max - 1, '+')]
-      starts.each_with_index.map { |start, line| "#{start} #{lines.map { escape(it[line].to_s) }.join(' | ')} |" }
+      starts = ['| ', *Array.new(lines.map(&:length).max - 1, '|+')]
+      starts.each_with_index.map { |start, line| "#{start}#{lines.map { escape(it[line].to_s) }.join(' | ')} |" }
     end
 
     # The cells of the table's delimiter row, like ['---', ':==='], or nil when the lines aren't a table.
@@ -40,22 +40,28 @@ module Raindown
     end
 
     # The rows of the table in the lines, their cells as written, padding and all, leaving out its separator, with each
-    # + row's cells joined into the row above's, on lines of their own.
+    # |+ row's cells joined into the row above's, on lines of their own.
     def padded_rows(lines)
       return [] unless delimiter(lines)
 
-      table_lines = [lines[0], *lines.drop(2)].map(&:strip).take_while { it.start_with?('|', '+') }
+      table_lines = [lines[0], *lines.drop(2)].map(&:strip).take_while { it.start_with?('|') }
       table_lines.each_with_object([]) do |line, rows|
         cells = padded_cells(line)
-        next rows << cells unless line.start_with?('+') && rows.any?
+        next rows << cells unless line.start_with?('|+') && rows.any?
 
         rows[-1] = rows.last.zip(cells).map { |above, more| joined_cell(above, more.to_s) }
       end
     end
 
-    # The line's cells, padding and all, without its outer pipes, or the + starting it.
+    # The line's cells, padding and all, without its outer pipes, or the |+ starting it.
     def padded_cells(line)
-      line.delete_prefix(line[0]).delete_suffix('|').split(PIPE, -1)
+      line.delete_prefix(lead(line)).delete_suffix('|').split(PIPE, -1)
+    end
+
+    def lead(line)
+      return '|+' if line.start_with?('|+')
+
+      '|'
     end
 
     # The cell carried on by the one below it, or as it was, padding and all, when that's blank.

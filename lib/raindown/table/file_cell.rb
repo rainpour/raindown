@@ -5,7 +5,8 @@ require_relative 'table_formulas'
 module Raindown
   # A cell of a table: block's file, as its table shows it: its value, worked out from its formula, and clipped to fit
   # its column, ending in an ellipsis, when the column's fixed. Deleting the padding around a formula's value shows its
-  # formula, and deleting a clipped cell's ellipsis shows its full text, wrapped onto + rows, each until it's changed.
+  # formula, and deleting a clipped cell's ellipsis shows its full text, wrapped onto |+ rows, each until it's changed,
+  # or, for its full text, an ellipsis is typed into it again, which clips it.
   FileCell = Data.define(:saved, :value, :column) do
     # As the table shows it, unless it's revealed.
     def shown
@@ -15,9 +16,10 @@ module Raindown
     end
 
     # Whether the written cell still shows it: its value, as shown or in full, or clipped at another width, as it was
-    # before its column's width changed, its formula, ignoring whitespace, or its clipped start, with the ellipsis deleted.
+    # before its column's width changed, or in full with an ellipsis typed into it, its formula, ignoring whitespace, or
+    # its clipped start, with the ellipsis deleted.
     def unchanged_by?(cell)
-      [shown, value, revealing].include?(cell) || formula_in?(cell) || clip_of_value?(cell)
+      [shown, value, revealing].include?(cell) || formula_in?(cell) || clip_of_value?(cell) || collapsing?(cell)
     end
 
     # Whether the written cell shows its formula, or its full text, in place of what the table shows. A full text written
@@ -48,6 +50,12 @@ module Raindown
 
     def formula_in?(cell)
       formula? && cell.gsub(/\s+/, '') == saved.gsub(/\s+/, '')
+    end
+
+    # Its full text with an ellipsis typed into it, like … or ..., anywhere between its words, to clip it again.
+    def collapsing?(cell)
+      ellipsis = /\s*(?:…|\.\.\.)\s*/
+      cell.match?(ellipsis) && cell.sub(ellipsis, ' ').strip == value
     end
 
     def clip_of_value?(cell)

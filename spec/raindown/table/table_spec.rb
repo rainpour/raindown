@@ -244,14 +244,14 @@ RSpec.describe Raindown::Table do
       expect(File.read(tasks)).to include('Release,Tag the build and push it')
     end
 
-    it 'shows the full text wrapped onto + rows when the ellipsis is deleted, until it changes, and is cut to fit' do
+    it 'shows the full text wrapped onto |+ rows when the ellipsis is deleted, until it changes, and is cut to fit' do
       revealed = aligned(clipped.sub('…', ''))
 
       expect(body(revealed)).to eq(<<~MARKDOWN)
         | Release | Tag the  |
-        +         | build    |
-        +         | and push |
-        +         | it       |
+        |+        | build    |
+        |+        | and push |
+        |+        | it       |
         | Docs    | Done     |
       MARKDOWN
       expect(aligned(revealed)).to eq(revealed)
@@ -260,19 +260,51 @@ RSpec.describe Raindown::Table do
       expect(File.read(tasks)).to include('Tag the build and ship it')
     end
 
+    it 'shows two cells of a row in full at once, and clips one when an ellipsis is typed into it, as in any editor' do
+      File.write(tasks, "task,notes\nMilk made with cows,Tag the build and push it\n")
+      fixed = aligned(aligned(aligned("table: 'tasks.csv'\n")).sub(/^\| -+ \| -+ \|$/, '| ====== | ======== |'))
+      both = aligned(fixed.gsub('…', ''))
+
+      expect(body(both)).to eq(<<~MARKDOWN)
+        | Milk   | Tag the  |
+        |+made   | build    |
+        |+with   | and push |
+        |+cows   | it       |
+      MARKDOWN
+      expect(body(aligned(both.sub('| Milk   |', '| Milk…  |')))).to start_with("| Milk…  | Tag the  |\n|+       | build    |\n")
+      expect(body(aligned(both.sub('| Milk   |', '| Milk...|')))).to start_with("| Milk…  | Tag the  |\n")
+      expect(File.read(tasks)).to eq("task,notes\nMilk made with cows,Tag the build and push it\n")
+    end
+
+    it "doesn't take an ellipsis in a cell's own text for one typed to clip it" do
+      File.write(tasks, "task,notes\nWait... then go,x\n")
+      shown = aligned(aligned(aligned("table: 'tasks.csv'\n")).sub(/^\| -+ \| -+ \|$/, '| ====== | ---- |'))
+
+      revealed = aligned(shown.sub('…', ''))
+
+      expect(body(revealed)).to eq("| Wait... | x     |\n|+then   |       |\n|+go     |       |\n")
+      expect(aligned(revealed)).to eq(revealed)
+    end
+
     it 'keeps the end that was clipped off when the start is edited before the ellipsis' do
       expect(body(aligned(clipped.sub('Tag the…', 'Tag a…')))).to start_with("| Release | Tag a b… |\n")
       expect(File.read(tasks)).to include('Tag a build and push it')
     end
 
-    it 'keeps the end that was clipped off when a + row carries on a clipped cell' do
-      aligned(clipped.sub(/^(\| Release .*\n)/, "\\1+ | right away |\n"))
+    it 'keeps the end that was clipped off when a |+ row carries on a clipped cell' do
+      aligned(clipped.sub(/^(\| Release .*\n)/, "\\1|+ | right away |\n"))
 
       expect(File.read(tasks)).to include('Tag the build and push it right away')
     end
 
-    it 'writes + rows typed below a row into its cells, then clips them' do
-      typed = aligned(clipped.sub(/^(\| Docs .*\n)/, "\\1+ | and check links |\n"))
+    it 'reads a |+ row with nothing in its first cell, before its pipe' do
+      aligned(clipped.sub(/^(\| Docs .*\n)/, "\\1|+| and more |\n"))
+
+      expect(File.read(tasks)).to include('Docs,Done and more')
+    end
+
+    it 'writes |+ rows typed below a row into its cells, then clips them' do
+      typed = aligned(clipped.sub(/^(\| Docs .*\n)/, "\\1|+ | and check links |\n"))
 
       expect(body(typed)).to end_with("| Docs    | Done an… |\n")
       expect(File.read(tasks)).to include('Docs,Done and check links')

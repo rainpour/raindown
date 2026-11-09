@@ -4,12 +4,13 @@ require_relative 'table_column'
 
 module Raindown
   # Pads every column of each Markdown table to the width of its widest cell, but for a column whose delimiter is
-  # equals signs, like |====|, which is as wide as they are, letting a longer cell run past it. A row starting with +,
-  # like "+ more | |", carries on the row above it, which Raindown joins into its cells when it renders.
+  # equals signs, like |====|, which is as wide as they are, letting a longer cell run past it. A row starting with |+,
+  # like "|+more | |", carries on the row above it, which Raindown joins into its cells when it renders. Its |+ takes
+  # the place of a row's "| ", so its columns line up.
   class TableFormatter
     DELIMITER_CELL = /\A:?[-=]+:?\z/
     FENCE = /\A\s*(```|~~~)/
-    CONTINUATION = /\A\s*\+/
+    CONTINUATION = /\A\s*\|\+/
 
     def self.rewrite(content:, **)
       new(content:).format
@@ -58,19 +59,20 @@ module Raindown
       output.join
     end
 
-    # Split on pipes that aren't escaped, dropping the optional outer pipes, or the + starting a continuation row.
+    # Split on pipes that aren't escaped, dropping the optional outer pipes, or the |+ starting a continuation row.
     def cells(line)
       content = line.strip
-      content = content.delete_prefix(row_start(line))
+      content = content.delete_prefix(row_lead(line).rstrip)
       content = content.delete_suffix('|') unless content.end_with?('\|')
 
       content.split(/(?<!\\)\|/, -1).map(&:strip)
     end
 
-    def row_start(line)
-      return '+' if line.match?(CONTINUATION)
+    # How the row's line starts, before its first cell: |+ when it carries on the row above, which is as wide as "| ".
+    def row_lead(line)
+      return '|+' if line.match?(CONTINUATION)
 
-      '|'
+      '| '
     end
 
     def table_start?(index)
@@ -120,9 +122,9 @@ module Raindown
       lines.insert(1, row_line(indent, table[1], columns.map(&:delimiter_cell)))
     end
 
-    # The row's line, starting with + when it carries on the row above, as the line it was did.
+    # The row's line, starting with |+ when it carries on the row above, as the line it was did.
     def row_line(indent, line, cells)
-      "#{indent}#{row_start(line)} #{cells.join(' | ')} |\n"
+      "#{indent}#{row_lead(line)}#{cells.join(' | ')} |\n"
     end
   end
 end
