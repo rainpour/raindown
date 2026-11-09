@@ -2,6 +2,7 @@
 
 require_relative 'code'
 require_relative 'front_matter'
+require_relative 'toc/markdown_headings'
 
 module Raindown
   # Obsidian's links between notes, which render as Markdown links to the file they name, by its path in the project,
@@ -53,14 +54,9 @@ module Raindown
     def markdown_link(link, page)
       name, heading, label = link.captures.map { it&.strip }
       label ||= [name, heading].compact.join(' > ')
-      anchor = "##{anchor(heading)}" if heading
+      anchor = "##{MarkdownHeadings.anchor(heading)}" if heading
 
       "[#{label.gsub(/[\[\]]/) { "\\#{it}" }}](<#{page.path}#{anchor}>)"
-    end
-
-    # A heading's id, the way Commonmarker makes it, like to-read for "To read".
-    def anchor(heading)
-      heading.downcase.gsub(/[^\p{Word}\- ]/, '').tr(' ', '-')
     end
   end
 end

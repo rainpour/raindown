@@ -9,7 +9,7 @@ require_relative 'node'
 require_relative 'problem'
 require_relative 'stat'
 require_relative 'table/table'
-require_relative 'toc'
+require_relative 'toc/toc'
 
 module Raindown
   # Nodes are LowNodes that a node block writes into the Markdown and renders into the HTML.

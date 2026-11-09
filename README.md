@@ -171,6 +171,8 @@ A `<!-- toc: -->` block does that too, and also writes the table of contents int
 
 The block needs `<!-- :toc -->` after it. In a [Raindown file](#raindown-files) it can be a bare `toc:` with the list straight below it, and `:toc` on its own is always the HTML table of contents.
 
+The list it writes comes from the headings as they're written in the file, so it's quick enough to write back as you type, with variables in them filled in, like `# {title}`. Headings that only a component renders, into the HTML, are in the HTML table of contents, but not the list.
+
 `toc:` and `:toc` are a [node](#nodes), so a project can change them with its own `TOC` node, like `class TOC < Raindown::TOC`.
 
 ### Lists
