@@ -6,7 +6,7 @@
 // Obsidian never waits for it.
 const { RubyVM, WASI, OpenFile, File, PreopenDirectory, Directory } = self['ruby-wasm-wasi'];
 
-self.onmessage = async ({ data: { wasm, files, includes, rounds, args, packed = [] } }) => {
+self.onmessage = async ({ data: { wasm, files, includes, rounds, args, packed = [], preludes = [] } }) => {
   try {
     const times = {};
     const time = async (name, step) => {
@@ -23,6 +23,7 @@ self.onmessage = async ({ data: { wasm, files, includes, rounds, args, packed = 
     await time('add files', () => addFiles(root.dir, files, packed));
     await time('load Raindown', () => vm.eval([
       "require 'rbconfig'",
+      ...preludes.map((file) => `require '${file}'`),
       `$LOAD_PATH.unshift(*${JSON.stringify(includes)})`,
       "require 'raindown/rewriter'",
       "require '/spike/scenario'"

@@ -13,6 +13,7 @@ module.exports = class RaindownWasmSpike extends Plugin {
     this.addCommand({
       id: 'packed', name: 'Run the write-back packed into the module, without RubyGems', callback: () => this.runPacked()
     });
+    this.addCommand({ id: 'bytecode', name: 'Run the write-back packed, loading bytecode', callback: () => this.runPacked({ bytecode: true }) });
   }
 
   config() {
@@ -70,17 +71,21 @@ module.exports = class RaindownWasmSpike extends Plugin {
   }
 
   // Runs the write-back in a Web Worker, with Ruby's files packed into the module by pack.sh, so only the scenario's sent,
-  // and Ruby started without RubyGems, which Raindown doesn't need, as its files are found on its load path.
-  runPacked() {
+  // and Ruby started without RubyGems, which Raindown doesn't need, as its files are found on its load path. With
+  // bytecode, the module's the one with each Ruby file's bytecode packed too, which bytecode.rb loads instead.
+  runPacked({ bytecode = false } = {}) {
     const config = this.config();
     const files = {};
     this.pack(files, '/spike/scenario.rb', config.pack['/spike/scenario.rb']);
+    if (bytecode) this.pack(files, '/spike/bytecode.rb', path.join(path.dirname(config.pack['/spike/scenario.rb']), 'bytecode.rb'));
     const args = ['ruby.wasm', '--disable-gems', '-EUTF-8', '-e_=0'];
-    return this.runWorker({ config, wasmPath: config.packedWasm, files, args, packed: config.packedDirs });
+    const wasmPath = bytecode ? config.bytecodeWasm : config.packedWasm;
+    const preludes = bytecode ? ['/spike/bytecode.rb'] : [];
+    return this.runWorker({ config, wasmPath, files, args, packed: config.packedDirs, preludes });
   }
 
   // Starts Ruby once in a Web Worker, then runs the write-back several times on the Ruby it kept running.
-  async runWorker({ config, wasmPath, files, args, packed }) {
+  async runWorker({ config, wasmPath, files, args, packed, preludes }) {
     new Notice('Running Raindown in a worker…');
     const started = performance.now();
     const wasm = new Uint8Array(fs.readFileSync(wasmPath));
@@ -95,7 +100,7 @@ module.exports = class RaindownWasmSpike extends Plugin {
     const result = await new Promise((resolve) => {
       worker.onmessage = ({ data }) => resolve(data);
       worker.onerror = (event) => resolve({ error: event.message });
-      worker.postMessage({ wasm: wasm.buffer, files, includes: config.includes, rounds: 5, args, packed }, [wasm.buffer]);
+      worker.postMessage({ wasm: wasm.buffer, files, includes: config.includes, rounds: 5, args, packed, preludes }, [wasm.buffer]);
     });
     worker.terminate();
     if (result.error) {

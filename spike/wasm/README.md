@@ -105,3 +105,12 @@ the whole standard library packed, then only the 73 files a write-back loads, wh
 Leaving out RubyGems took starting Ruby from 707 ms to under 300 ms. The module's now mostly Ruby itself, 16.7 MB:
 11.7 MB of code and 4.9 MB of data, without debug names, so making it smaller would take building Ruby with fewer
 extensions. Loading Raindown, about 200 files, is most of what's left of starting up: about 150 ms natively.
+
+## Bytecode
+
+Most of starting up is loading Raindown, about 200 files, which Ruby parses and compiles. With `WASMTIME`, `pack.sh`
+compiles each Ruby file it packs to bytecode with `compile.rb`, in the WASI build's Ruby, the JavaScript build's version
+and platform, as bytecode only loads in the Ruby that compiled it, and packs it at `/bytecode` too, in
+`raindown-bytecode.wasm`. `bytecode.rb` loads it rather than the source, through `RubyVM::InstructionSequence.load_iseq`,
+as Bootsnap does, which the plugin's fourth command, **Run the write-back packed, loading bytecode**, requires first.
+Natively, it takes loading Raindown from about 145 ms to 95 ms, and adds 1.4 MB, 0.7 MB gzipped.
