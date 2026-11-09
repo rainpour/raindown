@@ -36,10 +36,15 @@ as its filesystem, and a custom Ruby build with only the extensions Raindown nee
 in Obsidian's own WebAssembly engine, with Node's WASI, and shows how long reading, compiling and running Ruby took.
 Ruby's files are read from disk, as with wasmtime, so it doesn't yet try packing them into the module, or mobile.
 
-1. Extract ruby.wasm's WASI build into `runtime/`, which git ignores, then write the plugin's `config.json`:
-   `RUBY_WASI=spike/wasm/runtime/ruby-3.4-wasm32-unknown-wasip1-full spike/wasm/obsidian/setup.sh`
+1. Extract ruby.wasm's WASI build into `runtime/`, which git ignores, and the `dist` folder of the npm package
+   `@ruby/3.4-wasm-wasi` into `runtime/npm`, then write the plugin's `config.json`:
+   `RUBY_WASI=spike/wasm/runtime/ruby-3.4-wasm32-unknown-wasip1-full RUBY_NPM=spike/wasm/runtime/npm spike/wasm/obsidian/setup.sh`
 2. Link `obsidian/` into a vault's `.obsidian/plugins/` as `raindown-wasm-spike`, and turn it on.
 3. Run **Raindown WebAssembly spike: Run the WebAssembly write-back** from the command palette.
+
+**Run the write-back in a worker, keeping Ruby running** runs it in a Web Worker instead, with ruby.wasm's JavaScript
+build, so Obsidian doesn't wait for it. Ruby's files are sent to the worker, to an in-memory folder, rather than read
+from disk, and it starts Ruby once, then runs the write-back five times on the Ruby it kept running.
 
 ### Results in Obsidian
 
