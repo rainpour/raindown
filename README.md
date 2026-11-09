@@ -348,20 +348,20 @@ A `table:` block writes a CSV or TSV file, relative to the project and inside it
 
 ````md
 table: 'data/team.csv'
-<!-- table 2 rows · 3f2a9c -->
+<!-- 2 rows · 3f2a9c -->
 | name | role     |
 | ---- | -------- |
 | Ada  | engineer |
 | Lin  | design   |
 ````
 
-Edit the table, like changing a cell or adding a row, and Raindown writes its rows back to the file. Edit the file and the table's written again. The hash is of the rows as they were when the table and the file last matched, so Raindown can tell which one changed. When both did, neither is written, and the comment reads `<!-- table conflict · 3f2a9c -->` until they match again. To keep the file's rows instead, delete the comment, or empty the table. A `|` in a cell is written as `\|`, and a line break in one as a space.
+Edit the table, like changing a cell or adding a row, and Raindown writes its rows back to the file. Edit the file and the table's written again. The hash is of the rows as they were when the table and the file last matched, so Raindown can tell which one changed. When both did, neither is written, and the comment reads `<!-- conflict · 3f2a9c -->` until they match again. To keep the file's rows instead, delete the comment, or empty the table. A `|` in a cell is written as `\|`, and a line break in one as a space.
 
 With `total: true`, a bold row below the table sums each column whose cells are all numbers or blank, to the most decimal places any of them has, and labels the first column Total unless it's numbers too:
 
 ````md
 table: 'data/sales.csv' total: true
-<!-- table 2 rows · 40ec83 -->
+<!-- 2 rows · 40ec83 -->
 | item      | units | price    |
 | --------- | ----- | -------- |
 | Tea       | 3     | 1.5      |
@@ -375,11 +375,11 @@ When the file isn't there yet, writing the block back makes it, and any folders 
 
 Formula cells in the file, like `=SUM(B)` by its column's letter or `=sum(Price)` by its header, show their values in the table, summing the numbers in the column below its header, like a spreadsheet, and leaving out other formulas. Case doesn't matter, in `SUM` or the column, so `=Sum(b)` and `=sum(PRICE)` work too. A formula naming a column that doesn't exist shows as it's written, like other formulas, so you can keep typing it. When the table's edits are written back, a formula cell still showing its value keeps its formula, so type a new formula or value into one to replace it. To edit its formula instead, delete the spaces around its value, so it's no longer lined up with its column, and the formula shows in its place, like `=SUM(B)`. It keeps showing until you change it, ignoring spaces, and then it's written to the file and shows its value again. Each row of the table is matched to the file's row it shows, so adding or deleting rows above a formula cell keeps its formula.
 
-A column whose delimiter is equals signs, like `====`, is fixed: as wide as there are equals signs, colons included, like `:====:` for a centred one. In any Markdown table Raindown keeps it that wide, letting a longer cell run past it. In a `table:` table, a cell longer than its column is cut to fit, ending in an ellipsis, while the file keeps its full text:
+A column whose delimiter is equals signs, like `====`, is fixed: as wide as there are equals signs, colons included, like `:====:` for a centred one. Type an equals sign into a column's dashes and it's fixed as wide as it is, and a dash into its equals signs and it widens to fit again. In any Markdown table Raindown keeps it that wide, letting a longer cell run past it. In a `table:` table, a cell longer than its column is cut to fit, ending in an ellipsis, while the file keeps its full text:
 
 ````md
 table: 'data/tasks.csv'
-<!-- table 2 rows · 7c41e0 -->
+<!-- 2 rows · 7c41e0 -->
 | task    | notes    |
 | ------- | ======== |
 | Release | Tag the… |

@@ -29,7 +29,7 @@ RSpec.describe Raindown::Skeleton do
     end
 
     it "takes out a table and its comment, as it's written again from its file" do
-      table = "<!-- table: 'a.csv' -->\n<!-- table 1 row · 09ae51 -->\n| a |\n| - |\n| 1 |\n<!-- :table -->\n"
+      table = "<!-- table: 'a.csv' -->\n<!-- 1 row · 09ae51 -->\n| a |\n| - |\n| 1 |\n<!-- :table -->\n"
 
       expect(strip("---\nskeleton: true\n---\n#{table}")).to eq("---\nskeleton: true\n---\n<!-- table: 'a.csv' -->\n<!-- :table -->\n")
     end

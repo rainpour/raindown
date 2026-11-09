@@ -15,7 +15,7 @@ module Raindown
   # The node behind table:, a CSV or TSV file relative to the project as a Markdown table, after a comment of how many
   # rows it has and a hash of them, as they were when the table and the file last matched:
   #   table: 'data/team.csv'
-  #   <!-- table 2 rows · 3f2a9c -->
+  #   <!-- 2 rows · 3f2a9c -->
   #   | name | role     |
   #   |------|----------|
   #   | Ada  | engineer |
@@ -26,7 +26,7 @@ module Raindown
   # cells in the file, like =SUM(B), show their values, and keep their formulas while their values are left alone. Delete
   # the padding around one's value and it shows its formula, to edit, until it's changed.
   class Table < Node
-    COMMENT = /\A<!-- table (?:conflict|\d+ rows?) · (\h+) -->\z/
+    COMMENT = /\A<!-- (?:conflict|\d+ rows?) · (\h+) -->\z/
     BOLD = /\A\*\*.*\*\*\z/
     # The table a new file starts with, when there's no table to make it from.
     STARTER = [['Column 1', 'Column 2'], ['', '']].freeze
@@ -96,7 +96,7 @@ module Raindown
       return markdown(TableFile.write(path, table.saved_rows), table) if hash_rows(shown) == synced_hash
 
       warn "raindown: #{@data} and its table both changed, so neither is written until they match"
-      ["<!-- table conflict · #{synced_hash} -->", *written.drop(1)].join("\n")
+      ["<!-- conflict · #{synced_hash} -->", *written.drop(1)].join("\n")
     end
 
     # Whether there's nothing to write back: the table's rows are as it wrote them, or as the file's are, or it's new.
@@ -119,7 +119,7 @@ module Raindown
       cells = with_total(with_revealed(shown, rows, written.revealed))
       columns = TableColumn.all(written.delimiter, rows)
       table = MarkdownTable.format(TableColumn.fit(cells, columns, written.revealed), written.delimiter)
-      "<!-- table #{count} row#{'s' unless count == 1} · #{hash_rows(shown)} -->\n#{table}"
+      "<!-- #{count} row#{'s' unless count == 1} · #{hash_rows(shown)} -->\n#{table}"
     end
 
     # The values, but for each revealed cell, which shows its formula, or its full text.

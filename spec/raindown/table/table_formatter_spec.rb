@@ -140,8 +140,9 @@ RSpec.describe Raindown::TableFormatter do
       MARKDOWN
     end
 
-    it 'makes a column fixed at its width as soon as an equals sign is typed into its delimiter' do
-      expect(rewrite("| name | notes |\n|-|:=----|\n| Ada | ok |\n").lines[1]).to eq("| ---- | :===== |\n")
+    it 'makes a column fixed at its width when an equals sign is typed into its delimiter, and widen when a dash is' do
+      expect(rewrite("| name | notes |\n|-|:=----|\n| Ada | ok |\n").lines[1]).to eq("| ---- | :==== |\n")
+      expect(rewrite("| name | notes |\n|-|:==-==|\n| Ada | a longer note |\n").lines[1]).to eq("| ---- | :------------ |\n")
     end
 
     it 'lines up rows starting with + like the others, keeping their +' do

@@ -4,7 +4,8 @@ require 'unicode/display_width'
 
 module Raindown
   # A table's column: its alignment, from its delimiter cell's colons, and its width, that of its widest cell, or as wide
-  # as its delimiter when that's equals signs, like |====|, which is fixed.
+  # as its delimiter when that's equals signs, like |====|, which is fixed. An equals sign typed into dashes, like
+  # |-=---|, makes it fixed as wide as it was, and a dash typed into equals signs, like |==-==|, makes it widen again.
   TableColumn = Data.define(:delimiter, :width) do
     # The columns of the delimiter's cells, while it has one for each of the rows' columns.
     def self.all(delimiter, rows)
@@ -28,7 +29,7 @@ module Raindown
     end
 
     def self.from(delimiter, cells)
-      return new(delimiter:, width: delimiter.length) if delimiter.include?('=')
+      return new(delimiter:, width: delimiter.length - fixing(delimiter)) if fixed?(delimiter)
 
       new(delimiter:, width: [*cells.map { display_width(it) }, 3].max)
     end
@@ -39,8 +40,21 @@ module Raindown
       Unicode::DisplayWidth.of(cell, emoji: :all)
     end
 
+    # Equals signs, or one typed into dashes, as fewer of them than dashes.
+    def self.fixed?(delimiter)
+      equals = delimiter.count('=')
+      equals.positive? && (delimiter.count('-').zero? || equals < delimiter.count('-'))
+    end
+
+    # The equals signs typed into dashes, which aren't part of its width, or none when it's all equals signs.
+    def self.fixing(delimiter)
+      return 0 if delimiter.count('-').zero?
+
+      delimiter.count('=')
+    end
+
     def fixed?
-      delimiter.include?('=')
+      TableColumn.fixed?(delimiter)
     end
 
     def alignment

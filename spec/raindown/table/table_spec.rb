@@ -33,7 +33,7 @@ RSpec.describe Raindown::Table do
   it "writes a CSV file as a table, after a comment of its rows and their hash, escaping a cell's |" do
     expect(synced.sub(/ \h{6} /, ' hash ')).to eq(<<~'MARKDOWN')
       table: 'team.csv'
-      <!-- table 2 rows · hash -->
+      <!-- 2 rows · hash -->
       | name | role |
       |---|---|
       | Ada | engineer |
@@ -52,7 +52,7 @@ RSpec.describe Raindown::Table do
     table = synced
     File.write(csv, "name,role\nAda,lead\n")
 
-    expect(rewrite(table)).to match(/<!-- table 1 row · \h{6} -->\n\| name \| role \|\n\|---\|---\|\n\| Ada \| lead \|\n\z/)
+    expect(rewrite(table)).to match(/<!-- 1 row · \h{6} -->\n\| name \| role \|\n\|---\|---\|\n\| Ada \| lead \|\n\z/)
   end
 
   it 'writes neither when both changed, until they match again' do
@@ -61,10 +61,10 @@ RSpec.describe Raindown::Table do
 
     conflict = nil
     expect { conflict = rewrite(edited) }.to output(/team.csv and its table both changed/).to_stderr
-    expect([conflict, File.read(csv)]).to eq([edited.sub(/table 2 rows/, 'table conflict'), "name,role\nAda,ops\n"])
+    expect([conflict, File.read(csv)]).to eq([edited.sub(/<!-- 2 rows/, '<!-- conflict'), "name,role\nAda,ops\n"])
 
     File.write(csv, "name,role\nAda,lead\nLin,design | ux\n")
-    expect(rewrite(conflict)).to include('<!-- table 2 rows')
+    expect(rewrite(conflict)).to include('<!-- 2 rows')
   end
 
   it 'writes the file again into an emptied table, without emptying the file' do
@@ -128,7 +128,7 @@ RSpec.describe Raindown::Table do
 
   describe 'a file outside the project' do
     let(:outside) { File.join(File.dirname(@root), "outside-#{File.basename(@root)}.csv") }
-    let(:content) { "table: '../#{File.basename(outside)}'\n<!-- table 1 row · 09ae51 -->\n| a |\n|---|\n| 9 |\n" }
+    let(:content) { "table: '../#{File.basename(outside)}'\n<!-- 1 row · 09ae51 -->\n| a |\n|---|\n| 9 |\n" }
 
     before { File.write(outside, "a\n1\n") }
     after { FileUtils.rm_f(outside) }
@@ -163,7 +163,7 @@ RSpec.describe Raindown::Table do
       written = rewrite("table: 'data/books.csv'\n| title | rating |\n|---|---|\n| Dune | 5 |\n")
 
       expect(File.read(new_file)).to eq("title,rating\nDune,5\n")
-      expect(written).to include('<!-- table 1 row').and include('| Dune | 5 |')
+      expect(written).to include('<!-- 1 row').and include('| Dune | 5 |')
     end
 
     it 'is made with a table to fill in, when there is none' do
