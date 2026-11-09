@@ -45,6 +45,25 @@ RSpec.describe Raindown::NodeInjector do
       .to raise_error(described_class::BlankLine, /needs <!-- SpecParagraphs: --> and <!-- :SpecParagraphs -->/)
   end
 
+  it "writes a node's comment straight below its directive, and gives it back to it the next time" do
+    once = rewrite("<!-- SpecRuns: -->\n<!-- :SpecRuns -->\n")
+
+    expect(once).to eq("<!-- SpecRuns: -->\n<!-- run 1 -->\nRan.\n<!-- :SpecRuns -->\n")
+    expect(rewrite(once)).to eq("<!-- SpecRuns: -->\n<!-- run 2 -->\nRan.\n<!-- :SpecRuns -->\n")
+    expect(rewrite(rewrite("SpecRuns:\n", path: 'notes.rd'), path: 'notes.rd')).to eq("SpecRuns:\n<!-- run 2 -->\nRan.\n")
+  end
+
+  it "writes over a comment below a node's directive when the node has none" do
+    expect(rewrite("SpecReleases: limit=1\n<!-- run 1 -->\n- old\n", path: 'notes.rd')).to eq("SpecReleases: limit=1\n- **1.2.0** Bare\n")
+  end
+
+  it "leaves a node's comment out of its HTML" do
+    html = Raindown.render(markdown: "<{ :SpecRuns }>\n")
+
+    expect(html).to include('Ran.')
+    expect(html).not_to include('run')
+  end
+
   it 'leaves content without node blocks unchanged' do
     content = "Note: this is prose.\n"
 

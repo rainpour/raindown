@@ -5,6 +5,7 @@ require 'json'
 
 require_relative '../node'
 require_relative '../utils'
+require_relative '../written'
 require_relative 'markdown_table'
 require_relative 'table_column'
 require_relative 'table_file'
@@ -26,7 +27,8 @@ module Raindown
   # cells in the file, like =SUM(B), show their values, and keep their formulas while their values are left alone. Delete
   # the padding around one's value and it shows its formula, to edit, until it's changed.
   class Table < Node
-    COMMENT = /\A<!-- (?:conflict|\d+ rows?) · (\h+) -->\z/
+    # The hash in its comment, like 3f2a9c in "2 rows · 3f2a9c".
+    HASH = /· (\h+)\z/
     BOLD = /\A\*\*.*\*\*\z/
     # The table a new file starts with, when there's no table to make it from.
     STARTER = [['Column 1', 'Column 2'], ['', '']].freeze
@@ -38,11 +40,11 @@ module Raindown
 
     # Written is what it wrote last time, so it can tell which of the table and the file changed since. A file that's
     # not there yet is made, from the table below it, or else one to fill in.
-    def rewrite(written: [], metadata: NoMetadata)
+    def rewrite(written: [], metadata: NoMetadata, comment: nil)
       path = data_path(metadata)
       lines = written.map(&:chomp)
       create_file(path, lines) if missing_file?(path, metadata)
-      data_error(path, metadata)&.then { Problem.alert(it) } || synced(path, lines)
+      data_error(path, metadata)&.then { Problem.alert(it) } || synced(path, lines, comment)
     end
 
     # Write-in, in <{ }>, the table only shows its file, and never writes to it.
@@ -70,10 +72,9 @@ module Raindown
       TableFile.supported?(path) && Utils.inside?(path, data_root(metadata)) && !File.exist?(path)
     end
 
-    # From the table as it's written, which has no comment yet when it's just been typed, below any alert saying why
-    # there was no file.
+    # From the table as it's written, below any alert saying why there was no file.
     def create_file(path, lines)
-      rows = MarkdownTable.parse(lines.grep_v(COMMENT).grep_v(/\A>/))
+      rows = MarkdownTable.parse(lines.grep_v(/\A>/))
       rows = STARTER if rows.empty?
       TableFile.create(path, rows)
     end
@@ -87,16 +88,16 @@ module Raindown
       "Can't show #{@data.inspect} as a table: no such file" unless File.file?(path)
     end
 
-    def synced(path, written)
+    def synced(path, written, comment)
       file = TableFile.read(path)
       shown = TableFormulas.evaluate(file)
-      synced_hash = written.first&.[](COMMENT, 1)
-      table = WrittenTable.new(written_rows(written), file, MarkdownTable.delimiter(written.drop(1)))
+      synced_hash = comment&.[](HASH, 1)
+      table = WrittenTable.new(written_rows(written), file, MarkdownTable.delimiter(written))
       return markdown(file, table) if unchanged?(table.rows, synced_hash, shown)
       return markdown(TableFile.write(path, table.saved_rows), table) if hash_rows(shown) == synced_hash
 
       warn "raindown: #{@data} and its table both changed, so neither is written until they match"
-      ["<!-- conflict · #{synced_hash} -->", *written.drop(1)].join("\n")
+      Written.new(written.join("\n"), comment: "conflict · #{synced_hash}")
     end
 
     # Whether there's nothing to write back: the table's rows are as it wrote them, or as the file's are, or it's new.
@@ -106,7 +107,7 @@ module Raindown
 
     # The table's rows as it was written, padding and all, leaving out its total.
     def written_rows(written)
-      header, *body = MarkdownTable.padded_rows(written.drop(1))
+      header, *body = MarkdownTable.padded_rows(written)
       [header, *body.reject { total_row?(it.map(&:strip)) }].compact
     end
 
@@ -119,7 +120,7 @@ module Raindown
       cells = with_total(with_revealed(shown, rows, written.revealed))
       columns = TableColumn.all(written.delimiter, rows)
       table = MarkdownTable.format(TableColumn.fit(cells, columns, written.revealed), written.delimiter)
-      "<!-- #{count} row#{'s' unless count == 1} · #{hash_rows(shown)} -->\n#{table}"
+      Written.new(table, comment: "#{count} row#{'s' unless count == 1} · #{hash_rows(shown)}")
     end
 
     # The values, but for each revealed cell, which shows its formula, or its full text.

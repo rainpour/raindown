@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown/node'
+require 'raindown/written'
 
 # Nodes for the node specs. Real projects keep theirs in a .raindown folder, as LowNodes.
 class SpecReleases < Raindown::Node
@@ -53,5 +54,12 @@ end
 class SpecSynced < Raindown::Node
   def rewrite(written: [])
     raise "rewrite wrote back #{written}"
+  end
+end
+
+# A node counting how many times it's written in its comment, straight below its directive.
+class SpecRuns < Raindown::Node
+  def rewrite(comment: nil)
+    Raindown::Written.new('Ran.', comment: "run #{comment.to_s[/\d+/].to_i + 1}")
   end
 end

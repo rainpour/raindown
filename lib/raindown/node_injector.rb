@@ -4,12 +4,17 @@ require_relative '../raindown'
 require_relative 'bare_directives'
 require_relative 'front_matter'
 require_relative 'node_blocks'
+require_relative 'written'
 
 module Raindown
   # Writes each node block's Markdown below its directive, replacing what it wrote before, when it's in comments or
   # bare. Ones in Antlers' delimiters, and self-closing ones, only render, so they're left alone.
   class NodeInjector
     class BlankLine < StandardError; end
+
+    # A comment on its own line that isn't a directive, like <!-- 2 rows · 3f2a9c -->, which straight below a directive
+    # is its node's comment, passed to its rewrite as comment:.
+    COMMENT = /\A\s*<!--(?!\s*(?::[A-Za-z]|[A-Za-z][\w-]*(?:::[A-Z]\w*)*:))\s*(.*?)\s*-->\s*\z/
 
     # Rewriter interface. Content without a node block is returned unchanged.
     def self.rewrite(content:, path: nil, bare: false, metadata: NoMetadata, **)
@@ -42,22 +47,25 @@ module Raindown
     private
 
     def block_lines(lines, block)
-      context = { document: @content, metadata: @metadata, bare: @bare, written: written_lines(lines, block) }
-      markdown = node_markdown(block, context)
-      written = markdown.empty? ? [] : "#{markdown}\n".lines
+      comment, written = comment_and_written(written_lines(lines, block))
+      context = { document: @content, metadata: @metadata, bare: @bare, comment:, written: }
+      written = written_lines_of(node_written(block, context))
       return [line(lines[block[:open]]), *bare(written, block)] unless block[:close]
 
       delimited(lines, block, written)
     end
 
     # A node that raises writes why in its place, like a Problem, so the rest of the file still writes back.
-    def node_markdown(block, context)
+    def node_written(block, context)
       @problems << block[:node].warning if block[:node].is_a?(Problem)
-      Nodes.call(block[:node], :rewrite, **context).to_s.chomp
+      written = Nodes.call(block[:node], :rewrite, **context)
+      return written if written.is_a?(Written)
+
+      Written.new(written.to_s)
     rescue StandardError => e
       problem = Problem.new("Couldn't write: #{e.message}", block[:open] + 1)
       @problems << problem.warning
-      problem.rewrite
+      Written.new(problem.rewrite)
     end
 
     # The directive, what the node wrote and the end tag, straight after each other, as a comment on its own line ends
@@ -70,6 +78,22 @@ module Raindown
 
       name = block[:node].class.name
       raise BlankLine, "#{name} writes blank lines, so it needs <!-- #{name}: --> and <!-- :#{name} --> around it"
+    end
+
+    # Its lines: its comment, straight below its directive, then its Markdown.
+    def written_lines_of(written)
+      markdown = written.to_s.chomp
+      lines = markdown.empty? ? [] : "#{markdown}\n".lines
+      return lines unless written.comment
+
+      ["<!-- #{written.comment} -->\n", *lines]
+    end
+
+    # The comment the block's node wrote straight below its directive, if it wrote one, and the lines it wrote below that.
+    def comment_and_written(lines)
+      return [nil, lines] unless lines.first&.match?(COMMENT)
+
+      [lines.first[COMMENT, 1], lines.drop(1)]
     end
 
     # What the block's node wrote last time, between its directive and its end tag, or the next blank line.
