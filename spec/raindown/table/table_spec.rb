@@ -215,6 +215,86 @@ RSpec.describe Raindown::Table do
     end
   end
 
+  describe 'fixed-width columns' do
+    let(:tasks) { File.join(@root, 'tasks.csv') }
+    let(:clipped) { aligned(aligned(aligned("table: 'tasks.csv'\n")).sub(/^\| -+ \| -+ \|$/, '| ---- | ======== |')) }
+
+    def aligned(content)
+      Raindown::Rewriter.rewrite(content:, path: 'tasks.rd', metadata:).content
+    end
+
+    def body(table)
+      table.lines.drop(4).join
+    end
+
+    before { File.write(tasks, "task,notes\nRelease,Tag the build and push it\nDocs,Done\n") }
+
+    it 'clips cells longer than the column with an ellipsis, keeping their full text in the file' do
+      expect(body(clipped)).to eq("| Release | Tag the… |\n| Docs    | Done     |\n")
+      expect(aligned(clipped)).to eq(clipped)
+      expect(File.read(tasks)).to include('Tag the build and push it')
+    end
+
+    it 'clips cells again as the column narrows or widens, leaving the file alone' do
+      narrowed = %w[======= ====== ========== ========].reduce(clipped) do |table, equals|
+        aligned(table.sub(/^\| -+ \| =+ \|$/, "| ---- | #{equals} |")).tap { expect(it[/^\| Release.*/]).to end_with('… |') }
+      end
+
+      expect(body(narrowed)).to start_with("| Release | Tag the… |\n")
+      expect(File.read(tasks)).to include('Release,Tag the build and push it')
+    end
+
+    it 'shows the full text wrapped onto + rows when the ellipsis is deleted, until it changes' do
+      revealed = aligned(clipped.sub('…', ''))
+
+      expect(body(revealed)).to eq(<<~MARKDOWN)
+        | Release | Tag the  |
+        +         | build    |
+        +         | and push |
+        +         | it       |
+        | Docs    | Done     |
+      MARKDOWN
+      expect(aligned(revealed)).to eq(revealed)
+      edited = aligned(revealed.sub('and push', 'and ship'))
+      expect(body(edited)).to start_with("| Release | Tag the build and ship it |\n")
+      expect(body(aligned(edited))).to start_with("| Release | Tag the… |\n")
+      expect(File.read(tasks)).to include('Tag the build and ship it')
+    end
+
+    it 'keeps the end that was clipped off when the start is edited before the ellipsis' do
+      expect(body(aligned(aligned(clipped.sub('Tag the…', 'Tag a…'))))).to start_with("| Release | Tag a b… |\n")
+      expect(File.read(tasks)).to include('Tag a build and push it')
+    end
+
+    it 'keeps the end that was clipped off when a + row carries on a clipped cell' do
+      aligned(clipped.sub(/^(\| Release .*\n)/, "\\1+ | right away |\n"))
+
+      expect(File.read(tasks)).to include('Tag the build and push it right away')
+    end
+
+    it 'writes + rows typed below a row into its cells, then clips them the next time it writes the table' do
+      typed = aligned(clipped.sub(/^(\| Docs .*\n)/, "\\1+ | and check links |\n"))
+
+      expect(body(typed)).to end_with("| Docs    | Done and check links |\n")
+      expect(body(aligned(typed))).to end_with("| Docs    | Done an… |\n")
+      expect(File.read(tasks)).to include('Docs,Done and check links')
+    end
+
+    # Each key's typed after what the cell shows, as an editor's cursor is, and a space before the next key, as an
+    # editor keeps the cursor after a space it's just typed, which the table trims. An ellipsis appearing as it's typed
+    # would have what's typed next typed after it.
+    it "doesn't clip a cell as it's typed, written back after each key, but the next time it writes the table" do
+      table = clipped
+      ' and check links'.chars.chunk_while { |key, _| key == ' ' }.each do |keys|
+        table = aligned(table.sub(/^(?<cell>\| Docs +\| .*?)(?<padding> *\|)$/, "\\k<cell>#{keys.join}\\k<padding>"))
+        expect(table[/^\| Docs.*/]).not_to include('…')
+      end
+
+      expect(File.read(tasks)).to include('Docs,Done and check links')
+      expect(body(aligned(table))).to end_with("| Docs    | Done an… |\n")
+    end
+  end
+
   describe 'formula cells' do
     let(:sales) { File.join(@root, 'sales.csv') }
     let(:shown) { rewrite("table: 'sales.csv'\n") }

@@ -6,6 +6,7 @@ require 'json'
 require_relative '../node'
 require_relative '../utils'
 require_relative 'markdown_table'
+require_relative 'table_column'
 require_relative 'table_file'
 require_relative 'table_formulas'
 require_relative 'written_table'
@@ -90,9 +91,9 @@ module Raindown
       file = TableFile.read(path)
       shown = TableFormulas.evaluate(file)
       synced_hash = written.first&.[](COMMENT, 1)
-      table = WrittenTable.new(written_rows(written), file)
-      return markdown(file, table.revealed) if unchanged?(table.rows, synced_hash, shown)
-      return markdown(TableFile.write(path, table.saved_rows), table.revealed) if hash_rows(shown) == synced_hash
+      table = WrittenTable.new(written_rows(written), file, MarkdownTable.delimiter(written.drop(1)))
+      return markdown(file, table) if unchanged?(table.rows, synced_hash, shown)
+      return markdown(TableFile.write(path, table.saved_rows), table) if hash_rows(shown) == synced_hash
 
       warn "raindown: #{@data} and its table both changed, so neither is written until they match"
       ["<!-- table conflict · #{synced_hash} -->", *written.drop(1)].join("\n")
@@ -109,16 +110,19 @@ module Raindown
       [header, *body.reject { total_row?(it.map(&:strip)) }].compact
     end
 
-    def markdown(rows, revealed = [])
+    # Written with the delimiter it was written with, its cells fit to its fixed columns.
+    def markdown(rows, written)
       return '' if rows.empty?
 
       shown = TableFormulas.evaluate(rows)
       count = rows.length - 1
-      table = MarkdownTable.format(with_total(with_revealed(shown, rows, revealed)))
+      cells = with_total(with_revealed(shown, rows, written.revealed))
+      columns = TableColumn.all(written.delimiter, rows)
+      table = MarkdownTable.format(TableColumn.fit(cells, columns, written.revealed, written.typed), written.delimiter)
       "<!-- table #{count} row#{'s' unless count == 1} · #{hash_rows(shown)} -->\n#{table}"
     end
 
-    # The values, but for each revealed cell, which shows its formula.
+    # The values, but for each revealed cell, which shows its formula, or its full text.
     def with_revealed(values, rows, revealed)
       revealed.each_with_object(values.map(&:dup)) { |(row, column), shown| shown[row][column] = rows[row][column] }
     end

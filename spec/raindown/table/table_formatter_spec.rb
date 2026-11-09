@@ -131,10 +131,41 @@ RSpec.describe Raindown::TableFormatter do
       MARKDOWN
     end
 
+    it 'keeps a column with equals signs as wide as they are, letting a longer cell run past it' do
+      expect(rewrite("| name | notes |\n|-|:======|\n| Ada | ok |\n| Lin | far too long |\n")).to eq(<<~MARKDOWN)
+        | name | notes   |
+        | ---- | :====== |
+        | Ada  | ok      |
+        | Lin  | far too long |
+      MARKDOWN
+    end
+
+    it 'makes a column fixed at its width as soon as an equals sign is typed into its delimiter' do
+      expect(rewrite("| name | notes |\n|-|:=----|\n| Ada | ok |\n").lines[1]).to eq("| ---- | :===== |\n")
+    end
+
+    it 'lines up rows starting with + like the others, keeping their +' do
+      expect(rewrite("| name | notes |\n|-|=====|\n| Ada | Tag the |\n+ | build |\n|Lin|ok|\n")).to eq(<<~MARKDOWN)
+        | name | notes |
+        | ---- | ===== |
+        | Ada  | Tag the |
+        +      | build |
+        | Lin  | ok    |
+      MARKDOWN
+    end
+
     it 'is idempotent' do
       once = rewrite("| a | b |\n|:-:|-:|\n| ccc | d |\n")
 
       expect(rewrite(once)).to eq(once)
+    end
+  end
+
+  describe '.gfm' do
+    it 'turns equals signs into dashes and joins + rows into the row above, outside code' do
+      markdown = "  | a | b |\n  |-|:==:|\n  | x | Tag the |\n  + | build |\n  + more | |\n\n```\n|a|\n|=|\n```\n"
+
+      expect(described_class.gfm(markdown)).to eq("  | a | b |\n  | - | :--: |\n  | x more | Tag the build |\n\n```\n|a|\n|=|\n```\n")
     end
   end
 end

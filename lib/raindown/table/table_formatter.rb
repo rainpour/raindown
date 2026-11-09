@@ -1,15 +1,24 @@
 # frozen_string_literal: true
 
-require 'unicode/display_width'
+require_relative 'table_column'
 
 module Raindown
-  # Pads every column of each Markdown table to the width of its widest cell.
+  # Pads every column of each Markdown table to the width of its widest cell, but for a column whose delimiter is
+  # equals signs, like |====|, which is as wide as they are, letting a longer cell run past it. A row starting with +,
+  # like "+ more | |", carries on the row above it, which Raindown joins into its cells when it renders.
   class TableFormatter
-    DELIMITER_CELL = /\A:?-+:?\z/
+    DELIMITER_CELL = /\A:?[-=]+:?\z/
     FENCE = /\A\s*(```|~~~)/
+    CONTINUATION = /\A\s*\+/
 
     def self.rewrite(content:, **)
       new(content:).format
+    end
+
+    # The Markdown as Commonmarker reads it: each table's equals signs as dashes, and its + rows joined into the row
+    # above them, each cell carrying on with a space.
+    def self.gfm(markdown)
+      new(content: markdown).gfm
     end
 
     def initialize(content:)
@@ -17,6 +26,17 @@ module Raindown
     end
 
     def format
+      replace_tables { align(it) }
+    end
+
+    def gfm
+      replace_tables { gfm_table(it) }
+    end
+
+    private
+
+    # The content with each table, outside code, replaced by the block's lines for it.
+    def replace_tables
       output = []
       index = 0
       in_fence = false
@@ -27,7 +47,7 @@ module Raindown
 
         if !in_fence && table_start?(index)
           table_end = find_table_end(index)
-          output.concat(align(@lines[index...table_end]))
+          output.concat(yield(@lines[index...table_end]))
           index = table_end
         else
           output << line
@@ -38,12 +58,25 @@ module Raindown
       output.join
     end
 
-    private
+    # Split on pipes that aren't escaped, dropping the optional outer pipes, or the + starting a continuation row.
+    def cells(line)
+      content = line.strip
+      content = content.delete_prefix(row_start(line))
+      content = content.delete_suffix('|') unless content.end_with?('\|')
+
+      content.split(/(?<!\\)\|/, -1).map(&:strip)
+    end
+
+    def row_start(line)
+      return '+' if line.match?(CONTINUATION)
+
+      '|'
+    end
 
     def table_start?(index)
       header = @lines[index]
       delimiter = @lines[index + 1]
-      return false unless header&.include?('|') && delimiter
+      return false unless header&.include?('|') && delimiter && !header.match?(CONTINUATION)
 
       delimiter_cells = cells(delimiter)
       delimiter_cells.any? && delimiter_cells.all? { |cell| cell.match?(DELIMITER_CELL) } &&
@@ -56,79 +89,40 @@ module Raindown
       table_end
     end
 
+    def gfm_table(table)
+      header, delimiter, *body = table.map { |line| cells(line) }
+      rows = joined_rows(table.drop(2), header, body)
+      rows.insert(1, delimiter.map { it.tr('=', '-') }).map { "#{table.first[/\A\s*/]}| #{it.join(' | ')} |\n" }
+    end
+
+    # The rows, each with the + rows below it joined into its cells.
+    def joined_rows(lines, header, body)
+      lines.zip(body).each_with_object([header]) do |(line, row), joined|
+        next joined << row unless line.match?(CONTINUATION)
+
+        joined[-1] = joined.last.zip(row).map { |above, more| [above, more].reject { it.to_s.empty? }.join(' ') }
+      end
+    end
+
     def align(table)
-      indent = table.first[/\A\s*/]
-      rows = table.map { |line| cells(line) }
-      header, delimiter, *body = rows
+      header, delimiter, *body = table.map { |line| cells(line) }
       return table if body.any? { |row| row.length > header.length }
 
-      table_lines(indent:, header:, body:, alignments: delimiter.map { |cell| alignment(cell) })
+      rows = [header, *body.map { |row| row + ([''] * (header.length - row.length)) }]
+      aligned_lines(table, rows, TableColumn.all(delimiter, rows))
     end
 
-    def table_lines(indent:, header:, body:, alignments:)
-      body = body.map { |row| row + ([''] * (header.length - row.length)) }
-      widths = column_widths(rows: [header, *body])
-
-      [
-        row_line(indent:, cells: header, widths:, alignments:),
-        delimiter_line(indent:, widths:, alignments:),
-        *body.map { |row| row_line(indent:, cells: row, widths:, alignments:) }
-      ].map { |line| "#{line}\n" }
-    end
-
-    # Split on pipes that aren't escaped, dropping the optional outer pipes.
-    def cells(line)
-      content = line.strip
-      content = content.delete_prefix('|')
-      content = content.delete_suffix('|') unless content.end_with?('\|')
-
-      content.split(/(?<!\\)\|/, -1).map(&:strip)
-    end
-
-    def alignment(cell)
-      if cell.start_with?(':') && cell.end_with?(':') then :center
-      elsif cell.end_with?(':') then :right
-      elsif cell.start_with?(':') then :left
+    def aligned_lines(table, rows, columns)
+      indent = table.first[/\A\s*/]
+      lines = rows.zip(table.values_at(0, 2...table.length)).map do |row, line|
+        row_line(indent, line, columns.zip(row).map { |column, cell| column.pad(cell) })
       end
+      lines.insert(1, row_line(indent, table[1], columns.map(&:delimiter_cell)))
     end
 
-    # Three is the shortest delimiter cell, which also fits ':-:'.
-    def column_widths(rows:)
-      rows.transpose.map { |column| [column.map { |cell| display_width(cell) }.max, 3].max }
-    end
-
-    # Wide characters like CJK and emoji take two columns. Emoji are always measured as two,
-    # instead of guessing from the terminal, so a file formats the same on every machine.
-    def display_width(cell)
-      Unicode::DisplayWidth.of(cell, emoji: :all)
-    end
-
-    def row_line(indent:, cells:, widths:, alignments:)
-      padded = cells.each_with_index.map { |cell, i| pad(cell, widths[i], alignments[i]) }
-      "#{indent}| #{padded.join(' | ')} |"
-    end
-
-    def delimiter_line(indent:, widths:, alignments:)
-      dashes = widths.each_with_index.map do |width, i|
-        case alignments[i]
-        when :center then ":#{'-' * (width - 2)}:"
-        when :right then "#{'-' * (width - 1)}:"
-        when :left then ":#{'-' * (width - 1)}"
-        else '-' * width
-        end
-      end
-
-      "#{indent}| #{dashes.join(' | ')} |"
-    end
-
-    def pad(cell, width, alignment)
-      padding = width - display_width(cell)
-
-      case alignment
-      when :center then "#{' ' * (padding / 2)}#{cell}#{' ' * (padding - (padding / 2))}"
-      when :right then "#{' ' * padding}#{cell}"
-      else "#{cell}#{' ' * padding}"
-      end
+    # The row's line, starting with + when it carries on the row above, as the line it was did.
+    def row_line(indent, line, cells)
+      "#{indent}#{row_start(line)} #{cells.join(' | ')} |\n"
     end
   end
 end

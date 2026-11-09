@@ -373,7 +373,31 @@ The total is worked out again whenever the table's written, and never written to
 
 When the file isn't there yet, writing the block back makes it, and any folders it's in, from the table you've written below it, or else with a table to fill in. So you can start a table from a note, even in an editor like Obsidian that doesn't show CSV files. It's never made when the table only renders, like in `<{ }>`.
 
-Formula cells in the file, like `=SUM(B)` by its column's letter or `=sum(Price)` by its header, show their values in the table, summing the numbers in the column below its header, like a spreadsheet, and leaving out other formulas. Case doesn't matter, in `SUM` or the column, so `=Sum(b)` and `=sum(PRICE)` work too. A formula naming a column that doesn't exist shows as it's written, like other formulas, so you can keep typing it. When the table's edits are written back, a formula cell still showing its value keeps its formula, so type a new formula or value into one to replace it. To edit its formula instead, delete the spaces around its value, so it's no longer lined up with its column, and the formula shows in its place, like `=SUM(B)`. It keeps showing until you change it, ignoring spaces, and then it's written to the file and shows its value again. Adding or deleting rows above a formula cell moves it, so check it's still a formula afterwards.
+Formula cells in the file, like `=SUM(B)` by its column's letter or `=sum(Price)` by its header, show their values in the table, summing the numbers in the column below its header, like a spreadsheet, and leaving out other formulas. Case doesn't matter, in `SUM` or the column, so `=Sum(b)` and `=sum(PRICE)` work too. A formula naming a column that doesn't exist shows as it's written, like other formulas, so you can keep typing it. When the table's edits are written back, a formula cell still showing its value keeps its formula, so type a new formula or value into one to replace it. To edit its formula instead, delete the spaces around its value, so it's no longer lined up with its column, and the formula shows in its place, like `=SUM(B)`. It keeps showing until you change it, ignoring spaces, and then it's written to the file and shows its value again. Each row of the table is matched to the file's row it shows, so adding or deleting rows above a formula cell keeps its formula.
+
+A column whose delimiter is equals signs, like `====`, is fixed: as wide as there are equals signs, colons included, like `:====:` for a centred one. In any Markdown table Raindown keeps it that wide, letting a longer cell run past it. In a `table:` table, a cell longer than its column is cut to fit, ending in an ellipsis, while the file keeps its full text:
+
+````md
+table: 'data/tasks.csv'
+<!-- table 2 rows · 7c41e0 -->
+| task    | notes    |
+| ------- | ======== |
+| Release | Tag the… |
+| Docs    | Done     |
+````
+
+Delete the ellipsis and the cell's full text shows, wrapped to fit the column onto rows starting with `+` below its row, which carry it on:
+
+````md
+| Release | Tag the  |
++         | build    |
++         | and push |
++         | it       |
+````
+
+It keeps showing until you change it, and then it's written to the file and cut to fit the next time the table's written. A cell you've typed into is written to the file as you typed it, on one line, and only cut the next time, so an editor that saves as you type never puts an ellipsis where you're typing. Change a column's width and its cells are cut to fit again, from the file's full text. Edit a cut cell's start, or type more after its ellipsis, like on a `+` row, and the end that was cut off is kept in its place. Deleting what's just before its ellipsis reads as the column narrowing, so to delete the end of a cell's text, delete its ellipsis first. In Obsidian, Enter in a table's cell works like in a spreadsheet: it's done with the cell, moving to the end of the same cell in the row below. On a cell shown in full, where it hints "↵ Enter to collapse", it joins its `+` rows back into its row first, so it's cut to fit again. Option or Alt and Enter breaks a cell onto a `+` row below, taking what's after the cursor with it. A cell's `+` rows are only how it's shown, wrapped to fit its column, as a cell is one line of text, so in a `table:` table they're wrapped again from its text, while in other tables they're yours, and stay as you wrote them.
+
+You can write `+` rows into any table yourself, to break a long cell onto lines of its own, like `+ | and push it |`. Raindown lines them up with the others, and joins each into the row above it in the HTML, carrying each cell on with a space. In a `table:` table, `+` rows you write are joined into the cell above them and written to the file, then it's cut to fit. GitHub and other Markdown renderers don't know `====` or `+` rows, so a table with them only shows as a table when Raindown renders it.
 
 ### Endpoints
 
