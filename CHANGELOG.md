@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## 0.18.0
+
+### Added
+
+- Fixed-width table columns, with equals signs in the delimiter, like `| ==== |`
+- Typing `=` into a column's dashes fixes it at its width, and `-` into its equals signs widens it again
+- `table:` cuts cells to fit a fixed column with `…`, keeping their full text in the file
+- Deleting a cell's `…` shows its full text, and typing `…` or `...` into it cuts it again
+- Rows starting with `|+` carry on the row above, in any table
+- A node's `rewrite` can take `comment:` and return `Raindown::Written`, for a comment below its directive
+
+### Changed
+
+- `table:`'s comment no longer starts with "table", like `<!-- 2 rows · 3f2a9c -->`
+
+### Fixed
+
+- Adding or deleting rows above a formula cell keeps its formula
+
 ## 0.17.2
 
 ### Added
