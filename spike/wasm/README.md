@@ -141,4 +141,7 @@ the files sent and RubyGems, and 1.3 s from wasmtime.
 - Make the standard library list from every directive's write-back, not just `table:` and `toc:`.
 - Compile only the files a write-back loads to bytecode, to shrink it.
 - Turn `pack.sh` into the plugin's build step, embedding the compressed module in `main.js`.
+- Run endpoints with Obsidian's `requestUrl`, rather than curl: the request `Curl` parses, sent from the worker to
+  Obsidian's main thread, which `requestUrl` needs, with Ruby awaiting it through ruby.wasm's `evalAsync`. It can refuse a
+  link-local host, but not pin a name's address or stop redirects, as curl does, so say so in the README.
 - Ask the Obsidian team about a large embedded module before submitting, and explain it in the README.
