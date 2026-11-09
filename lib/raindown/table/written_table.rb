@@ -42,14 +42,6 @@ module Raindown
       end
     end
 
-    # The row and column of each cell typed into since it was written, which isn't clipped as it's saved, so what's
-    # typed after it meanwhile isn't typed after an ellipsis, but the next time it's written.
-    def typed
-      cells.each_with_index.flat_map do |row, row_index|
-        row.each_index.reject { file_cell(row_index, it)&.unchanged_by?(row[it]) }.map { [row_index, it] }
-      end
-    end
-
     # The row and column of each cell to show as its formula, or in full.
     def revealed
       cells.each_with_index.flat_map do |row, row_index|

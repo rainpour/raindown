@@ -118,7 +118,7 @@ module Raindown
       count = rows.length - 1
       cells = with_total(with_revealed(shown, rows, written.revealed))
       columns = TableColumn.all(written.delimiter, rows)
-      table = MarkdownTable.format(TableColumn.fit(cells, columns, written.revealed, written.typed), written.delimiter)
+      table = MarkdownTable.format(TableColumn.fit(cells, columns, written.revealed), written.delimiter)
       "<!-- table #{count} row#{'s' unless count == 1} · #{hash_rows(shown)} -->\n#{table}"
     end
 

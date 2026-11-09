@@ -13,13 +13,12 @@ module Raindown
       delimiter.each_with_index.map { |cell, i| from(cell, rows.map { it[i].to_s }) }
     end
 
-    # The rows with each cell clipped to fit its fixed column, but for those just typed, which are left as they are, and
-    # those revealed, which are wrapped to fit it as lines instead, but for the header's, as + rows can only be below
-    # the delimiter.
-    def self.fit(rows, columns, revealed, typed = [])
+    # The rows with each cell clipped to fit its fixed column, but for those revealed, which are wrapped to fit it as
+    # lines instead, but for the header's, as + rows can only be below the delimiter.
+    def self.fit(rows, columns, revealed)
       rows.each_with_index.map do |row, row_index|
         row.each_with_index.map do |cell, column|
-          next cell if !columns[column]&.fixed? || typed.include?([row_index, column])
+          next cell unless columns[column]&.fixed?
           next columns[column].clip(cell) unless revealed.include?([row_index, column])
           next cell if row_index.zero?
 
