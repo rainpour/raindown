@@ -89,3 +89,19 @@ it, then the write-back run five times on it. Each wrote the same note and CSV a
 | Each write-back, 4 steps | 67 to 118 ms, the first slowest |
 
 About 1.7 s to the first write-back, in the background, then about 16 to 36 ms a step.
+
+### Results packed, without RubyGems
+
+The plugin's third command, with Raindown packed into the module by `pack.sh` and Ruby started without RubyGems. With
+the whole standard library packed, then only the 73 files a write-back loads, which `stdlib.rb` lists in `stdlib.txt`:
+
+| | Whole standard library | Only what's loaded |
+| --- | --- | --- |
+| Module | 32.1 MB, 9.3 MB gzipped | 18.6 MB, 5.4 MB gzipped |
+| Starting Ruby | 294 ms | 269 ms |
+| Loading Raindown | 840 ms | 689 ms |
+| Each write-back, 4 steps | 83 to 159 ms | 68 to 113 ms |
+
+Leaving out RubyGems took starting Ruby from 707 ms to under 300 ms. The module's now mostly Ruby itself, 16.7 MB:
+11.7 MB of code and 4.9 MB of data, without debug names, so making it smaller would take building Ruby with fewer
+extensions. Loading Raindown, about 200 files, is most of what's left of starting up: about 150 ms natively.
