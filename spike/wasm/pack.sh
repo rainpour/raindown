@@ -12,11 +12,11 @@ set -e
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 GEMS=$(cd "$ROOT" && mise exec -- ruby -e 'print Gem.dir')/gems
 RUNTIME="$ROOT/spike/wasm/runtime"
-STDLIB="$RUNTIME/stdlib"
+STDLIB="$RUNTIME/stdlib/usr/local/lib/ruby"
 BYTECODE="$RUNTIME/bytecode"
 
-# Only the standard library files in stdlib.txt, in their folders.
-rm -rf "$STDLIB"
+# Only the standard library files in stdlib.txt, in their folders, under usr/ as in Ruby's.
+rm -rf "$RUNTIME/stdlib"
 while read -r file; do
   mkdir -p "$STDLIB/3.4.0/$(dirname "$file")"
   cp "$RUBY_WASI/usr/local/lib/ruby/3.4.0/$file" "$STDLIB/3.4.0/$file"
@@ -42,8 +42,10 @@ OUTPUT="$RUNTIME/raindown.wasm"
 
 if [ -n "$WASMTIME" ]; then
   rm -rf "$BYTECODE" && mkdir -p "$BYTECODE"
+  # /usr too, as Ruby looks at the folders a file's in, finding its real path, which wasmtime only has if they're mounted.
   # shellcheck disable=SC2086
-  "$WASMTIME" run $DIRS --dir "$ROOT/spike/wasm::/spike" --dir "$BYTECODE::/bytecode" "$RUBY_WASI/usr/local/bin/ruby" \
+  "$WASMTIME" run $DIRS --dir "$RUNTIME/stdlib/usr::/usr" --dir "$ROOT/spike/wasm::/spike" --dir "$BYTECODE::/bytecode" \
+    "$RUBY_WASI/usr/local/bin/ruby" \
     --disable-gems /spike/compile.rb /bytecode $GUESTS
   DIRS="$DIRS --dir $BYTECODE::/bytecode"
   OUTPUT="$RUNTIME/raindown-bytecode.wasm"
