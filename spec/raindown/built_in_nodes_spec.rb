@@ -187,6 +187,10 @@ RSpec.describe 'Raindown built-in nodes' do
         .to include("| a cat   | b       |\n| on a    |         |\n| mat     |         |\n|         |         |\n+")
     end
 
+    it "keeps the spaces typed between a cell's words as it wraps them" do
+      expect(rewrite("grid: width: 21\n+---+\n| a  cat | b |\n| on |\n+---+\n", path: 'notes.rd')).to include('| a  cat  |')
+    end
+
     it 'marks the cells of the rows on both sides of a rule' do
       written = "grid: width: 13\n+\n| a | b |\n+\n| c | d | e |\n+\n"
 

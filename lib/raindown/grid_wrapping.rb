@@ -19,20 +19,20 @@ module Raindown
       texts.chunk_while { |line, following| !line.empty? && !following.empty? }.flat_map do |lines|
         next lines if lines.first.empty?
 
-        lines_of(lines.join(' ').split, width)
+        lines_of(lines.join(' '), width)
       end
     end
 
-    def lines_of(words, width)
-      words.each_with_object([+'']) do |word, lines|
-        if lines.last.empty?
+    # The text's lines, broken at the spaces after its words, each word keeping the spaces after it unless it ends a
+    # line, so spaces typed between words, like one before another as a word's typed between two, are kept.
+    def lines_of(text, width)
+      text.scan(/\S+\s*/).each_with_object([+'']) do |word, lines|
+        if lines.last.empty? || Unicode::DisplayWidth.of(lines.last + word.rstrip, emoji: :all) <= width
           lines.last << word
-        elsif Unicode::DisplayWidth.of("#{lines.last} #{word}", emoji: :all) <= width
-          lines.last << " #{word}"
         else
           lines << +word
         end
-      end
+      end.map(&:rstrip)
     end
   end
 end
