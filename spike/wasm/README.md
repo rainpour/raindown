@@ -132,15 +132,15 @@ the files sent and RubyGems, and 1.3 s from wasmtime.
 
 ## To do
 
-- Test on a phone: load the module without Node, embedded in `main.js` and unpacked with `DecompressionStream`, with
-  the vault, through Obsidian's API, as Ruby's filesystem, and time starting up and writing back, and its memory.
-- Load Commonmarker only when rendering HTML, as endpoints do sockets, so no stub's needed. Render reading view's
-  `<{ }>` sections with Obsidian's own Markdown renderer, or build Commonmarker into Ruby.
-- Pack `dirload` and `lownode`, to load a project's `.raindown` nodes, sent from the vault, and run its JavaScript nodes
-  in the plugin rather than NodeJS.
-- Make the standard library list from every directive's write-back, not just `table:` and `toc:`.
-- Compile only the files a write-back loads to bytecode, to shrink it.
-- Turn `pack.sh` into the plugin's build step, embedding the compressed module in `main.js`.
+The plugin now runs Raindown this way: raindown-obsidian's `bin/build` packs it, from what `scripts/trace.rb` sees a
+write-back of each directive load, with `dirload` and `lownode` for a vault's `.raindown` nodes, and embeds the module in
+`main.js`, which `src/worker.js` unpacks with `DecompressionStream`, with the vault mirrored as Ruby's filesystem.
+
+- Test on a phone, and time starting up and writing back, and its memory.
+- Render reading view's `<{ }>` sections with Obsidian's own Markdown renderer, or build Commonmarker into Ruby.
+- Run a vault's JavaScript nodes in the plugin, rather than Node.
+- Pack only the gem files a write-back loads, not their whole `lib` folders, to shrink the module. Only those are
+  compiled to bytecode already.
 - Run endpoints with Obsidian's `requestUrl`, rather than curl: the request `Curl` parses, sent from the worker to
   Obsidian's main thread, which `requestUrl` needs, with Ruby awaiting it through ruby.wasm's `evalAsync`. It can refuse a
   link-local host, but not pin a name's address or stop redirects, as curl does, so say so in the README.

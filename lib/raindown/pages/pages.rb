@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-require_relative 'front_matter'
+require_relative '../front_matter'
+require_relative 'listings'
 require_relative 'page'
-require_relative 'utils'
+require_relative '../utils'
 
 module Raindown
   # The metadata of a project's Markdown files, which list: lists by tag.
@@ -13,49 +14,31 @@ module Raindown
   #   folder: basics, order: 1, path: docs/_basics/_1-getting-started.md
   # Folder tags can share a folder name with "&", like docs/_1&_basics/getting-started.md.
   # An app can add its own metadata by subclassing and overriding implicit_metadata, like Raindeer's URL paths.
-  # Each file's front matter is only read once something lists the files. The listing and the front matter are kept for
-  # as long as the process runs, like "raindown server", until they change.
+  # Each file's front matter is only read once something lists the files, and kept, with the listing, by Listings.
   class Pages
     EXTENSIONS = %w[md rd markdown raindown].freeze
     SEGMENTS = Regexp.union(['/', '&', '-'])
 
-    class << self
-      # Each file's front matter, by its path, with the time it was modified when it was read.
-      def front_matters
-        @front_matters ||= {}
-      end
+    extend Listings
 
+    class << self
       # The Markdown files under a project's root, the folder with its .raindown folder, or a vault, or else the file's
       # folder.
       def for(path)
-        require_relative 'projects'
+        require_relative '../projects'
         load(root: Projects.content_root(path) || File.dirname(File.expand_path(path)))
       end
 
-      # Lists the files under the root, without loading them, for Dirload.
+      # Lists the files under the root, without loading them, for Dirload, once while an editor watching them says none
+      # have changed.
       def load(root:)
+        return pages[root] if watched? && pages[root]
+
         require 'dirload'
         file_types = file_paths(root).group_by { Dirload.extension(file_path: it) }
-        new(metadata: Dirload::Metadata.new(loaded_paths: {}, missed_paths: [], file_types:), root:)
-      end
-
-      # The files under the root, outside hidden folders, like Dirload lists them. They're listed again once a folder
-      # among them has changed, which adding, removing or renaming a file or folder in it does.
-      def file_paths(root)
-        listing = listings[root]
-        return listing[:file_paths] if listing&.dig(:folders)&.all? { |folder, modified| modified_at(folder) == modified }
-
-        folders, file_paths = Dir["#{root}/**/*"].partition { File.directory?(it) }
-        listings[root] = { file_paths:, folders: [root, *folders].to_h { [it, modified_at(it)] } }
-        file_paths
-      end
-
-      def listings
-        @listings ||= {}
-      end
-
-      def modified_at(path)
-        File.mtime(path) if File.exist?(path)
+        loaded = new(metadata: Dirload::Metadata.new(loaded_paths: {}, missed_paths: [], file_types:), root:)
+        pages[root] = loaded if watched?
+        loaded
       end
     end
 
@@ -109,14 +92,18 @@ module Raindown
     end
 
     def process(file_path:)
-      metadata = @metadata[file_path] = implicit_metadata(file_path:).merge(front_matter(file_path))
+      implicit = self.class.implicit_metadatas[[@root, file_path]] ||= implicit_metadata(file_path:)
+      metadata = @metadata[file_path] = implicit.merge(front_matter(file_path))
       metadata.each { |type, tag| Array(tag).each { |item| tag(type:, tag: item, file_path:) } }
     end
 
-    # The file's front matter, read again only when the file's changed since it was last read.
+    # The file's front matter, read again only when the file's changed since it was last read, or an editor watching the
+    # files says so.
     def front_matter(file_path)
-      modified = File.mtime(file_path)
       modified_then, front_matter = self.class.front_matters[file_path]
+      return front_matter if modified_then && self.class.watched?
+
+      modified = File.mtime(file_path)
       return front_matter if modified_then == modified
 
       FrontMatter.read(file_path).tap { self.class.front_matters[file_path] = [modified, it] }
