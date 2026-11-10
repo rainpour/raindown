@@ -71,6 +71,12 @@ RSpec.describe Raindown::Chart do
       expect(rewrite("chart: ''\n", metadata:)).to include(message)
     end
 
+    it 'needs no file with points of its own, like a project chart of its commits' do
+      own = Class.new(described_class) { def points(**) = [['A', 3]] }
+
+      expect(own.new.rewrite).to start_with("```\nA")
+    end
+
     it "writes why it can't chart a file" do
       expect(rewrite("chart: '../outside.csv'\n", metadata:)).to include("it's outside the project")
       expect(rewrite("chart: 'missing.csv'\n", metadata:))

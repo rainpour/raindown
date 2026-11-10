@@ -31,9 +31,12 @@ module Raindown
       @tail = tail
     end
 
-    # The data is read every time, so the chart follows changes to its file.
+    # The data is read every time, so the chart follows changes to its file. A chart with points of its own, like a
+    # project's chart of its commits, needs no file.
     def rewrite(metadata: NoMetadata)
-      return Problem.alert('Needs a file path to a CSV, TSV, JSON or YAML file') if ['', nil].include?(@data)
+      if ['', nil].include?(@data) && method(:points).owner == Chart
+        return Problem.alert('Needs a file path to a CSV, TSV, JSON or YAML file')
+      end
 
       points = points(metadata:)
       return '' if points.empty?
