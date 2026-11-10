@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -38 ▕█████│████████████████████████▉ +185
+Total    -85 ▐█████│████████████████████████▌ +374
 ──────────────────────────────────────────────────
-1220b64  -11     ▐█│██▌                        +19
-570f7de   -6      █│█                           +7
-02dcb6b  -10     ▐█│████████▋                  +64
-7d30bff   -4      ▐│███████▎                   +54
-2ccc904   -7      █│█████▌                     +41
+29849ca   -0       │▍                           +5
+dc2b6a5  -15      █│████▋                      +70
+550f394  -15      █│██████████▍               +159
+7bb9233  -47   ▕███│████████▌                 +130
+c15ed4c   -8      ▐│▋                          +10
 ```
 <!-- :Commits -->
 
@@ -63,7 +63,7 @@ cat draft.rd | raindown draft.rd --stdin
 
 With `--stdin`, FILE only decides whether bare directives are allowed (by its extension), so it doesn't need to exist yet, and the TOC and tables aren't written back to it.
 
-`raindown watch` on a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders, ones like `node_modules` and `build`, and the folders your `.gitignore` files name. An Obsidian vault, a folder with an `.obsidian` folder, is left alone when it's below the folder Raindown's watching, even with a `.raindown` folder of its own, so a `raindown` on `~/dev` and the [Obsidian plugin](https://github.com/rainpour/raindown-obsidian)'s own server don't both write back to its notes. Pointed at the vault itself, Raindown watches it as usual. The terminal UI only writes back to files in a folder's projects, or to any file saved in a folder with no projects. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
+`raindown watch` on a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders, ones like `node_modules` and `build`, and the folders your `.gitignore` files name. An Obsidian vault, a folder with an `.obsidian` folder, is left alone when it's below the folder Raindown's watching, even with a `.raindown` folder of its own, so a `raindown` on `~/dev` and the [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) don't both write back to its notes. Pointed at the vault itself, Raindown watches it as usual. The terminal UI only writes back to files in a folder's projects, or to any file saved in a folder with no projects. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
 
 `raindown` shows a project's Markdown files beside an outline of the open file's headings and directives, after Raindown's rain cloud while it loads. On a folder of projects, like `raindown ~/dev`, it shows only the projects' files, leaving out the Markdown outside them, and in a folder without a project the Dashboard says so, until `raindown init` makes one. It opens on the Dashboard (below), or on the file you name, like `raindown README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Like `raindown watch`, it watches every file in the folder, and writes back to each Markdown file as it's saved, so there's no need for `raindown watch` running in another terminal too. A click does what Enter does where it's clicked, or presses the button clicked, like `[Run]`, unless that would leave the TUI for your editor, so a stray click only moves the cursor. Scrolling does nothing.
 
@@ -635,7 +635,7 @@ The [VS Code extension](vscode/) highlights syntax and previews Raindown files w
 
 ### Obsidian
 
-The [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) writes back to your notes as you save them, like `raindown watch`, with the [editor server](#editor-server), or `raindown NOTE --stdin --rewrite`, which prints the note as it would be written back without writing it. So tables of contents, components and `list:` fill in as you write, in plain Markdown that reads the same outside Obsidian. Endpoints only run from its **Run the endpoints in this note** command. It needs Raindown installed, and shows you how if it can't find it.
+The [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) writes back to your notes as you type, like `raindown watch`. So tables of contents, components and `list:` fill in as you write, in plain Markdown that reads the same outside Obsidian. Raindown runs inside the plugin, in Ruby compiled to WebAssembly, so there's nothing else to install, on desktop or mobile. Endpoints only run from its **Run the endpoints in this note** command, and are sent by Obsidian rather than curl, which refuses link-local addresses but follows redirects. JavaScript components run inside the plugin too, rather than Node.js, so they can't import other files or use Node's APIs. Reading view shows `<{ }>` as Raindown renders it, in Markdown, which Obsidian renders.
 
 ### Editor server
 
