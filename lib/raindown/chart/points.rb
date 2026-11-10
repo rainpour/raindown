@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require 'csv'
+# Loaded when first used, as it loads strscan, a native extension, which slows a packed executable's start.
+autoload :CSV, 'csv'
 require 'json'
 require 'yaml'
 
