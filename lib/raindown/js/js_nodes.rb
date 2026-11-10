@@ -33,6 +33,11 @@ module Raindown
       end
     end
 
+    class << self
+      # A host in place of NodeJS, answering the same requests, like the Obsidian plugin's worker, which runs them itself.
+      attr_writer :host
+    end
+
     module_function
 
     # Loads the JavaScript Components in a .raindown folder, starting NodeJS the first time a folder has any.
