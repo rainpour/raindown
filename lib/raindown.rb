@@ -49,31 +49,39 @@ module Raindown
   # Front matter keys are variables, like {title} or <{ title }>.
   # Bare directives like "toc:" show in bold in the HTML, and the rest stay hidden, as comments.
   # Code blocks are highlighted, unless highlight_code is false for a site that highlights code in the browser.
-  def render(markdown:, metadata: NoMetadata, bare: false, highlight_code: true)
+  # Without commonmark, it's Markdown, not HTML, with nodes as they'd be written back, for an app to render itself, like
+  # Obsidian's reading view in the plugin, where Commonmarker, which is native, can't run.
+  def render(markdown:, metadata: NoMetadata, bare: false, highlight_code: true, commonmark: true)
     context = Context.new(document: markdown, metadata:, bare: bare || BareDirectives.front_matter?(markdown))
 
-    highlighting(highlight_code) do
+    rendering(highlight_code:, commonmark:) do
       Fragments.collect do
         # Components' HTML goes back in, then their headings get unique ids, before nodes like the TOC see it.
         html = Nodes.render_placeholders(assembled(context), context)
+        output = Directives.render("#{html.chomp}\n")
+        next output if commonmark
 
-        Directives.render("#{html.chomp}\n")
+        output.gsub(/[\u{E000}\u{E001}]/, CODE_BRACES.invert)
       end
     end
   end
 
-  # Whether code is highlighted while the block runs, like one document's render,
+  # Whether code is highlighted, and Markdown made HTML, while the block runs, like one document's render,
   # so components and endpoints rendering their own Markdown follow it too.
-  def highlighting(highlight_code)
-    outer = Thread.current[:raindown_highlight_code]
-    Thread.current[:raindown_highlight_code] = highlight_code
+  def rendering(highlight_code:, commonmark: true)
+    outer = Thread.current[:raindown_rendering]
+    Thread.current[:raindown_rendering] = { highlight_code:, commonmark: }
     yield
   ensure
-    Thread.current[:raindown_highlight_code] = outer
+    Thread.current[:raindown_rendering] = outer
   end
 
   def highlight_code?
-    Thread.current[:raindown_highlight_code] != false
+    Thread.current[:raindown_rendering]&.fetch(:highlight_code) != false
+  end
+
+  def commonmark?
+    Thread.current[:raindown_rendering]&.fetch(:commonmark) != false
   end
 
   # The document's HTML with its components' HTML put back, and unique heading ids.
@@ -94,8 +102,10 @@ module Raindown
     Commonmarker.parse(markdown, options: MARKDOWN_OPTIONS)
   end
 
-  # Markdown to HTML, like a document's or a component's slot.
+  # Markdown to HTML, like a document's or a component's slot, unless it's rendering Markdown.
   def commonmark(markdown)
+    return markdown unless commonmark?
+
     doc = parse_markdown(hide_directives(markdown: TableFormatter.gfm(markdown)))
     preserve_code(doc:)
 

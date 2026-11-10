@@ -10,6 +10,13 @@ RSpec.describe Raindown do
       CGI.unescapeHTML(html.gsub(/<[^>]*>/, ''))
     end
 
+    it 'renders Markdown, not HTML, without commonmark, with nodes as they would be written back' do
+      markdown = "---\ntitle: Notes\n---\n# {title}\n\n<{ :toc }>\n\n## One\n\n<{ if: true }>\nYes `{x}`\n<{ :if }>\n\n## Two\n"
+
+      expect(described_class.render(markdown:, commonmark: false))
+        .to eq("---\ntitle: Notes\n---\n# Notes\n\n- [One](#one)\n- [Two](#two)\n\n## One\n\nYes `{x}`\n\n## Two\n")
+    end
+
     context 'with front matter variables' do
       def render(front_matter, body)
         described_class.render(markdown: "---\n#{front_matter}\n---\n\n#{body}\n")

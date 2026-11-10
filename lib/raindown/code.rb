@@ -1,20 +1,54 @@
 # frozen_string_literal: true
 
+require_relative 'code_blocks'
+
 module Raindown
   # Finds code in Markdown the way Commonmarker reads it: code spans and fenced, indented or quoted code blocks.
   module Code
+    # A code span on one line, like `{x}`, between runs of the same number of backticks.
+    SPAN = /(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)/n
+
     module_function
 
-    # Byte ranges of code in the Markdown, from Commonmarker's line and column positions.
+    # Byte ranges of code in the Markdown, from Commonmarker's line and column positions, or rendering Markdown, which
+    # doesn't load Commonmarker, its fenced blocks and code spans.
     def ranges(markdown)
-      line_offsets = markdown.each_line.reduce([0]) { |offsets, line| offsets << (offsets.last + line.bytesize) }
+      return scanned_ranges(markdown) unless Raindown.commonmark?
+
+      offsets = line_offsets(markdown.lines)
       ranges = []
 
       Raindown.parse_markdown(markdown).walk do |node|
-        ranges << range(node.source_position, line_offsets) if %i[code code_block].include?(node.type)
+        ranges << range(node.source_position, offsets) if %i[code code_block].include?(node.type)
       end
 
       ranges
+    end
+
+    # The byte offset each line starts at, and the end's.
+    def line_offsets(lines)
+      lines.reduce([0]) { |offsets, line| offsets << (offsets.last + line.bytesize) }
+    end
+
+    def scanned_ranges(markdown)
+      lines = markdown.lines
+      offsets = line_offsets(lines)
+      ranges = []
+      index = 0
+      while index < lines.length
+        if (block = CodeBlocks.at(lines, index))
+          ranges << (offsets[index]...offsets[block[:close] + 1])
+          index = block[:close]
+        else
+          ranges.concat(span_ranges(lines[index], offsets[index]))
+        end
+        index += 1
+      end
+      ranges
+    end
+
+    def span_ranges(line, start)
+      line.b.to_enum(:scan, SPAN).map { (start + ::Regexp.last_match.begin(0))...(start + ::Regexp.last_match.end(0)) }
     end
 
     def range(position, line_offsets)

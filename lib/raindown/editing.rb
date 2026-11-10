@@ -10,9 +10,11 @@ module Raindown
   module Editing
     module_function
 
-    def render_markdown(markdown, path:, bare: false)
+    # Without commonmark, it's Markdown, for the editor to render itself.
+    def render_markdown(markdown, path:, bare: false, commonmark: true)
       Nodes.load(path)
-      Raindown.render(markdown:, metadata: Pages.for(path), bare: bare || BareDirectives.file?(path), **Config.render_options(path))
+      Raindown.render(markdown:, metadata: Pages.for(path), bare: bare || BareDirectives.file?(path), commonmark:,
+                      **Config.render_options(path))
     end
 
     def rewrite_markdown(markdown, path:, bare: false, execute: false)

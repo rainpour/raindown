@@ -140,8 +140,10 @@ module Raindown
       end
     end
 
+    # Rendering Markdown, a node's written as it would be written back.
     def html(node, context, **keywords)
       return node.render_template(props: {}).to_s if template?(node.class)
+      return call(node, :rewrite, **context.to_h, **keywords).to_s if !Raindown.commonmark? && node.respond_to?(:rewrite)
 
       call(node, :render, **context.to_h, **keywords).to_s
     end
