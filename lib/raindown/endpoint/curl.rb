@@ -3,6 +3,7 @@
 require 'open3'
 require 'shellwords'
 require 'uri'
+require_relative 'curl_request'
 require_relative 'curl_response'
 
 module Raindown
@@ -11,9 +12,14 @@ module Raindown
   # are allowed: nothing that reads or writes local files, loads a config, or uses another protocol.
   # Link-local addresses, like the cloud metadata service at 169.254.169.254, are refused, as they can give out
   # credentials, and redirects aren't followed (no -L), so a URL can't redirect there either.
+  # Or, without processes, like in WebAssembly, the request's sent by Curl.fetcher, as the Obsidian plugin sends it with
+  # Obsidian's requestUrl, which refuses link-local hosts but can't pin an address or stop redirects as curl does here.
   module Curl
     class Error < StandardError; end
-    Request = Data.define(:method, :url)
+    class << self
+      # Given a Request, returns its Response, in place of curl.
+      attr_accessor :fetcher
+    end
 
     TIMEOUT = '30'
     # The variables curl reads a proxy from, which then looks the names up rather than curl.
@@ -52,6 +58,8 @@ module Raindown
     # Placeholders like {base_url} are replaced from the variables, word by word, so a value can't add options.
     def run(snippet, variables = nil)
       args = arguments(snippet, variables)
+      return fetch(args) if fetcher
+
       stdout, stderr, status = Open3.capture3('curl', *SAFE_OPTIONS, '--silent', '--show-error', '--max-time', TIMEOUT,
                                               *resolve_options(args), *args, '--write-out', Response::WRITE_OUT)
       raise Error, stderr.strip.empty? ? "curl exited with #{status.exitstatus}" : stderr.strip unless status.success?
@@ -61,22 +69,19 @@ module Raindown
       raise Error, 'curl is not installed'
     end
 
-    # The snippet's method and URL, like GET https://httpbin.org/uuid, or nil when it can't be read.
+    # The snippet's request, like GET https://httpbin.org/uuid, or nil when it can't be read.
     def request(snippet, variables = nil)
-      args = arguments(snippet, variables)
-      Request.new(method: request_method(args), url: args.find { it.match?(URL) })
+      Request.from(arguments(snippet, variables))
     rescue Error
       nil
     end
 
-    # A snippet that sends data is a POST, unless it says otherwise, as with curl.
-    def request_method(args)
-      index = args.index('--request')
-      return args[index + 1].upcase if index
-      return 'HEAD' if args.include?('--head')
-      return 'POST' if args.intersect?(VALUE_CHECKS.keys.grep(/data|json/))
+    # With --fail, an error status fails, as curl does.
+    def fetch(args)
+      response = fetcher.call(Request.from(args))
+      raise Error, "The requested URL returned error: #{response.status}" if args.include?('--fail') && response.status >= 400
 
-      'GET'
+      response
     end
 
     def arguments(snippet, variables = nil)

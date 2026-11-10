@@ -7,8 +7,28 @@ RSpec.describe Raindown::Curl do
     it "reads a snippet's method and URL, which is a POST when it sends data, as with curl" do
       expect(described_class.request('curl https://httpbin.org/uuid')).to eq(described_class::Request.new(method: 'GET', url: 'https://httpbin.org/uuid'))
       expect(described_class.request('curl -sS -XDELETE https://a.io/x')).to eq(described_class::Request.new(method: 'DELETE', url: 'https://a.io/x'))
-      expect(described_class.request("curl -d 'a=1' https://a.io/p")).to eq(described_class::Request.new(method: 'POST', url: 'https://a.io/p'))
+      expect(described_class.request("curl -d 'a=1' https://a.io/p")).to have_attributes(method: 'POST', url: 'https://a.io/p')
       expect(described_class.request('curl -I https://a.io')).to eq(described_class::Request.new(method: 'HEAD', url: 'https://a.io'))
+    end
+
+    it 'reads its headers and body, as curl would send them' do
+      snippet = "curl -H 'X-Key: k' -A raindown -u me:pw --json '{\"a\":1}' https://a.io/p"
+      headers = { 'X-Key' => 'k', 'User-Agent' => 'raindown', 'Authorization' => "Basic #{['me:pw'].pack('m0')}",
+                  'Content-Type' => 'application/json', 'Accept' => 'application/json' }
+
+      expect(described_class.request(snippet))
+        .to eq(described_class::Request.new(method: 'POST', url: 'https://a.io/p', body: '{"a":1}', headers:))
+    end
+
+    it 'sends data as a form, joined by &, with --data-urlencode encoded, or with --get as the query' do
+      snippet = "curl -e https://ref.io -d 'a=1' --data-urlencode 'q=a b&c' --data-urlencode '=x y' https://a.io/p"
+
+      expect(described_class.request(snippet)).to have_attributes(
+        url: 'https://a.io/p', body: 'a=1&q=a%20b%26c&x%20y',
+        headers: { 'Content-Type' => 'application/x-www-form-urlencoded', 'Referer' => 'https://ref.io' }
+      )
+      expect(described_class.request("curl -G -d 'a=1' 'https://a.io/p?b=2'"))
+        .to eq(described_class::Request.new(method: 'GET', url: 'https://a.io/p?b=2&a=1'))
     end
 
     it "is nil for a snippet that isn't a curl request" do
@@ -149,6 +169,32 @@ RSpec.describe Raindown::Curl do
       allow(Open3).to receive(:capture3).and_raise(Errno::ENOENT)
 
       expect { described_class.run('curl https://203.0.113.5') }.to raise_error(described_class::Error, 'curl is not installed')
+    end
+
+    context 'with a fetcher, in place of curl' do
+      let(:sent) { [] }
+
+      before do
+        described_class.fetcher = lambda do |request|
+          sent << request
+          described_class::Response.received(body: '{"id":1}', content_type: 'application/json', status: 404, milliseconds: 9)
+        end
+      end
+
+      after { described_class.fetcher = nil }
+
+      it 'sends the request through it, without curl' do
+        allow(Open3).to receive(:capture3)
+
+        expect(described_class.run('curl -X PUT https://a.io/x'))
+          .to eq(described_class::Response.new(body: "{\n  \"id\": 1\n}", language: 'json', status: 404, milliseconds: 9))
+        expect(sent).to eq([described_class::Request.new(method: 'PUT', url: 'https://a.io/x')])
+        expect(Open3).not_to have_received(:capture3)
+      end
+
+      it 'fails on an error status with --fail, as curl does' do
+        expect { described_class.run('curl -f https://a.io/x') }.to raise_error(described_class::Error, /returned error: 404/)
+      end
     end
   end
 end

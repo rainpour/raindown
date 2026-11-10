@@ -19,10 +19,13 @@ module Raindown
       def self.parse(stdout)
         body, _, info = stdout.rpartition(INFO_MARKER)
         status, seconds, content_type = info.split(' ', 3)
-        language = LANGUAGES.find { |pattern, _| content_type.to_s.match?(pattern) }&.last || ''
+        received(body:, content_type:, status: status.to_i, milliseconds: (seconds.to_f * 1000).round)
+      end
 
-        new(body: language == 'json' ? pretty_json(body) : body, language:, status: status.to_i,
-            milliseconds: (seconds.to_f * 1000).round)
+      # A response however it was sent, like by Curl.fetcher.
+      def self.received(body:, content_type:, status:, milliseconds:)
+        language = LANGUAGES.find { |pattern, _| content_type.to_s.match?(pattern) }&.last || ''
+        new(body: language == 'json' ? pretty_json(body) : body, language:, status:, milliseconds:)
       end
 
       def self.pretty_json(body)
