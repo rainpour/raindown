@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'commonmarker'
-
 require_relative '../raindown'
 require_relative 'bare_directives'
 require_relative 'code_blocks'
@@ -72,7 +70,7 @@ module Raindown
     private
 
     def root
-      @root ||= Commonmarker.parse(@markdown, options: MARKDOWN_OPTIONS)
+      @root ||= Raindown.parse_markdown(@markdown)
     end
 
     def text(heading)

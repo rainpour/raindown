@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'commonmarker'
-
 module Raindown
   # Finds code in Markdown the way Commonmarker reads it: code spans and fenced, indented or quoted code blocks.
   module Code
@@ -12,7 +10,7 @@ module Raindown
       line_offsets = markdown.each_line.reduce([0]) { |offsets, line| offsets << (offsets.last + line.bytesize) }
       ranges = []
 
-      Commonmarker.parse(markdown, options: MARKDOWN_OPTIONS).walk do |node|
+      Raindown.parse_markdown(markdown).walk do |node|
         ranges << range(node.source_position, line_offsets) if %i[code code_block].include?(node.type)
       end
 
