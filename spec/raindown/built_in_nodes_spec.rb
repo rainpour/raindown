@@ -121,4 +121,54 @@ RSpec.describe 'Raindown built-in nodes' do
         .to include('<img src="cat.png" alt="cat" style="width: 40ch">')
     end
   end
+
+  describe Raindown::Grid do
+    it 'writes a new grid of two cells, three lines tall' do
+      expect(rewrite("grid: width: 21\n", path: 'notes.rd')).to eq(<<~MARKDOWN)
+        grid: width: 21
+        +---------+---------+
+        |         |         |
+        |         |         |
+        |         |         |
+        +---------+---------+
+      MARKDOWN
+    end
+
+    it "shares its width, borders and all, equally among a row's cells, adding one for each | added, and keeps the lines added" do
+      written = "grid: width: 21\n+---+\n| ![cat](cat.png) | a | b\n| two\n|\n|\n+---+\n"
+
+      expect(rewrite(written, path: 'notes.rd')).to eq(<<~MARKDOWN)
+        grid: width: 21
+        +------+------+-----+
+        | ![cat](cat.png)| a    | b   |
+        | two  |      |     |
+        |      |      |     |
+        |      |      |     |
+        +------+------+-----+
+      MARKDOWN
+    end
+
+    it 'marks the cells of the rows on both sides of a rule' do
+      written = "grid: width: 13\n+\n| a | b |\n+\n| c | d | e |\n+\n"
+
+      expect(rewrite(written, path: 'notes.rd')).to include("+-----+-----+\n| a   | b   |\n+---+-+-+---+\n| c | d | e |\n+---+---+---+")
+    end
+
+    it 'pads a wide character by the width it shows' do
+      expect(rewrite("grid: width: 9\n+\n| 🌧️ |\n+\n", path: 'notes.rd')).to include("| 🌧️    |\n")
+    end
+
+    it 'renders each row as a grid of its cells' do
+      html = Raindown.render(markdown: "grid: width: 21\n+---+\n| ![cat](cat.png) | b |\n+---+\n", bare: true)
+
+      expect(html).to include('<div class="raindown-grid" style="display: grid; grid-template-columns: repeat(2, 1fr)">')
+      expect(html).to include('<img src="cat.png" alt="cat"')
+    end
+
+    it "renders a cell's image by reference, from the note's definitions" do
+      markdown = "grid: width: 21\n+---+\n| ![cat] | b |\n+---+\n\n[cat]: pictures/cat.png\n"
+
+      expect(Raindown.render(markdown:, bare: true)).to include('<img src="pictures/cat.png" alt="cat"')
+    end
+  end
 end

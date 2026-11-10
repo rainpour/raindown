@@ -113,15 +113,17 @@ module Raindown
     end
 
     def rendered_lines(lines, block, context)
-      output = node_markdown(block, context).chomp
+      written = lines[(block[:open] + 1)...(block[:close] || (block[:last] + 1))]
+      output = node_markdown(block, context, written:).chomp
       close = marker(lines[block[:close]]) if block[:close]
 
       [marker(lines[block[:open]]), *("#{output}\n".lines unless output.empty?), *close]
     end
 
-    # A node that raises shows why in its place, rather than stopping the page.
-    def node_markdown(block, context)
-      return Nodes.rendered(block[:node], context) if !block[:writes] || Nodes.html?(block[:node])
+    # A node that raises shows why in its place, rather than stopping the page. A node that renders its own HTML can take
+    # written:, its block's lines as they're written in the file, like a grid: drawn from them.
+    def node_markdown(block, context, written:)
+      return Nodes.rendered(block[:node], context, written:) if !block[:writes] || Nodes.html?(block[:node])
 
       Nodes.call(block[:node], :rewrite, **context.to_h).to_s
     rescue StandardError => e

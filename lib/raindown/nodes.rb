@@ -2,6 +2,7 @@
 
 require_relative 'chart/chart'
 require_relative 'fragments'
+require_relative 'grid'
 require_relative 'image'
 require_relative 'js/js_nodes'
 require_relative 'list'
@@ -25,8 +26,10 @@ module Raindown
     class NoRender < StandardError; end
 
     FOLDER = '.raindown'
-    # Lowercase directives for Raindown's own nodes. A project's own TOC, List, Chart, Table or Image node replaces Raindown's.
-    BUILT_INS = { 'toc' => 'TOC', 'list' => 'List', 'chart' => 'Chart', 'table' => 'Table', 'image' => 'Image' }.freeze
+    # Lowercase directives for Raindown's own nodes. A project's own TOC, List, Chart, Table, Image or Grid node
+    # replaces Raindown's.
+    BUILT_INS = { 'toc' => 'TOC', 'list' => 'List', 'chart' => 'Chart', 'table' => 'Table', 'image' => 'Image',
+                  'grid' => 'Grid' }.freeze
     # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers, with its slot's HTML, as a
     # fragment, when it has one.
     PLACEHOLDER = /<!-- raindown:node (\d+)(?: slot (\d+))? -->/
@@ -109,11 +112,11 @@ module Raindown
 
     # Renders the node where it is, as a fragment, so its headings are part of the page, or through a placeholder, once
     # the page is HTML, when its render takes html:, the page's HTML, like TOC's.
-    def rendered(node, context, slot: '')
+    def rendered(node, context, slot: '', **keywords)
       raise NoRender, "#{node.class.name} has no render, so it can't be write-in: write it bare or in comments" unless renders?(node)
       return placeholder(node, slot:) if !template?(node.class) && takes?(node, :render, :html)
 
-      Fragments.add(html(node, context, slot:))
+      Fragments.add(html(node, context, slot:, **keywords))
     end
 
     def takes?(node, method_name, keyword)
