@@ -6,7 +6,7 @@ require_relative 'bare_directives'
 require_relative 'document'
 require_relative 'front_matter'
 require_relative 'nodes'
-require_relative 'pages'
+require_relative 'pages/pages'
 require_relative 'utils'
 
 module Raindown

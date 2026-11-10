@@ -28,6 +28,31 @@ RSpec.describe Raindown::Pages do
     Dirload::Metadata.new(loaded_paths: {}, missed_paths: [], file_types:)
   end
 
+  describe '.watch' do
+    after do
+      described_class.instance_variable_set(:@watched, nil)
+      described_class.pages.clear
+    end
+
+    it "lists by the front matter an editor gave, and only reads or lists files again once they've changed" do
+      write('a.md', "---\ntags: [old]\n---\n")
+      described_class.watch(File.join(@root, 'a.md') => { tags: ['given'] })
+      expect(pages.list(tags: 'given').map(&:file_path)).to eq([File.join(@root, 'a.md')])
+
+      write('b.md', "---\ntags: [given]\n---\n")
+      expect(pages.list(tags: 'given').size).to eq(1)
+
+      described_class.changed([File.join(@root, 'a.md'), File.join(@root, 'b.md')])
+      expect(pages.list(tags: 'given').map(&:file_path)).to eq([File.join(@root, 'b.md')])
+      expect(pages.list(tags: 'old').size).to eq(1)
+
+      FileUtils.rm(File.join(@root, 'b.md'))
+      write('.hidden/c.md', "---\ntags: [given]\n---\n")
+      described_class.changed([File.join(@root, 'b.md'), File.join(@root, '.hidden/c.md')])
+      expect(pages.list(tags: 'given')).to be_empty
+    end
+  end
+
   describe '#list' do
     before do
       write('docs/_basics/_2-setup.md', "---\ntitle: Setup\ntags: [ruby]\n---\n\n# Setup\n")

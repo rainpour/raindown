@@ -2,7 +2,8 @@
 
 require 'cgi/escape'
 
-require_relative 'node'
+require_relative 'markdown_headings'
+require_relative '../node'
 
 module Raindown
   # The node behind toc: and :toc, a table of contents of the document's headings.
@@ -14,8 +15,10 @@ module Raindown
     IGNORED = %r{<!--.*?-->|<script\b.*?</script\s*>}mi
     TAG = /<[^>]*>/
 
+    # From the Markdown as it's written, without rendering it, so it's quick enough to write back as it's typed.
     def rewrite(document:, metadata: nil, bare: false)
-      headings = headings_below_title(markdown: document, metadata:, bare:)
+      variables = Context.new(document:, metadata: metadata || NoMetadata, bare:).variables
+      headings = below_title(MarkdownHeadings.scan(document, variables:))
       return '' if headings.empty?
 
       min_level = headings.map { |heading| heading[:level] }.min
@@ -27,7 +30,7 @@ module Raindown
 
     # With the document's final HTML, the headings include ones its components render.
     def render(document:, html: nil, metadata: nil, bare: false)
-      items = headings_below_title(markdown: document, html:, metadata:, bare:).map do |heading|
+      items = below_title(headings(markdown: document, html:, metadata:, bare:)).map do |heading|
         "<li class='h#{heading[:level]}'><a href='##{heading[:id]}'>#{CGI.escapeHTML(heading[:text])}</a></li>"
       end
 
@@ -44,8 +47,8 @@ module Raindown
     end
 
     # A lone top-level heading that starts the document is its title, so it's left out when there are headings below it.
-    def headings_below_title(**)
-      title, *below = headings = headings(**)
+    def below_title(headings)
+      title, *below = headings
       return headings if below.empty? || title[:level] != 1 || below.any? { it[:level] == 1 }
 
       below

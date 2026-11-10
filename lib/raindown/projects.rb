@@ -3,7 +3,7 @@
 require 'find'
 require_relative 'gitignore'
 require_relative 'nodes'
-require_relative 'pages'
+require_relative 'pages/pages'
 
 module Raindown
   # Raindown projects are folders with a .raindown folder, and their Markdown files are watched for changes.

@@ -48,7 +48,9 @@ module Raindown
 
     def block_lines(lines, block)
       comment, written = comment_and_written(written_lines(lines, block))
-      context = { document: @content, metadata: @metadata, bare: @bare, comment:, written: }
+      # The document as it's written so far, from the bottom up, so a node sees what the nodes below it just wrote, like
+      # the TOC the headings they write.
+      context = { document: lines.join, metadata: @metadata, bare: @bare, comment:, written: }
       written = written_lines_of(node_written(block, context))
       return [line(lines[block[:open]]), *bare(written, block)] unless block[:close]
 

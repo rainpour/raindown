@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'commonmarker'
 require 'antlers'
 require 'antlers/api'
 
@@ -14,7 +13,7 @@ require_relative 'raindown/fragments'
 require_relative 'raindown/front_matter'
 require_relative 'raindown/heading_ids'
 require_relative 'raindown/node_blocks'
-require_relative 'raindown/pages'
+require_relative 'raindown/pages/pages'
 require_relative 'raindown/pre_renderer'
 require_relative 'raindown/table/table_formatter'
 require_relative 'raindown/utils'
@@ -88,9 +87,16 @@ module Raindown
     commonmark(PreRenderer.render(markdown, variables: context.variables, context:))
   end
 
+  # Commonmarker's tree of the Markdown. It's only loaded here, as only rendering HTML needs it, so a build without it,
+  # like the WebAssembly one, can still write back.
+  def parse_markdown(markdown)
+    require 'commonmarker'
+    Commonmarker.parse(markdown, options: MARKDOWN_OPTIONS)
+  end
+
   # Markdown to HTML, like a document's or a component's slot.
   def commonmark(markdown)
-    doc = Commonmarker.parse(hide_directives(markdown: TableFormatter.gfm(markdown)), options: MARKDOWN_OPTIONS)
+    doc = parse_markdown(hide_directives(markdown: TableFormatter.gfm(markdown)))
     preserve_code(doc:)
 
     html = highlight_code? ? doc.to_html(options: HTML_OPTIONS) : unhighlighted_html(doc:)
