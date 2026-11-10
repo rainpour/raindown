@@ -135,17 +135,56 @@ RSpec.describe 'Raindown built-in nodes' do
     end
 
     it "shares its width, borders and all, equally among a row's cells, adding one for each | added, and keeps the lines added" do
-      written = "grid: width: 21\n+---+\n| ![cat](cat.png) | a | b\n| two\n|\n|\n+---+\n"
+      written = "grid: width: 21\n+---+\n| a | b | c\n| two\n|\n+---+\n"
 
       expect(rewrite(written, path: 'notes.rd')).to eq(<<~MARKDOWN)
         grid: width: 21
         +------+------+-----+
-        | ![cat](cat.png)| a    | b   |
+        | a    | b    | c   |
         | two  |      |     |
-        |      |      |     |
         |      |      |     |
         +------+------+-----+
       MARKDOWN
+    end
+
+    it "grows a cell whose text needs more into the room the row's other cells don't need, with cell: :fit" do
+      written = "grid: width: 21 cell: :fit\n+---+\n| ![cat](a.png) | b |\n+---+\n"
+
+      expect(rewrite(written, path: 'notes.rd')).to include("+---------------+---+\n| ![cat](a.png) | b |\n")
+    end
+
+    it "widens the grid when a row's cells need more than its width, with cell: :fit" do
+      written = "grid: width: 21 cell: :fit\n+---+\n| ![cat](cat.png) | a | b\n+---+\n| c | d |\n+---+\n"
+
+      expect(rewrite(written, path: 'notes.rd')).to include(<<~MARKDOWN)
+        +-----------------+---+---+
+        | ![cat](cat.png) | a | b |
+        +------------+----+---+---+
+        | c          | d          |
+        +------------+------------+
+      MARKDOWN
+    end
+
+    it "wraps a cell's text at its spaces onto the row's next lines, taller when it needs more, running a longer word on" do
+      written = "grid: width: 21\n+---+\n| a cat on a mat | ![cat](cat.png) |\n|\n| below |\n+---+\n"
+
+      expect(rewrite(written, path: 'notes.rd')).to eq(<<~MARKDOWN)
+        grid: width: 21
+        +---------+---------+
+        | a cat   | ![cat](cat.png)|
+        | on a    |         |
+        | mat     |         |
+        |         |         |
+        | below   |         |
+        +---------+---------+
+      MARKDOWN
+    end
+
+    it "wraps a cell's text again as it's edited, keeping its row's lines" do
+      written = "grid: width: 21\n+---+\n| a     | b |\n| cat on a mat |\n|\n+---+\n"
+
+      expect(rewrite(written, path: 'notes.rd'))
+        .to include("| a cat   | b       |\n| on a    |         |\n| mat     |         |\n|         |         |\n+")
     end
 
     it 'marks the cells of the rows on both sides of a rule' do
@@ -161,7 +200,7 @@ RSpec.describe 'Raindown built-in nodes' do
     it 'renders each row as a grid of its cells' do
       html = Raindown.render(markdown: "grid: width: 21\n+---+\n| ![cat](cat.png) | b |\n+---+\n", bare: true)
 
-      expect(html).to include('<div class="raindown-grid" style="display: grid; grid-template-columns: repeat(2, 1fr)">')
+      expect(html).to include('<div class="raindown-grid" style="display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 9fr)">')
       expect(html).to include('<img src="cat.png" alt="cat"')
     end
 

@@ -355,7 +355,7 @@ image: 'pictures/cat.png' alt: 'A cat' width: 40
 
 ### Grids
 
-`grid:` writes a frame of cells in text, like a page of photos, which editors that draw images in text fill with the image in each cell. It's written from itself as you edit it: each `|` you add to a row's line adds a cell to that row, each line you add between its rules makes the row taller, and each row's cells share its `width:`, in characters, borders and all. In the HTML, each row is a grid of its cells:
+`grid:` writes a frame of cells in text, like a page of photos, which editors that draw images in text fill with the image in each cell. It's written from itself as you edit it: each `|` you add to a row's line adds a cell to that row, each line you add between its rules makes the row taller, and each row's cells share its `width:`, in characters, borders and all, equally, a cell's text wrapping at its spaces onto the row's next lines, the row taller when it needs them. A word longer than its cell, like an image's path, runs on past it, so an image by reference, like `![cat]`, keeps it short. With `cell: :fit`, a cell whose text needs more grows into the room the others don't need instead, and widens the grid when there's none. In the HTML, each row is a grid of its cells, as wide as they are in the text:
 
 ```
 grid: width: 40
