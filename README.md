@@ -113,7 +113,7 @@ Shape how the Markdown around them renders, like Liquid or Jinja: [variables](#v
 
 #### Content directives
 
-Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [lists](#lists) with `list:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they're write-in: they only render into the HTML, taking what's between their tags as input, and write nothing into the file.
+Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [lists](#lists) with `list:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [images](#images) with `image:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they're write-in: they only render into the HTML, taking what's between their tags as input, and write nothing into the file.
 
 ### Raindown files
 
@@ -343,6 +343,15 @@ end
 ```
 
 Then `<!-- Issues: -->` and `<!-- :Issues -->` in a file write it there. An opening tag needs its colon, even without props.
+
+### Images
+
+`image:` writes a Markdown image of a file or a URL, so it shows wherever Markdown does. Its path is relative to the note, like a Markdown image's, its `alt:` text is the file's name unless you give one, and its `width:` is how many characters wide to show it, in the HTML and in editors that draw images in text:
+
+```
+image: 'pictures/cat.png' alt: 'A cat' width: 40
+![A cat](pictures/cat.png)
+```
 
 ### Tables
 

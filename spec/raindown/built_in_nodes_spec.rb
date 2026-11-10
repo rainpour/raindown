@@ -99,4 +99,26 @@ RSpec.describe 'Raindown built-in nodes' do
       expect(Raindown.render(markdown: "list: folder: 'notes'\n", metadata:, bare: true)).to include('<li>/notes/1</li>')
     end
   end
+  describe Raindown::Image do
+    it 'writes a Markdown image of the file, described by its name' do
+      expect(rewrite("image: 'pictures/cat.png'\n", path: 'notes.rd')).to eq("image: 'pictures/cat.png'\n![cat](pictures/cat.png)\n")
+    end
+
+    it 'writes its alt text, without brackets that would end it early' do
+      expect(rewrite("image: 'cat.png' alt: 'A [very] good cat'\n", path: 'notes.rd')).to include('![A very good cat](cat.png)')
+    end
+
+    it 'writes a path with spaces in angle brackets' do
+      expect(rewrite("image: 'my pictures/cat.png'\n", path: 'notes.rd')).to include('![cat](<my pictures/cat.png>)')
+    end
+
+    it 'warns when it has no source' do
+      expect(rewrite("image:\n", path: 'notes.rd')).to include("> [!WARNING]\n> Needs a path to an image or a URL")
+    end
+
+    it 'renders its width in characters' do
+      expect(Raindown.render(markdown: "<{ :image 'cat.png' width=40 }>\n"))
+        .to include('<img src="cat.png" alt="cat" style="width: 40ch">')
+    end
+  end
 end
