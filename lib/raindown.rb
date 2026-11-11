@@ -13,6 +13,7 @@ require_relative 'raindown/fragments'
 require_relative 'raindown/front_matter'
 require_relative 'raindown/heading_ids'
 require_relative 'raindown/node_blocks'
+require_relative 'raindown/outdent'
 require_relative 'raindown/pages/pages'
 require_relative 'raindown/pre_renderer'
 require_relative 'raindown/table/table_formatter'
@@ -52,7 +53,7 @@ module Raindown
   # Without commonmark, it's Markdown, not HTML, with nodes as they'd be written back, for an app to render itself, like
   # Obsidian's reading view in the plugin, where Commonmarker, which is native, can't run.
   def render(markdown:, metadata: NoMetadata, bare: false, highlight_code: true, commonmark: true)
-    context = Context.new(document: markdown, metadata:, bare: bare || BareDirectives.front_matter?(markdown))
+    context = Context.new(document: Outdent.unwrapped(markdown), metadata:, bare: bare || BareDirectives.front_matter?(markdown))
 
     rendering(highlight_code:, commonmark:) do
       Fragments.collect do

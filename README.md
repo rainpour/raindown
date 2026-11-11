@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -85 ▐█████│████████████████████████▌ +374
-──────────────────────────────────────────────────
-29849ca   -0       │▍                           +5
-dc2b6a5  -15      █│████▋                      +70
-550f394  -15      █│██████████▍               +159
-7bb9233  -47   ▕███│████████▌                 +130
-c15ed4c   -8      ▐│▋                          +10
+Total    -234 ▐████████████│█████████████████▋ +333
+───────────────────────────────────────────────────
+7f4467c  -232 ▕████████████│████████████       +226
+b089904    -0              │██▏                 +41
+2151cb0    -2             ▕│▉                   +17
+dcf28b0    -0              │█                   +18
+c4569c9    -0              │█▋                  +31
 ```
 <!-- :Commits -->
 
@@ -381,6 +381,18 @@ A new grid is 80 characters wide. Options:
 In the HTML, each row is shown as a grid of its cells, with the same widths as in the text.
 
 Where [bare directives](#directives) work, you can leave out `grid:`. A block that starts with a rule, like `+---+`, is a grid. Rules inside code blocks are left alone.
+
+### Outdent
+
+A block can reach the top and left edges of the page. Put a line of `^` above it, and a `<` at the start of each of its lines:
+
+```md
+^^^^^^^^^^^^^^^^^^^^
+< weather:
+< login -> login-tests
+```
+
+Directives work inside it as anywhere else, and Raindown keeps each line's `<` when it writes back. In the HTML, the block is a `<div class="outdent">`, which your page's styles can take to its edges.
 
 ### Tables
 

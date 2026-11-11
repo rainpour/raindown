@@ -4,6 +4,7 @@ require_relative '../raindown'
 require_relative 'bare_directives'
 require_relative 'front_matter'
 require_relative 'node_blocks'
+require_relative 'outdent'
 require_relative 'written'
 
 module Raindown
@@ -32,19 +33,30 @@ module Raindown
       @metadata = metadata
     end
 
+    # Outdented blocks' directives are written first, then the rest of the file's.
     def call
-      lines = @content.lines
-      blocks = NodeBlocks.find(lines, front_matter: FrontMatter.parse(@content).first, bare: @bare)
-                         .select { |block| block[:writes] }
-      return @content if blocks.empty?
-
-      # From the bottom up, so the lines above each block stay where they are, so its problems are put back in order.
-      blocks.reverse_each { |block| lines[block[:open]..block[:last]] = block_lines(lines, block) }
-      @problems.reverse!
-      lines.join
+      front_matter = FrontMatter.parse(@content).first
+      outdented = Outdent.rewrite(@content) { |content, range| write(content, front_matter:, within: range) }
+      write(outdented, front_matter:)
     end
 
     private
+
+    # Writes the blocks whose directives are within the range of lines, or all of them.
+    def write(content, front_matter:, within: nil)
+      lines = content.lines
+      blocks = NodeBlocks.find(lines, front_matter:, bare: @bare).select do |block|
+        block[:writes] && (within.nil? || within.cover?(block[:open]))
+      end
+      return content if blocks.empty?
+
+      # From the bottom up, so the lines above each block stay where they are, so its problems are put back in order.
+      problems = @problems
+      @problems = []
+      blocks.reverse_each { |block| lines[block[:open]..block[:last]] = block_lines(lines, block) }
+      @problems = problems + @problems.reverse
+      lines.join
+    end
 
     def block_lines(lines, block)
       comment, written = comment_and_written(Problem.without_alert(written_lines(lines, block)))
