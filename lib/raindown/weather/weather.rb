@@ -10,8 +10,8 @@ module Raindown
   # code project, it's the branches that aren't merged into main, and the branches off them, by when they were made:
   #   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   #   < weather:
-  #   < Nov 10 login  ->  Nov 11 login-tests
-  #   <                   Nov 12 search  ->  Nov 12 search-filters
+  #   < login · 4 commits
+  #   <     -> login-tests · 2 commits
   # A notes project's forecast is still to come, so it writes nothing yet.
   class Weather < Node
     def rewrite(metadata: NoMetadata)

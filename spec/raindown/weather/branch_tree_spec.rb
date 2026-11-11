@@ -31,24 +31,20 @@ RSpec.describe Raindown::BranchTree do
     commit(name)
   end
 
-  # The day a branch made by the nth commit after the first was made, as it's written.
-  def day(commits)
-    Time.at(1_700_000_000 + (60 * (commits + 1))).strftime('%b %-d')
-  end
-
-  it 'draws each branch off main as an event on its line, then the branches off it, those made later further right' do
+  it 'draws a branch a line with its own commits, those made first at the top, the ones off them indented' do
     branch('login', from: 'main')
+    commit('login again')
     branch('login-tests', from: 'login')
     branch('search', from: 'main')
     branch('search-filters', from: 'search')
     branch('search-sort', from: 'search')
-    login = "#{day(1)} login"
-    search = "#{' ' * (login.length + 6)}#{day(3)} search"
 
     expect(described_class.new(@dir).lines).to eq([
-                                                    "#{login}  ->  #{day(2)} login-tests",
-                                                    "#{search}  ->  #{day(4)} search-filters",
-                                                    "#{' ' * (search.length + 2)}->  #{day(5)} search-sort"
+                                                    'login · 2 commits',
+                                                    '    -> login-tests · 1 commit',
+                                                    'search · 1 commit',
+                                                    '    -> search-filters · 1 commit',
+                                                    '    -> search-sort · 1 commit'
                                                   ])
   end
 
@@ -58,7 +54,7 @@ RSpec.describe Raindown::BranchTree do
     git('merge', '-q', '--ff-only', 'done')
     branch('open', from: 'main')
 
-    expect(described_class.new(@dir).lines).to eq(["#{day(2)} open"])
+    expect(described_class.new(@dir).lines).to eq(['open · 1 commit'])
   end
 
   it 'is empty outside a git repository' do

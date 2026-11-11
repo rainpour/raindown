@@ -3,21 +3,21 @@
 require 'open3'
 
 module Raindown
-  # The branches of a git repository that aren't merged into its main branch, as events, each on the day it was made,
-  # in lines from left to right, each starting with a branch off main, then the branches off it, the ones made earlier
-  # further left:
-  #   Nov 10 login  ->  Nov 11 login-tests
-  #                     Nov 12 search  ->  Nov 12 search-filters
-  #                                    ->  Nov 14 search-sort
+  # The branches of a git repository that aren't merged into its main branch, a line each, with how many commits it has
+  # that its parent doesn't, those made earlier first, each branch off main followed by the branches off it, indented
+  # under it after an arrow:
+  #   login · 4 commits
+  #       -> login-tests · 2 commits
+  #   search · 6 commits
+  #       -> search-filters · 3 commits
+  #       -> search-sort · 1 commit
   # A branch is off the branch it shares the most commits with, or main, and it was made when its first commit that
-  # its parent doesn't have was, or its last commit when it has none. Git doesn't keep when a branch was made. Two
-  # spaces either side of an arrow keep the events apart, so an app can draw each as a block.
+  # its parent doesn't have was, or its last commit when it has none. Git doesn't keep when a branch was made.
   class BranchTree
     MAINS = %w[main master].freeze
-    ARROW = '  ->  '
-    DATE = '%b %-d'
-    # The furthest right a branch off main starts, so a long list doesn't run off the page.
-    WIDEST_START = 40
+    ARROW = '-> '
+    # How much further right a branch off another starts than it.
+    INDENT = 4
 
     Commit = Data.define(:time, :parents)
 
@@ -102,29 +102,19 @@ module Raindown
     # Each branch off main starts a line further right than the one made before it, and its first branch carries on
     # its line, while its other branches start lines below, their arrows under its first's.
     def draw
-      start = 0
-      children_of(nil).flat_map do |root|
-        lines = chain(root, start)
-        start = [start + event(root).length + ARROW.length, WIDEST_START].min
-        lines
-      end
+      children_of(nil).flat_map { branch_lines(it, 0) }
     end
 
-    # The branch's event and its branches', its first carrying on its line, the others below, their arrows under its
-    # first's.
-    def chain(name, column, arrow = '')
-      text = "#{' ' * column}#{arrow}#{event(name)}"
-      first, *rest = children_of(name)
-      return [text] unless first
-
-      first_lines = chain(first, text.length, ARROW)
-      [text + first_lines.first[text.length..], *first_lines.drop(1),
-       *rest.flat_map { chain(it, text.length + 2, ARROW.lstrip) }]
+    # The branch's line and its branches', indented under it.
+    def branch_lines(name, column, arrow = '')
+      ["#{' ' * column}#{arrow}#{label(name)}", *children_of(name).flat_map { branch_lines(it, column + INDENT, ARROW) }]
     end
 
-    # The branch as an event, on the day it was made, like "Nov 10 login".
-    def event(name)
-      "#{Time.at(created_at(name)).strftime(DATE)} #{name}"
+    # The branch with its own commits, those its parent doesn't have, like "login · 4 commits".
+    def label(name)
+      parent = @parents[name]
+      count = (@reach[name] - (parent ? @reach[parent] : Set.new)).size
+      "#{name} · #{count} #{count == 1 ? 'commit' : 'commits'}"
     end
 
     def git(*args)
