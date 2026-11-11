@@ -355,7 +355,7 @@ image: 'pictures/cat.png' alt: 'A cat' width: 40
 
 ### Grids
 
-`grid:` writes a frame of cells in text, like a page of photos, which editors that draw images in text fill with the image in each cell. It's written from itself as you edit it: each `|` you add to a row's line adds a cell to that row, each line you add between its rules makes the row taller, each `-` you add to or take from a rule widens or narrows the whole grid, and each row's cells share its width, in characters, borders and all, equally, a cell's text wrapping at its spaces onto the row's next lines, the row taller when it needs them. A word longer than its cell, like an image's path, runs on past it, so an image by reference, like `![cat]`, keeps it short. With `cell: :fit`, a cell whose text needs more grows into the room the others don't need instead, and widens the grid when there's none, until you take the `-`s out again. A new grid starts 80 characters wide. Give it `width:` to keep it that wide whatever its rules, and with `cell: :fit`, a row whose cells need more than that shares it equally, their text wrapping. In the HTML, each row is a grid of its cells, as wide as they are in the text:
+`grid:` draws a frame of cells in text, like a page of photos. Editors that can show images in text show each cell's image inside it.
 
 ```
 grid:
@@ -365,7 +365,22 @@ grid:
 +-------------------+------------------+
 ```
 
-Where [bare directives](#directives) work, a bare grid needs no `grid:` either: a block that starts with a rule, like `+---+`, is a grid, written from itself the same way, and code blocks are left alone.
+Raindown redraws the grid as you edit it:
+
+- Add a `|` to a row to add a cell.
+- Add a line inside a row to make it taller.
+- Add or remove a `-` in any rule to make the whole grid wider or narrower.
+
+The cells in a row share its width equally. Text that's too long wraps onto the row's next lines, and the row grows to fit. A word that's longer than its cell, like an image's path, isn't wrapped. To keep image paths short, use a reference like `![cat]`, with `[cat]: cat.png` on its own line below the grid.
+
+A new grid is 80 characters wide. Options:
+
+- `width: 60` keeps the grid at that width, whatever the rules say.
+- `cell: :fit` makes a cell wider when its text needs it, taking space from the other cells. If there isn't enough space, the grid gets wider, and stays wider until you remove the extra `-`s. With `width:` set, the grid stays that wide, and the text wraps instead.
+
+In the HTML, each row is shown as a grid of its cells, with the same widths as in the text.
+
+Where [bare directives](#directives) work, you can leave out `grid:`. A block that starts with a rule, like `+---+`, is a grid. Rules inside code blocks are left alone.
 
 ### Tables
 
