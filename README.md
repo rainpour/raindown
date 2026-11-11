@@ -384,13 +384,13 @@ Where [bare directives](#directives) work, you can leave out `grid:`. A block th
 
 ### Weather
 
-`weather:` writes a project's forecast. In a code project, that's its branches that aren't merged into `main` yet, and the branches made from them. Each line starts with a branch made from `main`, followed by the branches made from it. Branches made later sit further right:
+`weather:` writes a project's forecast. In a code project, that's its branches that aren't merged into `main` yet, and the branches made from them, each as an event on the day it was made. Each line starts with a branch made from `main`, followed by the branches made from it. Branches made later sit further right:
 
 ```md
 weather:
-login -> login-tests
-         search -> search-filters
-                 -> search-sort
+Nov 10 login  ->  Nov 11 login-tests
+                  Nov 12 search  ->  Nov 12 search-filters
+                                 ->  Nov 14 search-sort
 ```
 
 In a notes project it writes nothing yet. A project's [kind](#config) says which it is.

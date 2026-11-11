@@ -3,16 +3,19 @@
 require 'open3'
 
 module Raindown
-  # The branches of a git repository that aren't merged into its main branch, as lines from left to right, each
-  # starting with a branch off main, then the branches off it, the ones made earlier further left:
-  #   login -> login-tests
-  #                search -> search-filters
-  #                          -> search-sort
+  # The branches of a git repository that aren't merged into its main branch, as events, each on the day it was made,
+  # in lines from left to right, each starting with a branch off main, then the branches off it, the ones made earlier
+  # further left:
+  #   Nov 10 login  ->  Nov 11 login-tests
+  #                     Nov 12 search  ->  Nov 12 search-filters
+  #                                    ->  Nov 14 search-sort
   # A branch is off the branch it shares the most commits with, or main, and it was made when its first commit that
-  # its parent doesn't have was, or its last commit when it has none. Git doesn't keep when a branch was made.
+  # its parent doesn't have was, or its last commit when it has none. Git doesn't keep when a branch was made. Two
+  # spaces either side of an arrow keep the events apart, so an app can draw each as a block.
   class BranchTree
     MAINS = %w[main master].freeze
-    ARROW = ' -> '
+    ARROW = '  ->  '
+    DATE = '%b %-d'
     # The furthest right a branch off main starts, so a long list doesn't run off the page.
     WIDEST_START = 40
 
@@ -102,18 +105,26 @@ module Raindown
       start = 0
       children_of(nil).flat_map do |root|
         lines = chain(root, start)
-        start = [start + root.length + ARROW.length, WIDEST_START].min
+        start = [start + event(root).length + ARROW.length, WIDEST_START].min
         lines
       end
     end
 
+    # The branch's event and its branches', its first carrying on its line, the others below, their arrows under its
+    # first's.
     def chain(name, column, arrow = '')
-      text = "#{' ' * column}#{arrow}#{name}"
+      text = "#{' ' * column}#{arrow}#{event(name)}"
       first, *rest = children_of(name)
       return [text] unless first
 
       first_lines = chain(first, text.length, ARROW)
-      [text + first_lines.first[text.length..], *first_lines.drop(1), *rest.flat_map { chain(it, text.length + 1, '-> ') }]
+      [text + first_lines.first[text.length..], *first_lines.drop(1),
+       *rest.flat_map { chain(it, text.length + 2, ARROW.lstrip) }]
+    end
+
+    # The branch as an event, on the day it was made, like "Nov 10 login".
+    def event(name)
+      "#{Time.at(created_at(name)).strftime(DATE)} #{name}"
     end
 
     def git(*args)
