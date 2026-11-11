@@ -72,9 +72,9 @@ module Raindown
       TableFile.supported?(path) && Utils.inside?(path, data_root(metadata)) && !File.exist?(path)
     end
 
-    # From the table as it's written, below any alert saying why there was no file.
+    # From the table as it's written.
     def create_file(path, lines)
-      rows = MarkdownTable.parse(lines.grep_v(/\A>/))
+      rows = MarkdownTable.parse(lines)
       rows = STARTER if rows.empty?
       TableFile.create(path, rows)
     end

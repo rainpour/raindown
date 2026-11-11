@@ -47,7 +47,7 @@ module Raindown
     private
 
     def block_lines(lines, block)
-      comment, written = comment_and_written(written_lines(lines, block))
+      comment, written = comment_and_written(Problem.without_alert(written_lines(lines, block)))
       # The document as it's written so far, from the bottom up, so a node sees what the nodes below it just wrote, like
       # the TOC the headings they write.
       context = { document: lines.join, metadata: @metadata, bare: @bare, comment:, written: }
@@ -67,7 +67,7 @@ module Raindown
     rescue StandardError => e
       problem = Problem.new("Couldn't write: #{e.message}", block[:open] + 1)
       @problems << problem.warning
-      Written.new(problem.rewrite)
+      Written.new(problem.rewrite(written: context[:written]))
     end
 
     # The directive, what the node wrote and the end tag, straight after each other, as a comment on its own line ends

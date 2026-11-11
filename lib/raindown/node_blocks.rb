@@ -116,7 +116,7 @@ module Raindown
     end
 
     def rendered_lines(lines, block, context)
-      written = lines[block[:first]...(block[:close] || (block[:last] + 1))]
+      written = Problem.without_alert(lines[block[:first]...(block[:close] || (block[:last] + 1))])
       output = node_markdown(block, context, written:).chomp
       close = marker(lines[block[:close]]) if block[:close]
 

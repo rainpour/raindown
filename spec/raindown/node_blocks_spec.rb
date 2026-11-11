@@ -106,6 +106,15 @@ RSpec.describe Raindown::NodeBlocks do
     expect(Raindown::Editing.rewrite_markdown(markdown, path: 'notes.md')[:warnings]).to eq(rewrite.problems)
   end
 
+  it "keeps what a directive that can't run wrote, below why, once, and drops why once it can" do
+    grid = "+-----+-----+\n| a   | b   |\n+-----+-----+\n"
+    broken = Raindown::Rewriter.rewrite(content: "grid: 80\n#{grid}", path: 'notes.rd').content
+
+    expect(broken).to eq("grid: 80\n> [!WARNING]\n> Takes no value, so it can't read 80\n#{grid}")
+    expect(Raindown::Rewriter.rewrite(content: broken, path: 'notes.rd').content).to eq(broken)
+    expect(Raindown::Rewriter.rewrite(content: broken.sub('grid: 80', 'grid:'), path: 'notes.rd').content).to eq("grid:\n#{grid}")
+  end
+
   it "writes messages that don't read as directives, once the directive above them is deleted" do
     markdown = "# A\n\ntoc: extra\n\n## B\n"
     written = Raindown::Rewriter.rewrite(content: markdown, path: 'notes.rd').content
