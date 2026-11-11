@@ -5,6 +5,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- `image:` writes a Markdown image of a file or a URL, with a `width:` in characters for the HTML and editors that draw images in text
+- `grid:` writes a frame of equal cells, written again from itself as you edit it, which can hold images by reference
+- A grid's cells wrap their text onto their row's next lines, keeping the spaces typed between words, or fit to it with `cell: :fit`
+- A grid's width comes from its rules unless `width:` keeps it, and a block starting with a rule, like `+---+`, is a bare grid where bare directives work
+
+### Fixed
+
+- A directive that can't run, like a typo such as `grid: 80`, keeps what it wrote below its warning, rather than losing it
+
+## 0.19.0
+
+### Added
+
+- `Raindown.render` with `commonmark: false` evaluates templates and writes nodes without Commonmarker, for an app that renders Markdown itself, like Obsidian's reading view
+- An endpoint's request is sent through `Curl.fetcher` when it's set, without curl, for runtimes without processes, like WebAssembly
+- A host in place of NodeJS can run JavaScript Components, set with `JSNodes.host=`
+- An editor watching the files can give Raindown the front matter it's read and which files changed, rather than Raindown reading every note for each `list:`
+
+### Changed
+
+- `toc:` finds headings in the Markdown as it's written, so it's quick enough to write back as you type and sees the headings nodes below it write
+- Commonmarker, sockets and `csv` load only when they're needed, so writing back starts faster
+
+### Fixed
+
+- A chart that gives its own points, like a project's commits, no longer warns that it has no file
+
 ## 0.18.0
 
 ### Added
