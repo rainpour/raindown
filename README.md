@@ -700,6 +700,7 @@ raindown skeleton
 - **A clone without the filter would commit output**, so run `raindown skeleton --check` in CI. It fails, naming the files, if any have output staged.
 - **It doesn't change history.** Output that's already committed stays there, and after setting it up on a file, `git add --renormalize .` strips what's staged.
 - **Bare directives** are stripped in `.rd` and `.raindown` files, and in `.md` files with `raindown: true`, but not ones only allowed by `--bare`.
+- **Directives in an [outdent](#outdent) block** are stripped too, keeping each line's `<`.
 
 ### VS Code
 

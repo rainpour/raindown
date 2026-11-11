@@ -24,6 +24,13 @@ RSpec.describe Raindown::Outdent do
     expect(Raindown::NodeInjector.rewrite(content:, bare: true)).to eq(content)
   end
 
+  it 'ends a bare block in a block with it, writing nothing past it' do
+    content = "---\nraindown: true\n---\n^^^^\n< toc:\nAfter\n\n## Notes\n"
+
+    expect(Raindown::NodeInjector.rewrite(content:))
+      .to eq("---\nraindown: true\n---\n^^^^\n< toc:\n< - [Notes](#notes)\nAfter\n\n## Notes\n")
+  end
+
   it 'renders a block as a div of its Markdown' do
     html = Raindown.render(markdown: "Before\n\n^^^^^^\n< **Sunny**\n<\n< - [x] dry\n")
 

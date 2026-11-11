@@ -28,6 +28,12 @@ RSpec.describe Raindown::Skeleton do
         .to eq("---\nraindown: true\nskeleton: true\n---\ntoc:\n\n## A\n")
     end
 
+    it 'takes out what a directive in an outdent block wrote, keeping the line after the block' do
+      markdown = "---\nraindown: true\nskeleton: true\n---\n^^^^\n< weather:\n< main -> login\nAfter\n"
+
+      expect(strip(markdown)).to eq("---\nraindown: true\nskeleton: true\n---\n^^^^\n< weather:\nAfter\n")
+    end
+
     it "takes out a table and its comment, as it's written again from its file" do
       table = "<!-- table: 'a.csv' -->\n<!-- 1 row · 09ae51 -->\n| a |\n| - |\n| 1 |\n<!-- :table -->\n"
 

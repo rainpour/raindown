@@ -6,6 +6,7 @@ require_relative 'code_blocks'
 require_relative 'endpoint/endpoint_runner'
 require_relative 'front_matter'
 require_relative 'node_blocks'
+require_relative 'outdent'
 
 module Raindown
   # A Markdown file's structure, read from its source so each part has the line it's on, for tools like an editor.
@@ -45,7 +46,9 @@ module Raindown
 
     def initialize(markdown:, bare: false)
       @markdown = markdown
-      @lines = markdown.lines
+      # An outdent block's lines are read without their <, so its directives are found as anywhere else.
+      @lines = Outdent.without_markers(markdown).lines
+      @outdents = Outdent.blocks(markdown.lines)
       @bare = bare || BareDirectives.front_matter?(markdown)
     end
 
@@ -84,8 +87,9 @@ module Raindown
 
     def node_directives
       NodeBlocks.spans(@lines, bare: @bare).map do |span|
-        output = trimmed(span[:first], span[:close] ? span[:close] - 1 : span[:last])
-        directive(span[:name], span[:args], span[:open]..span[:last], output:, writes: span[:writes])
+        last = span[:close] ? span[:last] : Outdent.bare_block_last(@outdents, span[:open], span[:last])
+        output = trimmed(span[:first], span[:close] ? span[:close] - 1 : last)
+        directive(span[:name], span[:args], span[:open]..last, output:, writes: span[:writes])
       end
     end
 
