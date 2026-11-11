@@ -31,4 +31,27 @@ RSpec.describe Raindown::Config do
       expect(Raindown.render_file(path:)).to include('<pre><code class="language-ruby">')
     end
   end
+
+  describe '.kind' do
+    it 'is the kind config.yml gives the project' do
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.raindown'))
+        FileUtils.mkdir_p(File.join(dir, '.git'))
+        File.write(File.join(dir, '.raindown', 'config.yml'), "kind: notes\n")
+
+        expect(described_class.kind(dir)).to eq('notes')
+      end
+    end
+
+    it 'is code for a git repository, and notes otherwise, without a kind it knows' do
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.raindown'))
+        File.write(File.join(dir, '.raindown', 'config.yml'), "kind: recipes\n")
+        expect(described_class.kind(dir)).to eq('notes')
+
+        FileUtils.mkdir_p(File.join(dir, '.git'))
+        expect(described_class.kind(dir)).to eq('code')
+      end
+    end
+  end
 end

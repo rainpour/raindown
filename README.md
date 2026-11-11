@@ -638,6 +638,13 @@ Code blocks are highlighted in the HTML. For a site that highlights code in the 
 highlight_code: false
 ```
 
+`kind:` says what the project's for, `code` or `notes`, so the [app](https://github.com/rainpour/raindown-app)'s dashboard shows what fits it, like a code project's last commit or a notes project's latest notes. Without one, a project in a git repository is code, and any other is notes:
+
+```yaml
+# .raindown/config.yml
+kind: notes
+```
+
 ### Skeleton files
 
 A file with `skeleton: true` in its front matter keeps its directives in git, but not what they write. Use it for dashboards that are always changing, which would otherwise fill your history, and for sensitive reports:
