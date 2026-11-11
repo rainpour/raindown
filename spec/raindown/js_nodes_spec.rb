@@ -36,7 +36,9 @@ RSpec.describe Raindown::JSNodes do
       }
     JS
 
-    expect(Raindown.render(markdown: "<{ SpecJsCard }>\n")).to include('<aside>18</aside>')
+    markdown = "<{ SpecJsCard }>\n"
+
+    expect(Raindown.render(markdown:)).to include("<aside>#{markdown.length}</aside>")
   end
 
   it 'leaves a Ruby node of the same name in place' do
@@ -46,10 +48,10 @@ RSpec.describe Raindown::JSNodes do
     expect(Raindown::Nodes.node_class('SpecReleases')).to eq(SpecReleases)
   end
 
-  it 'raises the error a JavaScript Component throws' do
+  it 'writes the error a JavaScript Component throws in its place' do
     project('spec_js_broken.js' => "export class SpecJsBroken { rewrite() { throw new Error('Broken') } }\n")
 
-    expect { Raindown::NodeInjector.rewrite(content: "<!-- SpecJsBroken: -->\n<!-- :SpecJsBroken -->\n") }
-      .to raise_error(Raindown::JSNodes::Error, 'Broken')
+    expect(Raindown::NodeInjector.rewrite(content: "<!-- SpecJsBroken: -->\n<!-- :SpecJsBroken -->\n"))
+      .to include("> Couldn't write: Broken\n")
   end
 end
