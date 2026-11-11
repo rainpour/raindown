@@ -11,7 +11,7 @@ require_relative '../views/list_view'
 require_relative 'project_menu'
 require_relative 'teleport'
 require_relative 'views'
-require_relative '../project'
+require_relative '../../project/project'
 
 module Raindown
   module TUI

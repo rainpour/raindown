@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/project'
+require 'raindown/project/project'
 require 'fileutils'
 require 'tmpdir'
 
 RSpec.describe Raindown::Workers do
-  subject(:workers) { Raindown::TUI::Project.workers(root: @dir) }
+  subject(:workers) { Raindown::Project.workers(root: @dir) }
 
   around do |example|
     Dir.mktmpdir do |dir|
@@ -85,7 +85,7 @@ RSpec.describe Raindown::Workers do
     notes = File.join(@dir, 'notes.md').tap { File.write(it, "# Notes\n\ntoc:\n:toc\n\n## Added\n") }
     expect(workers.for(notes).call(:outline, notes).directives).to be_empty
 
-    bare = Raindown::TUI::Project.workers(root: @dir, bare: true)
+    bare = Raindown::Project.workers(root: @dir, bare: true)
     expect(bare.for(notes).call(:outline, notes).directives.map(&:name)).to eq(%w[toc])
     bare.for(notes).call(:write_back, notes)
     expect(File.read(notes)).to include('- [Added](#added)')

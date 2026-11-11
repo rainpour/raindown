@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/card'
+require 'raindown/project/card'
 
-RSpec.describe Raindown::TUI::Card do
+RSpec.describe Raindown::Card do
   subject(:card) do
     described_class.new(project: '/docs', path: '/docs/notes.md', line: 3, heading: 'Sales', directive: "chart: '1 2 3'",
                         chart: ['▁▅█'])

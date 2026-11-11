@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'endpoint'
+require_relative '../project/endpoint'
 require_relative 'views/endpoint_view'
 require_relative 'row'
 require_relative '../workers/worker'

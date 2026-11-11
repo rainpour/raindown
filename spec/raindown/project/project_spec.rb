@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/project'
+require 'raindown/project/project'
 require 'fileutils'
 require 'tmpdir'
 
-RSpec.describe Raindown::TUI::Project do
+RSpec.describe Raindown::Project do
   around do |example|
     Dir.mktmpdir do |dir|
       @root = File.realpath(dir)

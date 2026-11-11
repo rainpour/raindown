@@ -47,7 +47,7 @@ SCREENS = {
 }.freeze
 
 open = SCREENS.fetch(ARGV.first.to_s) { abort("Usage: bin/screens #{SCREENS.keys.join(' | ')}") }
-workers = Raindown::TUI::Project.workers(root: ROOT)
+workers = Raindown::Project.workers(root: ROOT)
 begin
   navigator = Raindown::TUI::Navigator.new(root: ROOT, workers:)
   open.call(navigator)
