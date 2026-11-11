@@ -113,7 +113,7 @@ Shape how the Markdown around them renders, like Liquid or Jinja: [variables](#v
 
 #### Content directives
 
-Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [lists](#lists) with `list:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [images](#images) with `image:`, [grids](#grids) with `grid:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they're write-in: they only render into the HTML, taking what's between their tags as input, and write nothing into the file.
+Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [lists](#lists) with `list:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [images](#images) with `image:`, [grids](#grids) with `grid:`, [weather](#weather) with `weather:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they're write-in: they only render into the HTML, taking what's between their tags as input, and write nothing into the file.
 
 ### Raindown files
 
@@ -381,6 +381,21 @@ A new grid is 80 characters wide. Options:
 In the HTML, each row is shown as a grid of its cells, with the same widths as in the text.
 
 Where [bare directives](#directives) work, you can leave out `grid:`. A block that starts with a rule, like `+---+`, is a grid. Rules inside code blocks are left alone.
+
+### Weather
+
+`weather:` writes a project's forecast. In a code project, that's its branches that aren't merged into `main` yet, and the branches made from them. Each line starts with a branch made from `main`, followed by the branches made from it. Branches made later sit further right:
+
+```md
+weather:
+login -> login-tests
+         search -> search-filters
+                 -> search-sort
+```
+
+In a notes project it writes nothing yet. A project's [kind](#config) says which it is.
+
+The [app](https://github.com/rainpour/raindown-app) draws clouds over a valley behind it. `raindown init` adds one to `.raindown/dashboard.md`, which the app shows when you open the project.
 
 ### Outdent
 

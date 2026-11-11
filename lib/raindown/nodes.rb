@@ -4,6 +4,7 @@ require_relative 'chart/chart'
 require_relative 'fragments'
 require_relative 'grid'
 require_relative 'image'
+require_relative 'weather/weather'
 require_relative 'js/js_nodes'
 require_relative 'list'
 require_relative 'markdown_nodes'
@@ -26,10 +27,10 @@ module Raindown
     class NoRender < StandardError; end
 
     FOLDER = '.raindown'
-    # Lowercase directives for Raindown's own nodes. A project's own TOC, List, Chart, Table, Image or Grid node
+    # Lowercase directives for Raindown's own nodes. A project's own TOC, List, Chart, Table, Image, Grid or Weather node
     # replaces Raindown's.
     BUILT_INS = { 'toc' => 'TOC', 'list' => 'List', 'chart' => 'Chart', 'table' => 'Table', 'image' => 'Image',
-                  'grid' => 'Grid' }.freeze
+                  'grid' => 'Grid', 'weather' => 'Weather' }.freeze
     # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers, with its slot's HTML, as a
     # fragment, when it has one.
     PLACEHOLDER = /<!-- raindown:node (\d+)(?: slot (\d+))? -->/
