@@ -84,7 +84,7 @@ module Raindown
 
     def node_directives
       NodeBlocks.spans(@lines, bare: @bare).map do |span|
-        output = trimmed(span[:open] + 1, span[:close] ? span[:close] - 1 : span[:last])
+        output = trimmed(span[:first], span[:close] ? span[:close] - 1 : span[:last])
         directive(span[:name], span[:args], span[:open]..span[:last], output:, writes: span[:writes])
       end
     end

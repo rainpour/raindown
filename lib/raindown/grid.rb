@@ -7,34 +7,36 @@ require_relative 'grid_wrapping'
 module Raindown
   # The node behind grid:, a frame of cells in text, like a page of photos, which editors that draw images in text fill
   # with the image in each cell:
-  #   grid: width: 40
+  #   grid:
   #   +-------------------+------------------+
   #   | ![cat](cat.png)   | ![dog](dog.png)  |
   #   |                   |                  |
   #   +-------------------+------------------+
   # It's written from itself, as it's edited: each | added to a row's line adds a cell to that row, each line added
-  # between its rules makes the row taller, and each row's cells share its width, in characters, equally, a cell's text
-  # wrapping onto the row's next lines. With cell: :fit, a cell whose text needs more grows into the room the others
-  # don't need instead, and widens the grid when there's none.
+  # between its rules makes the row taller, each - added to or taken from a rule widens or narrows the grid, and each
+  # row's cells share its width, in characters, equally, a cell's text wrapping onto the row's next lines. With
+  # cell: :fit, a cell whose text needs more grows into the room the others don't need instead, and widens the grid when
+  # there's none. A new grid, with no rules yet, is 80 wide. With width:, it's always width: wide, and a row whose cells
+  # need more than that, with cell: :fit, shares it equally, its text wrapping.
   class Grid < Node
     RULE = /\A\s*\+[-+]*\+?\s*\z/
     # A reference definition, like [cat]: pictures/cat.png, which an image like ![cat] in a cell takes its path from.
     DEFINITION = /\A {0,3}\[[^\]]+\]:\s*\S/
     NEW_GRID = [Array.new(3) { ['', ''] }].freeze
+    NEW_WIDTH = 80
 
-    def initialize(width: 60, cell: nil)
-      @width = width.to_i
+    def initialize(width: nil, cell: nil)
+      @width = width&.to_i
       @fit = cell.to_s.delete_prefix(':') == 'fit'
       super()
     end
 
     def rewrite(written: [])
       rows = rows_of(written)
-      widths = widths_of(rows)
+      widths = widths_of(rows, written)
       lines = [rule(widths.first)]
       rows.each_with_index do |row, index|
-        row = GridWrapping.wrapped(row, widths[index]) unless @fit
-        row.each { |cells| lines << row_line(cells, widths[index]) }
+        wrapped(row, widths[index]).each { |cells| lines << row_line(cells, widths[index]) }
         lines << rule(widths[index], widths[index + 1])
       end
       lines.join("\n")
@@ -46,7 +48,7 @@ module Raindown
     def render(written: [], document: '')
       definitions = document.lines.grep(DEFINITION).join
       rows = rows_of(written)
-      rows.zip(widths_of(rows)).map { |row, widths| row_html(row, widths, definitions) }.join
+      rows.zip(widths_of(rows, written)).map { |row, widths| row_html(row, widths, definitions) }.join
     end
 
     private
@@ -65,10 +67,21 @@ module Raindown
       inner.split('|', -1).map(&:strip)
     end
 
-    # Each row's cells' widths, inside their borders, as wide as the grid, or as the widest row's cells need.
-    def widths_of(rows)
+    # Its width, from its rules: the one edited to be longer or shorter than the lines left as they were, or as wide as
+    # those lines are, or a new grid's when it has no rules yet. Typing in a cell changes its row's line but never a rule.
+    def width_of(written)
+      lines = written.map(&:strip).reject(&:empty?)
+      rules = lines.grep(RULE).map(&:size)
+      return NEW_WIDTH if rules.empty?
+
+      kept = lines.map { Unicode::DisplayWidth.of(it, emoji: :all) }.tally.max_by(&:last).first
+      rules.find { it != kept } || kept
+    end
+
+    # Each row's cells' widths, inside their borders, as wide as width:, or as the grid, or as the widest row's cells need.
+    def widths_of(rows, written)
       needs = rows.map { needs_of(it) }
-      inner = [@width, *needs.map { it.sum + it.size + 1 }].max
+      inner = @width || [width_of(written), *needs.map { it.sum + it.size + 1 }].max
       needs.map { |row| cell_widths(row, inner - row.size - 1) }
     end
 
@@ -83,14 +96,21 @@ module Raindown
     end
 
     # The widths of a row's cells, inside their borders, sharing its room equally, but for those whose text needs more,
-    # which take what it needs.
+    # which take what it needs, unless all their text needs more than the room.
     def cell_widths(needs, room, grown = [])
       shared = needs.each_index.to_a - grown
       shares = shares_of(shared, room - needs.values_at(*grown).sum)
       more = shared.select { needs[it] > shares[it] }
-      return cell_widths(needs, room, grown + more) if more.any?
+      return cell_widths(needs, room, grown + more) if more.any? && needs.sum <= room
 
       needs.each_index.map { shares[it] || needs[it] }
+    end
+
+    # The row with its cells' text wrapped to their widths, unless they fit it.
+    def wrapped(row, widths)
+      return row if @fit && needs_of(row).zip(widths).all? { |need, width| need <= width }
+
+      GridWrapping.wrapped(row, widths)
     end
 
     # Room shared equally among cells, by their indexes, the first a character wider when it doesn't share evenly.

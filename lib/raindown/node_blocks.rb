@@ -19,7 +19,8 @@ module Raindown
   # A bare :Changelog is write-in: it only renders, with its render, never its rewrite. In Antlers' delimiters, like
   # <{ Changelog }>, it's write-in too, and the template pass renders it, as a WriteInNode, so it's only found here
   # for a document's outline. toc: and list: are Raindown's own nodes. A name only starts a block when it's a loaded
-  # node, so other text like "Note:" is left alone.
+  # node, so other text like "Note:" is left alone. Where bare directives work, a bare grid, a block starting with a
+  # rule like +---+, is a grid: without its directive, which it writes from its first line, its rule.
   module NodeBlocks
     class MissingEndTag < StandardError; end
     class BrokenText < StandardError; end
@@ -31,6 +32,7 @@ module Raindown
     # <{ Card }>, or <{ :Card }>, which a lowercase name like toc needs, as <{ toc }> is a variable.
     SELF_CLOSING = /\A( {0,3})<\{\s*(?::|(?=[A-Z]))(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
     BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
+    BARE_GRID = /\A {0,3}\+-[-+]*\+[ \t]*$/
     # Unquoted text after name:, like YAML's, runs up to the next prop, so title: Hello world limit: 3 has two. A comma
     # before the next prop, like data.csv, total: true, separates them like a space, while one in text, like Hello,
     # world, is part of it.
@@ -43,8 +45,9 @@ module Raindown
 
     module_function
 
-    # Each block outside code and front matter as { open:, close:, last:, writes:, node: }, where close is nil for a
-    # bare block, and writes is whether its output's written into the file. A self-closing node is a block of one line.
+    # Each block outside code and front matter as { open:, first:, close:, last:, writes:, node: }, where first is the
+    # first line it wrote, close is nil for a bare block, and writes is whether its output's written into the file. A
+    # self-closing node is a block of one line.
     def find(lines, front_matter: {}, bare: false)
       with_nodes(spans(lines, bare:), front_matter)
     end
@@ -113,11 +116,11 @@ module Raindown
     end
 
     def rendered_lines(lines, block, context)
-      written = lines[(block[:open] + 1)...(block[:close] || (block[:last] + 1))]
+      written = lines[block[:first]...(block[:close] || (block[:last] + 1))]
       output = node_markdown(block, context, written:).chomp
       close = marker(lines[block[:close]]) if block[:close]
 
-      [marker(lines[block[:open]]), *("#{output}\n".lines unless output.empty?), *close]
+      [*lines[block[:open]...block[:first]].map { marker(it) }, *("#{output}\n".lines unless output.empty?), *close]
     end
 
     # A node that raises shows why in its place, rather than stopping the page. A node that renders its own HTML can take
@@ -135,10 +138,13 @@ module Raindown
     end
 
     def span_at(lines, index, bare:)
+      return bare_grid(lines, index) if bare && lines[index].match?(BARE_GRID)
+
       found, pattern = directive(lines[index], bare:)
       return unless found && (klass = Nodes.node_class(found[2]))
 
-      span = { name: found[2], class: klass, args: found[3].to_s, antlers: %i[open self_closing].include?(pattern) }
+      span = { name: found[2], class: klass, args: found[3].to_s, antlers: %i[open self_closing].include?(pattern),
+               first: index + 1 }
       case pattern
       when :open, :comment_open
         end_tag(lines, index, found[2], comment: pattern == :comment_open)
@@ -159,6 +165,11 @@ module Raindown
       end
 
       nil
+    end
+
+    def bare_grid(lines, index)
+      grid = { name: 'grid', class: Nodes.node_class('grid'), args: '', antlers: false }
+      { **bare_block(lines, index), first: index, writes: true, **grid }
     end
 
     # A bare block holds the lines straight below it, up to the next blank line, with fenced code kept whole.

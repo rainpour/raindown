@@ -16,9 +16,9 @@ RSpec.describe Raindown::NodeBlocks do
   describe '.find' do
     it "finds a block in Antlers' delimiters, which only renders, or in comments, which writes, up to its end tag" do
       expect(find("<{ SpecReleases: limit=2 }>\n\n- old\n\n<{ :SpecReleases }>\n"))
-        .to eq([{ open: 0, close: 4, last: 4, writes: false, node: SpecReleases }])
+        .to eq([{ open: 0, first: 1, close: 4, last: 4, writes: false, node: SpecReleases }])
       expect(find("<!-- SpecReleases: limit=2 -->\n\n- old\n\n<!-- :SpecReleases -->\n"))
-        .to eq([{ open: 0, close: 4, last: 4, writes: true, node: SpecReleases }])
+        .to eq([{ open: 0, first: 1, close: 4, last: 4, writes: true, node: SpecReleases }])
       expect { find("<!-- SpecReleases: -->\n<{ :SpecReleases }>\n") }
         .to raise_error(described_class::MissingEndTag, /line 1 needs <!-- :SpecReleases -->/)
     end
@@ -30,8 +30,9 @@ RSpec.describe Raindown::NodeBlocks do
 
     it 'ends a bare block at the next blank line, with fenced code kept whole' do
       expect(find("SpecReleases: limit=2\n- a\n```\nb\n\nc\n```\n\nText.\n", bare: true))
-        .to eq([{ open: 0, close: nil, last: 6, writes: true, node: SpecReleases }])
-      expect(find("SpecReleases:\n\nText.\n", bare: true)).to eq([{ open: 0, close: nil, last: 0, writes: true, node: SpecReleases }])
+        .to eq([{ open: 0, first: 1, close: nil, last: 6, writes: true, node: SpecReleases }])
+      expect(find("SpecReleases:\n\nText.\n", bare: true))
+        .to eq([{ open: 0, first: 1, close: nil, last: 0, writes: true, node: SpecReleases }])
     end
 
     it 'only reads bare blocks when asked' do

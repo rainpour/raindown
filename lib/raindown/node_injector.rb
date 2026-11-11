@@ -52,7 +52,7 @@ module Raindown
       # the TOC the headings they write.
       context = { document: lines.join, metadata: @metadata, bare: @bare, comment:, written: }
       written = written_lines_of(node_written(block, context))
-      return [line(lines[block[:open]]), *bare(written, block)] unless block[:close]
+      return [*directive(lines, block), *bare(written, block)] unless block[:close]
 
       delimited(lines, block, written)
     end
@@ -72,7 +72,10 @@ module Raindown
 
     # The directive, what the node wrote and the end tag, straight after each other, as a comment on its own line ends
     # at its -->, so what's written below it, like a list, is its own block.
-    def delimited(lines, block, written) = [line(lines[block[:open]]), *written, line(lines[block[:close]])]
+    def delimited(lines, block, written) = [*directive(lines, block), *written, line(lines[block[:close]])]
+
+    # Its directive's line, or none for a bare grid, which has none.
+    def directive(lines, block) = lines[block[:open]...block[:first]].map { line(it) }
 
     # A bare block ends at the next blank line, so what it writes can't have one.
     def bare(written, block)
@@ -100,7 +103,7 @@ module Raindown
 
     # What the block's node wrote last time, between its directive and its end tag, or the next blank line.
     def written_lines(lines, block)
-      lines[(block[:open] + 1)...(block[:close] || (block[:last] + 1))]
+      lines[block[:first]...(block[:close] || (block[:last] + 1))]
     end
 
     def line(line)

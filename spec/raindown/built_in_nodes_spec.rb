@@ -123,6 +123,8 @@ RSpec.describe 'Raindown built-in nodes' do
   end
 
   describe Raindown::Grid do
+    let(:rule) { "+#{'-' * 19}+" }
+
     it 'writes a new grid of two cells, three lines tall' do
       expect(rewrite("grid: width: 21\n", path: 'notes.rd')).to eq(<<~MARKDOWN)
         grid: width: 21
@@ -135,10 +137,10 @@ RSpec.describe 'Raindown built-in nodes' do
     end
 
     it "shares its width, borders and all, equally among a row's cells, adding one for each | added, and keeps the lines added" do
-      written = "grid: width: 21\n+---+\n| a | b | c\n| two\n|\n+---+\n"
+      written = "grid:\n#{rule}\n| a | b | c\n| two\n|\n#{rule}\n"
 
       expect(rewrite(written, path: 'notes.rd')).to eq(<<~MARKDOWN)
-        grid: width: 21
+        grid:
         +------+------+-----+
         | a    | b    | c   |
         | two  |      |     |
@@ -148,13 +150,13 @@ RSpec.describe 'Raindown built-in nodes' do
     end
 
     it "grows a cell whose text needs more into the room the row's other cells don't need, with cell: :fit" do
-      written = "grid: width: 21 cell: :fit\n+---+\n| ![cat](a.png) | b |\n+---+\n"
+      written = "grid: cell: :fit\n#{rule}\n| ![cat](a.png) | b |\n#{rule}\n"
 
       expect(rewrite(written, path: 'notes.rd')).to include("+---------------+---+\n| ![cat](a.png) | b |\n")
     end
 
     it "widens the grid when a row's cells need more than its width, with cell: :fit" do
-      written = "grid: width: 21 cell: :fit\n+---+\n| ![cat](cat.png) | a | b\n+---+\n| c | d |\n+---+\n"
+      written = "grid: cell: :fit\n#{rule}\n| ![cat](cat.png) | a | b\n#{rule}\n| c | d |\n#{rule}\n"
 
       expect(rewrite(written, path: 'notes.rd')).to include(<<~MARKDOWN)
         +-----------------+---+---+
@@ -166,10 +168,10 @@ RSpec.describe 'Raindown built-in nodes' do
     end
 
     it "wraps a cell's text at its spaces onto the row's next lines, taller when it needs more, running a longer word on" do
-      written = "grid: width: 21\n+---+\n| a cat on a mat | ![cat](cat.png) |\n|\n| below |\n+---+\n"
+      written = "grid:\n#{rule}\n| a cat on a mat | ![cat](cat.png) |\n|\n| below |\n#{rule}\n"
 
       expect(rewrite(written, path: 'notes.rd')).to eq(<<~MARKDOWN)
-        grid: width: 21
+        grid:
         +---------+---------+
         | a cat   | ![cat](cat.png)|
         | on a    |         |
@@ -181,35 +183,82 @@ RSpec.describe 'Raindown built-in nodes' do
     end
 
     it "wraps a cell's text again as it's edited, keeping its row's lines" do
-      written = "grid: width: 21\n+---+\n| a     | b |\n| cat on a mat |\n|\n+---+\n"
+      written = "grid:\n#{rule}\n| a     | b |\n| cat on a mat |\n|\n#{rule}\n"
 
       expect(rewrite(written, path: 'notes.rd'))
         .to include("| a cat   | b       |\n| on a    |         |\n| mat     |         |\n|         |         |\n+")
     end
 
     it "keeps the spaces typed between a cell's words as it wraps them" do
-      expect(rewrite("grid: width: 21\n+---+\n| a  cat | b |\n| on |\n+---+\n", path: 'notes.rd')).to include('| a  cat  |')
+      expect(rewrite("grid:\n#{rule}\n| a  cat | b |\n| on |\n#{rule}\n", path: 'notes.rd')).to include('| a  cat  |')
+    end
+
+    it 'starts a new grid 80 characters wide' do
+      expect(rewrite("grid:\n", path: 'notes.rd')).to include("+#{'-' * 39}+#{'-' * 38}+\n")
+    end
+
+    it 'widens or narrows to the rule a - is added to or taken from, whichever row it is between' do
+      row = "|         |         |\n"
+      wider = "grid:\n+---------+----------+\n#{row}+---------+---------+\n| a |\n#{rule}\n"
+      narrower = "grid:\n+---------+---------+\n#{row}+--------+--------+\n| a |\n#{rule}\n"
+
+      expect(rewrite(wider, path: 'notes.rd')).to include("+----------+---------+\n|          |         |\n")
+      expect(rewrite(narrower, path: 'notes.rd')).to include("+--------+--------+\n|        |        |\n")
+    end
+
+    it 'keeps to width: when given, whatever its rules' do
+      expect(rewrite("grid: width: 21\n+---------+----------+\n| a | b |\n#{rule}\n", path: 'notes.rd'))
+        .to include("+---------+---------+\n| a       | b       |\n+---------+---------+")
+    end
+
+    it 'keeps to width: with cell: :fit, a row whose cells need more than it sharing it equally, its text wrapping' do
+      written = "grid: width: 21 cell: :fit\n#{rule}\n| ![cat](a.png) | b |\n#{rule}\n| a cat on a mat | b c d e |\n#{rule}\n"
+
+      expect(rewrite(written, path: 'notes.rd')).to include(<<~MARKDOWN)
+        +---------------+---+
+        | ![cat](a.png) | b |
+        +---------+-----+---+
+        | a cat   | b c d e |
+        | on a    |         |
+        | mat     |         |
+        +---------+---------+
+      MARKDOWN
     end
 
     it 'marks the cells of the rows on both sides of a rule' do
-      written = "grid: width: 13\n+\n| a | b |\n+\n| c | d | e |\n+\n"
+      written = "grid:\n+-----------+\n| a | b |\n+-----------+\n| c | d | e |\n+-----------+\n"
 
       expect(rewrite(written, path: 'notes.rd')).to include("+-----+-----+\n| a   | b   |\n+---+-+-+---+\n| c | d | e |\n+---+---+---+")
     end
 
     it 'pads a wide character by the width it shows' do
-      expect(rewrite("grid: width: 9\n+\n| 🌧️ |\n+\n", path: 'notes.rd')).to include("| 🌧️    |\n")
+      expect(rewrite("grid:\n+-------+\n| 🌧️ |\n+-------+\n", path: 'notes.rd')).to include("| 🌧️    |\n")
+    end
+
+    it 'writes a bare grid, a rule like +---+ without grid: above it, where bare directives work' do
+      written = "Text.\n\n#{rule}\n| a | b | c\n#{rule}\n\n```\n+---+\n```\n"
+
+      grid = "+------+------+-----+\n| a    | b    | c   |\n+------+------+-----+\n"
+      expect(rewrite(written, path: 'notes.rd')).to eq("Text.\n\n#{grid}\n```\n+---+\n```\n")
+      expect(rewrite(written, path: 'notes.md')).to eq(written)
+    end
+
+    it 'renders a bare grid as a grid of its cells, with no directive shown' do
+      html = Raindown.render(markdown: "#{rule}\n| ![cat](cat.png) | b |\n#{rule}\n", bare: true)
+
+      expect(html).to include('<div class="raindown-grid"')
+      expect(html).not_to include('grid:')
     end
 
     it 'renders each row as a grid of its cells' do
-      html = Raindown.render(markdown: "grid: width: 21\n+---+\n| ![cat](cat.png) | b |\n+---+\n", bare: true)
+      html = Raindown.render(markdown: "grid:\n#{rule}\n| ![cat](cat.png) | b |\n#{rule}\n", bare: true)
 
       expect(html).to include('<div class="raindown-grid" style="display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 9fr)">')
       expect(html).to include('<img src="cat.png" alt="cat"')
     end
 
     it "renders a cell's image by reference, from the note's definitions" do
-      markdown = "grid: width: 21\n+---+\n| ![cat] | b |\n+---+\n\n[cat]: pictures/cat.png\n"
+      markdown = "grid:\n#{rule}\n| ![cat] | b |\n#{rule}\n\n[cat]: pictures/cat.png\n"
 
       expect(Raindown.render(markdown:, bare: true)).to include('<img src="pictures/cat.png" alt="cat"')
     end
