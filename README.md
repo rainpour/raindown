@@ -664,7 +664,7 @@ export class Changelog {
 }
 ```
 
-It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content. A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `list:` or `chart:`.
+It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content, and `raindown` is Raindown's [services](#services). A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `list:` or `chart:`.
 
 In the [app](https://github.com/rainpour/raindown-app), a JavaScript Component can paint behind its text, like `weather:`'s valley, with `rasterize`, which the app runs itself, in its page, every frame. It's given the area to paint, from the component's directive down to two lines past its block, as `{ width, height, setPixel, time, textEnds, cell }`: `setPixel(x, y, color)` takes a colour as `0xRRGGBB`, `time` is the time now in milliseconds, for animating, `textEnds` is where the text ends on each row, in pixels across, and `cell` is a character's width and height. The app makes the component from its file's source, with its props, so a change to the file shows the next time the app asks, every few seconds. Like the page's own JavaScript, `rasterize` can't use Node's APIs or import other files:
 
@@ -687,6 +687,34 @@ export class Twinkle {
   }
 }
 ```
+
+#### Services
+
+A component can ask Raindown for things a node often needs, the same from Ruby and JavaScript, wherever it runs: as `raindown:` in a Ruby node's `rewrite` and `render`, like `metadata:`, and as `raindown` in a JavaScript one's context, where each one is async. Paths are from the project's root, and can't leave it:
+
+| Ruby                                                                     | JavaScript                                             | Gives                                                                                                            |
+| ------------------------------------------------------------------------ | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `raindown.fetch(url, 'method' => 'POST', 'headers' => {}, 'body' => '')` | `await raindown.fetch(url, { method, headers, body })` | The response, as `status`, `headers` and its `body` as text, and in JavaScript `json()` too, following redirects |
+| `raindown.read(path)`                                                    | `await raindown.files.read(path)`                      | A file's text                                                                                                    |
+| `raindown.list('notes/*.md')`                                            | `await raindown.files.list('notes/*.md')`              | The project's files that match, all of them without a pattern                                                    |
+| `raindown.write(path, text)`                                             | `await raindown.files.write(path, text)`               | Writes a file, and the folders it's in                                                                           |
+| `raindown.cache_get(key)`                                                | `await raindown.cache.get(key)`                        | A value kept for the project, or `nil` or `null`                                                                 |
+| `raindown.cache_set(key, value, seconds)`                                | `await raindown.cache.set(key, value, { seconds })`    | Keeps a value JSON can hold, for so many seconds, or until it's kept again                                       |
+| `raindown.git('branch', '--list')`                                       | `await raindown.git('branch', '--list')`               | What git writes, run in the project, where there's git                                                           |
+
+```js
+// .raindown/word_count.mjs
+export class WordCount {
+  async rewrite({ raindown }) {
+    const notes = await raindown.files.list("**/*.md")
+    let words = 0
+    for (const note of notes) words += (await raindown.files.read(note)).split(/\s+/).length
+    return `${words} words in ${notes.length} notes`
+  }
+}
+```
+
+A service that fails, or that a platform hasn't got, like git on a phone, raises a `Raindown::Services::Error` in Ruby, and rejects in JavaScript. Each one is a name and arguments JSON can hold, so an app that runs components itself answers them its own way: the desktop app's page asks its server.
 
 #### Markdown Components
 

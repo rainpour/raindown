@@ -5,43 +5,67 @@ require 'open3'
 
 require_relative '../node'
 require_relative '../scene'
+require_relative '../services'
 
 module Raindown
   # JavaScript Components, the .js and .mjs files in a project's .raindown folder, which export classes with rewrite and
   # optionally render, like Ruby nodes. They run in a NodeJS process of Raindown's own, started when a folder has them,
-  # so only projects with JavaScript Components need NodeJS.
+  # so only projects with JavaScript Components need NodeJS, or in a host of an app's own, like its page. Wherever they
+  # run, they get Raindown's services as raindown in their context.
   module JSNodes
     EXTENSIONS = %w[.js .mjs].freeze
-    SCRIPT = File.join(__dir__, 'host.mjs')
+    # Raindown's services for JavaScript nodes, which every host runs before its own script, like an app's page.
+    SERVICES = File.join(__dir__, 'services.js')
+    SCRIPTS = [SERVICES, File.join(__dir__, 'host.mjs')].freeze
 
     class Error < StandardError; end
 
-    # The NodeJS process running the nodes, which answers each request with a line of JSON. NodeJS can't read the script
-    # inside Raindown's package, so it's passed to node -e.
+    # The NodeJS process running the nodes, which answers each request with a line of JSON. A node asking for a service
+    # meanwhile sends a line of { service, root, args, asked }, which is answered with { answer, value } or
+    # { answer, error }, before the request's answer. NodeJS can't read the script inside Raindown's package, so it's
+    # passed to node -e.
     class Host
       def initialize
-        @input, @output, = Open3.popen2('node', '--input-type=module', '-e', File.read(SCRIPT))
+        @input, @output, = Open3.popen2('node', '--input-type=module', '-e', SCRIPTS.map { File.read(it) }.join("\n"))
       rescue Errno::ENOENT
         raise Error, 'JavaScript Components need NodeJS 22 or later on your PATH'
       end
 
       def request(**message)
         @input.puts(JSON.generate(message))
-        reply = JSON.parse(@output.gets || raise(Error, 'NodeJS stopped running the JavaScript Components'))
+        reply = answered_services
         raise Error, reply['error'] if reply['error']
 
         reply
       end
+
+      private
+
+      # The request's reply, after answering the services its node asks for.
+      def answered_services
+        loop do
+          line = JSON.parse(@output.gets || raise(Error, 'NodeJS stopped running the JavaScript Components'))
+          return line unless line.key?('service')
+
+          @input.puts(JSON.generate(service_answer(line)))
+        end
+      end
+
+      def service_answer(asked)
+        { answer: asked['asked'], value: Services.at(asked['root']).call(asked['service'], asked['args']) }
+      rescue Services::Error, SystemCallError => e
+        { answer: asked['asked'], error: e.message }
+      end
     end
 
     class << self
-      # A host in place of NodeJS, answering the same requests, like the Obsidian plugin's worker, which runs them itself.
+      # A host of an app's own, answering the same requests, like the Obsidian plugin's worker or the desktop app's page.
       attr_writer :host
     end
 
     module_function
 
-    # Loads the JavaScript Components in a .raindown folder, starting NodeJS the first time a folder has any.
+    # Loads the JavaScript Components in a .raindown folder, starting their host the first time a folder has any.
     def load(folder)
       return if Dir.glob(EXTENSIONS.map { "*#{it}" }, base: folder).empty?
 
@@ -69,7 +93,7 @@ module Raindown
     end
   end
 
-  # A JavaScript Component, made in the NodeJS process with its props, where its rewrite and render are sent.
+  # A JavaScript Component, made in its host with its props, where its rewrite and render are sent.
   class JSNode < Node
     # A class for each JavaScript Component, from its file, which renders its own HTML when the component has render,
     # and rasterizes when it has rasterize.
@@ -101,14 +125,17 @@ module Raindown
       Scene.new(name: 'node', data: { node: self.class.name, source: File.read(self.class.file), args: @args, props: @props })
     end
 
+    # Its output, with the project's root for its services, which its host gives it as raindown.
     def js_output(method, context)
-      JSNodes.host.request(op: 'call', id: object_id, method:, context: json_context(**context)).fetch('value').to_s
+      root = Services.for(context[:metadata]).root
+      JSNodes.host.request(op: 'call', id: object_id, method:, root:, context: json_context(**context)).fetch('value').to_s
     end
 
-    # JSON can't hold Pages, so the metadata is its root and each file's front matter and path.
+    # JSON can't hold Pages, so the metadata is its root and each file's front matter and path, nor the services, which
+    # its host makes again.
     def json_context(metadata: NoMetadata, **context)
       root = metadata.root if metadata.respond_to?(:root)
-      { **context, metadata: { root:, files: metadata.list.map(&:metadata) } }
+      { **context.except(:raindown), metadata: { root:, files: metadata.list.map(&:metadata) } }
     end
   end
 end

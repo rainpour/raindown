@@ -92,8 +92,10 @@ module Raindown
       klass < Node || (defined?(::LowNode) && klass < ::LowNode) || false
     end
 
-    # Calls a node's rewrite or render with the context keywords it takes.
+    # Calls a node's rewrite or render with the context keywords it takes, raindown: being Raindown's services for its
+    # project.
     def call(node, name, **context)
+      context = { raindown: Services.for(context[:metadata]), **context }
       parameters = node.method(name).parameters
       return node.public_send(name, **context) if parameters.any? { |type, _| type == :keyrest }
 
