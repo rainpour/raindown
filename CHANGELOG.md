@@ -13,6 +13,19 @@ Minor features that don't break backwards compatibility are released as patches.
 - `grid:` writes a frame of equal cells, written again from itself as you edit it, which can hold images by reference
 - A grid's cells wrap their text onto their row's next lines, keeping the spaces typed between words, or fit to it with `cell: :fit`
 - A grid's width comes from its rules unless `width:` keeps it, and a block starting with a rule, like `+---+`, is a bare grid where bare directives work
+- Raindown's own directives work in a grid's cells, writing their output into the cell's lines below them
+- `weather:` writes a week's forecast from Open-Meteo, a card a day, where you are or in a place you name, and in a code project draws the branches not merged into main
+- `world:` writes a map of the world, with the night where it is now, which the app paints with the cities' lights
+- `painting:` writes a different painting from the Rijksmuseum each day, which the app shows in a gilded frame
+- A node can rasterize what an app shows behind its text, as a scene the app paints or a raster of pixels, and so can a JavaScript Component
+- Raindown's services, the web, a project's files, a cache and git, for Ruby nodes as `raindown:` and JavaScript Components as `raindown`, which an app can answer itself with `Services.host=`
+- A rule of `^` above a block takes it to the page's top and left edges, with a `<` before each line
+- `kind: code` or `kind: notes` in a project's `config.yml` says what it's for
+
+### Changed
+
+- JavaScript Components run in QuickJS, inside Raindown, so they no longer need Node.js, and can import their own files by their paths
+- Raindown starts faster, loading its own directives, and libraries like `uri` and unicode-display_width, the first time they're used
 
 ### Fixed
 
