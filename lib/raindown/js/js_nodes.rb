@@ -6,12 +6,13 @@ require 'open3'
 require_relative '../node'
 require_relative '../scene'
 require_relative '../services'
+require_relative 'quickjs_host'
 
 module Raindown
   # JavaScript Components, the .js and .mjs files in a project's .raindown folder, which export classes with rewrite and
-  # optionally render, like Ruby nodes. They run in a NodeJS process of Raindown's own, started when a folder has them,
-  # so only projects with JavaScript Components need NodeJS, or in a host of an app's own, like its page. Wherever they
-  # run, they get Raindown's services as raindown in their context.
+  # optionally render, like Ruby nodes. They run in QuickJS, inside Raindown, so they need nothing installed, or in a
+  # NodeJS process of Raindown's own with RAINDOWN_JS=node, for Node's APIs, or in a host of an app's own, like its page.
+  # Wherever they run, they get Raindown's services as raindown in their context.
   module JSNodes
     EXTENSIONS = %w[.js .mjs].freeze
     # Raindown's services for JavaScript nodes, which every host runs before its own script, like an app's page.
@@ -28,7 +29,7 @@ module Raindown
       def initialize
         @input, @output, = Open3.popen2('node', '--input-type=module', '-e', SCRIPTS.map { File.read(it) }.join("\n"))
       rescue Errno::ENOENT
-        raise Error, 'JavaScript Components need NodeJS 22 or later on your PATH'
+        raise Error, 'JavaScript Components with RAINDOWN_JS=node need NodeJS 22 or later on your PATH'
       end
 
       def request(**message)
@@ -85,7 +86,14 @@ module Raindown
     end
 
     def host
-      @host ||= Host.new
+      @host ||= default_host
+    end
+
+    # QuickJS, or NodeJS with RAINDOWN_JS=node.
+    def default_host
+      return Host.new if ENV['RAINDOWN_JS'] == 'node'
+
+      QuickJSHost.new
     end
 
     def node_classes

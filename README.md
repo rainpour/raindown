@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -234 ▐████████████│█████████████████▋ +333
-───────────────────────────────────────────────────
-7f4467c  -232 ▕████████████│████████████       +226
-b089904    -0              │██▏                 +41
-2151cb0    -2             ▕│▉                   +17
-dcf28b0    -0              │█                   +18
-c4569c9    -0              │█▋                  +31
+Total    -61 ▐█│████████████████████████████▍ +1,084
+────────────────────────────────────────────────────
+19450d8   -4  ▕│▊                                +28
+ec0b22e   -7  ▕│██▍                              +92
+cea4d12   -2  ▕│█████▉                          +222
+de32227   -2  ▕│█▎                               +49
+436f54b  -46 ▕█│██████████████████▏             +693
 ```
 <!-- :Commits -->
 
@@ -664,7 +664,9 @@ export class Changelog {
 }
 ```
 
-It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content, and `raindown` is Raindown's [services](#services). A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `list:` or `chart:`.
+It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content, and `raindown` is Raindown's [services](#services). A Ruby node of the same name is used instead. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `list:` or `chart:`.
+
+Raindown runs JavaScript Components itself, in [QuickJS](https://bellard.org/quickjs/), so there's nothing to install. A component's file can import others by their paths from it, like `../lib/release.mjs`, and has `setTimeout`, `URL`, `TextEncoder` and `TextDecoder`, but not Node's APIs, like `fs`. For the web, the project's files, a cache and git, it has Raindown's [services](#services), which work the same in the terminal and in the [app](https://github.com/rainpour/raindown-app)'s page. What it logs goes to stderr. To use Node's APIs, run Raindown with `RAINDOWN_JS=node`, which runs them in [Node.js](https://nodejs.org) 22 or later from your `PATH` instead, in one process of its own.
 
 In the [app](https://github.com/rainpour/raindown-app), a JavaScript Component can paint behind its text, like `weather:`'s valley, with `rasterize`, which the app runs itself, in its page, every frame. It's given the area to paint, from the component's directive down to two lines past its block, as `{ width, height, setPixel, time, textEnds, cell }`: `setPixel(x, y, color)` takes a colour as `0xRRGGBB`, `time` is the time now in milliseconds, for animating, `textEnds` is where the text ends on each row, in pixels across, and `cell` is a character's width and height. The app makes the component from its file's source, with its props, so a change to the file shows the next time the app asks, every few seconds. Like the page's own JavaScript, `rasterize` can't use Node's APIs or import other files:
 

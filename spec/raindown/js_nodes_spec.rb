@@ -5,8 +5,6 @@ require 'raindown/node_injector'
 require 'tmpdir'
 
 RSpec.describe Raindown::JSNodes do
-  before { skip 'needs Node.js' unless system('node', '-v', out: File::NULL, err: File::NULL) }
-
   def project(files)
     dir = Dir.mktmpdir
     FileUtils.mkdir_p(File.join(dir, '.raindown'))
@@ -53,5 +51,50 @@ RSpec.describe Raindown::JSNodes do
 
     expect(Raindown::NodeInjector.rewrite(content: "<!-- SpecJsBroken: -->\n<!-- :SpecJsBroken -->\n"))
       .to include("> Couldn't write: Broken\n")
+  end
+
+  it "imports other files by their paths from the node's" do
+    dir = Dir.mktmpdir
+    FileUtils.mkdir_p(File.join(dir, 'lib'))
+    File.write(File.join(dir, 'lib', 'shout.mjs'), "export const shout = (text) => `${text.toUpperCase()}!`\n")
+    project_in(dir, 'spec_js_shout.mjs' => <<~JS)
+      import { shout } from '../lib/shout.mjs'
+      export class SpecJsShout { rewrite() { return shout('hi') } }
+    JS
+
+    expect(Raindown::NodeInjector.rewrite(content: "<!-- SpecJsShout: -->\n<!-- :SpecJsShout -->\n")).to include("HI!\n")
+  end
+
+  context "with Raindown's services" do
+    it "reads its project's files, and keeps values in the cache, as raindown" do
+      Dir.mktmpdir do |cache|
+        stub_const('ENV', ENV.to_h.merge('XDG_CACHE_HOME' => cache))
+        dir = project('spec_js_services.mjs' => <<~JS)
+          export class SpecJsServices {
+            async rewrite({ raindown }) {
+              await raindown.cache.set('seen', { times: 2 }, { seconds: 60 })
+              const kept = await raindown.cache.get('seen')
+              const files = await raindown.files.list('*.txt')
+              const text = await raindown.files.read(files[0])
+              let outside
+              try { await raindown.files.read('../secret') } catch (error) { outside = error.message }
+              return [text.trim(), kept.times, outside].join(' · ')
+            }
+          }
+        JS
+        File.write(File.join(dir, 'hello.txt'), "hello\n")
+        metadata = Raindown::Pages.for(File.join(dir, 'notes.rd'))
+
+        expect(Raindown::NodeInjector.rewrite(content: "<!-- SpecJsServices: -->\n<!-- :SpecJsServices -->\n", metadata:))
+          .to include("hello · 2 · ../secret is outside the project\n")
+      end
+    end
+  end
+
+  def project_in(dir, files)
+    FileUtils.mkdir_p(File.join(dir, '.raindown'))
+    files.each { |name, source| File.write(File.join(dir, '.raindown', name), source) }
+    Raindown::Nodes.load(File.join(dir, 'notes.rd'))
+    dir
   end
 end
