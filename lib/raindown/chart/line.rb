@@ -63,7 +63,7 @@ module Raindown
         from + ((to - from) * step.to_f / steps).round
       end
 
-      def plot(x, y) # rubocop:disable Naming/MethodParameterName -- a dot's coordinates
+      def plot(x, y)
         @cells[y / 4][x / 2] |= DOTS[y % 4][x % 2]
       end
 

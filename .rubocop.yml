@@ -40,3 +40,7 @@ Style/RedundantArrayConstructor:
 
 Metrics/ModuleLength:
   Max: 150
+
+# RuboCop's own short names, and x and y for pixels.
+Naming/MethodParameterName:
+  AllowedNames: [as, at, by, cc, db, id, if, in, io, ip, of, on, os, pp, to, x, y]

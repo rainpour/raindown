@@ -21,11 +21,24 @@ module Raindown
 
     Commit = Data.define(:time, :parents)
 
+    # A branch as it's written: its name, how deep it is off main, and its own commits.
+    Branch = Data.define(:name, :depth, :commits) do
+      def arrow = depth.zero? ? '' : ARROW
+      def indent = INDENT * depth
+      def count = "#{commits} #{commits == 1 ? 'commit' : 'commits'}"
+      def to_s = "#{' ' * indent}#{arrow}#{name} · #{count}"
+    end
+
     def initialize(root)
       @root = root
     end
 
     def lines
+      branches.map(&:to_s)
+    end
+
+    # Each branch in the order it's written: a branch off main, then the branches off it.
+    def branches
       return [] unless main
 
       @tips = unmerged_tips
@@ -34,7 +47,7 @@ module Raindown
       @commits = commits_off_main
       @reach = @tips.to_h { |name, tip| [name, reachable(tip)] }
       @parents = @tips.keys.to_h { [it, parent_of(it)] }
-      draw
+      children_of(nil).flat_map { branches_from(it, 0) }
     end
 
     private
@@ -101,20 +114,11 @@ module Raindown
 
     # Each branch off main starts a line further right than the one made before it, and its first branch carries on
     # its line, while its other branches start lines below, their arrows under its first's.
-    def draw
-      children_of(nil).flat_map { branch_lines(it, 0) }
-    end
-
-    # The branch's line and its branches', indented under it.
-    def branch_lines(name, column, arrow = '')
-      ["#{' ' * column}#{arrow}#{label(name)}", *children_of(name).flat_map { branch_lines(it, column + INDENT, ARROW) }]
-    end
-
-    # The branch with its own commits, those its parent doesn't have, like "login · 4 commits".
-    def label(name)
+    # The branch and the branches off it, a level deeper, with its own commits, those its parent doesn't have.
+    def branches_from(name, depth)
       parent = @parents[name]
-      count = (@reach[name] - (parent ? @reach[parent] : Set.new)).size
-      "#{name} · #{count} #{count == 1 ? 'commit' : 'commits'}"
+      commits = (@reach[name] - (parent ? @reach[parent] : Set.new)).size
+      [Branch.new(name:, depth:, commits:), *children_of(name).flat_map { branches_from(it, depth + 1) }]
     end
 
     def git(*args)

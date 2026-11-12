@@ -397,7 +397,7 @@ search · 6 commits
 
 In a notes project it writes nothing yet. A project's [kind](#config) says which it is.
 
-The [app](https://github.com/rainpour/raindown-app) draws clouds over a valley behind it. `raindown init` adds one to `.raindown/dashboard.md`, which the app shows when you open the project.
+In the [app](https://github.com/rainpour/raindown-app), its `rasterize` shows a valley behind it: sunny by day, or misty mountains under the stars by night, with a constellation for each branch, a star for each commit. `raindown init` adds one to `.raindown/dashboard.md`, which the app shows when you open the project.
 
 ### Outdent
 

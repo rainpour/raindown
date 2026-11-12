@@ -9,6 +9,7 @@ require_relative '../node_blocks'
 require_relative '../nodes'
 require_relative '../pages/pages'
 require_relative '../projects'
+require_relative '../rasters'
 require_relative '../workers/workers'
 require_relative '../stat'
 require_relative 'card'
@@ -74,6 +75,12 @@ module Raindown
       rescue StandardError
         []
       end
+    end
+
+    # The pixels of the node on a line of a file that rasterizes, like weather:, and the characters of its lines to dim,
+    # as { raster:, quiet: }, with its options, like width: and height:.
+    def rasterize(path, line, **options)
+      Rasters.rasterize(path:, line:, **options)
     end
 
     def write_back(path)
