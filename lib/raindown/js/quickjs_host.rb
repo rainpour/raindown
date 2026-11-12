@@ -4,8 +4,8 @@ require 'json'
 
 module Raindown
   module JSNodes
-    # JavaScript Components run in QuickJS, inside Raindown's own process, so they need nothing installed, answering the
-    # same requests as NodeJS. Like a page, it has no Node APIs, but a node's file can import others by their paths
+    # JavaScript Components run in QuickJS, inside Raindown's own process, so they need nothing installed, answering
+    # JSNodes' requests. Like a page, it has no Node APIs, but a node's file can import others by their paths
     # from it, like '../lib/release.mjs', and has setTimeout, URL and TextEncoder, and Raindown's services. What it
     # logs goes to stderr.
     class QuickJSHost

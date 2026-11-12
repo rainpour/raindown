@@ -22,7 +22,7 @@ RSpec.describe Raindown::Rasters do
   end
 
   context 'with a JavaScript Component that rasterizes' do
-    # A host answering as NodeJS would, with the component the folder's file has.
+    # A host answering as QuickJS would, with the component the folder's file has.
     let(:host) do
       Class.new do
         def request(**message)

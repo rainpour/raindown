@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'open3'
 
 require_relative '../node'
 require_relative '../scene'
@@ -10,53 +9,18 @@ require_relative '../services'
 module Raindown
   # JavaScript Components, the .js and .mjs files in a project's .raindown folder, which export classes with rewrite and
   # optionally render, like Ruby nodes. They run in QuickJS, inside Raindown, so they need nothing installed, or in a
-  # NodeJS process of Raindown's own with RAINDOWN_JS=node, for Node's APIs, or in a host of an app's own, like its page.
-  # Wherever they run, they get Raindown's services as raindown in their context.
+  # host of an app's own, like its page. Wherever they run, they get Raindown's services as raindown in their context.
+  # A host answers requests, which JSON can hold, with request(**message):
+  #   { op: 'load', folder }                     → { nodes: [{ name, render, rasterize, file }] }
+  #   { op: 'new', id, name, args, props }       → {}
+  #   { op: 'call', id, method, context, root }  → { value }
+  # and raises an Error for a request that fails.
   module JSNodes
     EXTENSIONS = %w[.js .mjs].freeze
     # Raindown's services for JavaScript nodes, which every host runs before its own script, like an app's page.
     SERVICES = File.join(__dir__, 'services.js')
-    SCRIPTS = [SERVICES, File.join(__dir__, 'host.mjs')].freeze
 
     class Error < StandardError; end
-
-    # The NodeJS process running the nodes, which answers each request with a line of JSON. A node asking for a service
-    # meanwhile sends a line of { service, root, args, asked }, which is answered with { answer, value } or
-    # { answer, error }, before the request's answer. NodeJS can't read the script inside Raindown's package, so it's
-    # passed to node -e.
-    class Host
-      def initialize
-        @input, @output, = Open3.popen2('node', '--input-type=module', '-e', SCRIPTS.map { File.read(it) }.join("\n"))
-      rescue Errno::ENOENT
-        raise Error, 'JavaScript Components with RAINDOWN_JS=node need NodeJS 22 or later on your PATH'
-      end
-
-      def request(**message)
-        @input.puts(JSON.generate(message))
-        reply = answered_services
-        raise Error, reply['error'] if reply['error']
-
-        reply
-      end
-
-      private
-
-      # The request's reply, after answering the services its node asks for.
-      def answered_services
-        loop do
-          line = JSON.parse(@output.gets || raise(Error, 'NodeJS stopped running the JavaScript Components'))
-          return line unless line.key?('service')
-
-          @input.puts(JSON.generate(service_answer(line)))
-        end
-      end
-
-      def service_answer(asked)
-        { answer: asked['asked'], value: Services.at(asked['root']).call(asked['service'], asked['args']) }
-      rescue Services::Error, SystemCallError => e
-        { answer: asked['asked'], error: e.message }
-      end
-    end
 
     class << self
       # A host of an app's own, answering the same requests, like the Obsidian plugin's worker or the desktop app's page.
@@ -84,17 +48,13 @@ module Raindown
       node_classes.select { |_, node| node.method_defined?(:rasterize) && File.dirname(node.file) == folder }.keys
     end
 
+    # QuickJS, unless an app gives its own. QuickJS is native, so it's only loaded here, not where an app gives its
+    # own host, like WebAssembly in the Obsidian plugin.
     def host
-      @host ||= default_host
-    end
-
-    # QuickJS, or NodeJS with RAINDOWN_JS=node. QuickJS is native, so it's only loaded here, not where an app gives
-    # its own host, like WebAssembly in the Obsidian plugin.
-    def default_host
-      return Host.new if ENV['RAINDOWN_JS'] == 'node'
-
-      require_relative 'quickjs_host'
-      QuickJSHost.new
+      @host ||= begin
+        require_relative 'quickjs_host'
+        QuickJSHost.new
+      end
     end
 
     def node_classes
