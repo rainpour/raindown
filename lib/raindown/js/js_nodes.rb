@@ -49,12 +49,14 @@ module Raindown
     end
 
     # QuickJS, unless an app gives its own. QuickJS is native, so it's only loaded here, not where an app gives its
-    # own host, like WebAssembly in the Obsidian plugin.
+    # own host, like WebAssembly in the Obsidian plugin, and isn't installed on Windows, where it doesn't build.
     def host
       @host ||= begin
         require_relative 'quickjs_host'
         QuickJSHost.new
       end
+    rescue LoadError
+      raise Error, "JavaScript Components need the quickjs gem, which doesn't build on Windows"
     end
 
     def node_classes

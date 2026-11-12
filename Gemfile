@@ -5,6 +5,10 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in dependency.gemspec
 gemspec
 
+# QuickJS, which runs JavaScript Components, but whose native extension doesn't build on Windows, so it's left out
+# there, where they can't run.
+gem 'quickjs', '~> 0.22', platforms: :ruby
+
 group :development do
   local_gems = {
     'dirload' => '../dirload',
