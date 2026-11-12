@@ -1,5 +1,13 @@
 # TODO
 
+## Shift_JIS CSVs, and the Obsidian plugin's transcoders
+
+Raindown reads tables' CSVs and charts' data as UTF-8 (`encoding: 'bom|utf-8'` in `table/table_file.rb` and `chart/points.rb`), so a CSV from Japanese Excel, which saves Shift_JIS by default, comes out garbled or fails, in the CLI, the app and Obsidian alike. Japanese, Chinese and Korean text in UTF-8 works everywhere, as Obsidian always saves UTF-8.
+
+**Read Shift_JIS CSVs.** When a data file isn't valid UTF-8, try reading it as Shift_JIS, then EUC-JP, and convert it to UTF-8, writing an edited table back in the file's own encoding. That needs Ruby's Japanese transcoders.
+
+**Trim the plugin's transcoders.** Ruby's transcoders, which convert legacy character sets to UTF-8, are 2.72 MB of the plugin's ruby.wasm, nearly all tables, and Raindown only uses `utf_16_32`, `single_byte`, `escape` and `newline`, with `transdb`. Building ruby.wasm without the rest saves 0.64 MB of `main.js` (0.48 MB with xz), about 17%. Keeping `japanese_sjis` and `japanese_euc`, for Shift_JIS CSVs above, saves about 0.5 MB. rbwasm can't leave transcoders out, so `scripts/ruby_wasm.rb` would pass `rbwasm build --patch` a patch to Ruby 3.4.1's list of them, to check on each ruby.wasm update. A vault's own Ruby node converting from a legacy encoding, like `text.encode('UTF-8', 'Big5')`, would then fail in Obsidian only.
+
 ## Endpoint response freshness
 
 A response only refreshes when its code block is emptied, so once written it stays, and a year-old response looks the same as one fetched today. Readers, and agents especially, can't tell whether an example still holds. Responses now record the date they were fetched (`<!-- raindown:fetched 2026-10-14 -->`), but nothing checks they still match.
