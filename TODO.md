@@ -1,12 +1,16 @@
 # TODO
 
-## Shift_JIS CSVs, and the Obsidian plugin's transcoders
+## Starting the Obsidian plugin faster
+
+The plugin's `main.js` carries ruby.wasm's module compressed with gzip by zopfli, in Z85, which the browser decompresses itself while compiling it, ready in about 120 ms in CI's smoke test. Starting Ruby takes about 100 ms, and loading Raindown, from its bytecode, about 250 ms, the most of starting. The smoke test prints each step's time, and Obsidian's console shows it as `Raindown started`.
+
+**Load Raindown faster.** Loading each directive's code when a note first uses it, rather than at start, would cut it, and the CLI's start too. Profile which files take the time first. Snapshotting Ruby with Raindown loaded at build time, with Wizer, would skip starting Ruby and loading Raindown both, but the js extension, Asyncify and WASI's preopened folders may not survive a snapshot.
+
+## Shift_JIS CSVs from Japanese Excel
 
 Raindown reads tables' CSVs and charts' data as UTF-8 (`encoding: 'bom|utf-8'` in `table/table_file.rb` and `chart/points.rb`), so a CSV from Japanese Excel, which saves Shift_JIS by default, comes out garbled or fails, in the CLI, the app and Obsidian alike. Japanese, Chinese and Korean text in UTF-8 works everywhere, as Obsidian always saves UTF-8.
 
-**Read Shift_JIS CSVs.** When a data file isn't valid UTF-8, try reading it as Shift_JIS, then EUC-JP, and convert it to UTF-8, writing an edited table back in the file's own encoding. That needs Ruby's Japanese transcoders.
-
-**Trim the plugin's transcoders.** Ruby's transcoders, which convert legacy character sets to UTF-8, are 2.72 MB of the plugin's ruby.wasm, nearly all tables, and Raindown only uses `utf_16_32`, `single_byte`, `escape` and `newline`, with `transdb`. Building ruby.wasm without the rest saves 0.64 MB of `main.js` (0.48 MB with xz), about 17%. Keeping `japanese_sjis` and `japanese_euc`, for Shift_JIS CSVs above, saves about 0.5 MB. rbwasm can't leave transcoders out, so `scripts/ruby_wasm.rb` would pass `rbwasm build --patch` a patch to Ruby 3.4.1's list of them, to check on each ruby.wasm update. A vault's own Ruby node converting from a legacy encoding, like `text.encode('UTF-8', 'Big5')`, would then fail in Obsidian only.
+**Read Shift_JIS CSVs.** When a data file isn't valid UTF-8, try reading it as Shift_JIS, then EUC-JP, and convert it to UTF-8, writing an edited table back in the file's own encoding. That needs Ruby's Japanese transcoders, which the Obsidian plugin's ruby.wasm leaves out, with the Chinese and Korean ones, as 2.6 MB of tables (`TRANSCODERS_LEFT_OUT` in its `scripts/ruby_wasm.rb`). Taking `japanese`, `japanese_sjis`, `japanese_euc` and `iso2022` off that list adds them back, for about 0.4 MB of `main.js`.
 
 ## Endpoint response freshness
 
