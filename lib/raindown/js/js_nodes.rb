@@ -6,7 +6,6 @@ require 'open3'
 require_relative '../node'
 require_relative '../scene'
 require_relative '../services'
-require_relative 'quickjs_host'
 
 module Raindown
   # JavaScript Components, the .js and .mjs files in a project's .raindown folder, which export classes with rewrite and
@@ -89,10 +88,12 @@ module Raindown
       @host ||= default_host
     end
 
-    # QuickJS, or NodeJS with RAINDOWN_JS=node.
+    # QuickJS, or NodeJS with RAINDOWN_JS=node. QuickJS is native, so it's only loaded here, not where an app gives
+    # its own host, like WebAssembly in the Obsidian plugin.
     def default_host
       return Host.new if ENV['RAINDOWN_JS'] == 'node'
 
+      require_relative 'quickjs_host'
       QuickJSHost.new
     end
 

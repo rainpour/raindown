@@ -716,7 +716,7 @@ export class WordCount {
 }
 ```
 
-A service that fails, or that a platform hasn't got, like git on a phone, raises a `Raindown::Services::Error` in Ruby, and rejects in JavaScript. Each one is a name and arguments JSON can hold, so an app that runs components itself answers them its own way: the desktop app's page asks its server.
+A service that fails, or that a platform hasn't got, like git on a phone, raises a `Raindown::Services::Error` in Ruby, and rejects in JavaScript. Each one is a name and arguments JSON can hold, so an app that runs components itself answers them its own way, by giving `Raindown::Services.host` its own `call(root, name, args)`: the desktop app's page asks its server, and the Obsidian plugin answers them in its worker, from its copy of the vault, with Obsidian fetching, and no git.
 
 #### Markdown Components
 
@@ -786,7 +786,7 @@ The [VS Code extension](vscode/) highlights syntax and previews Raindown files w
 
 ### Obsidian
 
-The [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) writes back to your notes as you type, like `raindown watch`. So tables of contents, components and `list:` fill in as you write, in plain Markdown that reads the same outside Obsidian. Raindown runs inside the plugin, in Ruby compiled to WebAssembly, so there's nothing else to install, on desktop or mobile. Endpoints only run from its **Run the endpoints in this note** command, and are sent by Obsidian rather than curl, which refuses link-local addresses but follows redirects. JavaScript components run inside the plugin too, rather than Node.js, so they can't import other files or use Node's APIs. Reading view shows `<{ }>` as Raindown renders it, in Markdown, which Obsidian renders.
+The [Obsidian plugin](https://github.com/rainpour/raindown-obsidian) writes back to your notes as you type, like `raindown watch`. So tables of contents, components and `list:` fill in as you write, in plain Markdown that reads the same outside Obsidian. Raindown runs inside the plugin, in Ruby compiled to WebAssembly, so there's nothing else to install, on desktop or mobile. Endpoints only run from its **Run the endpoints in this note** command, and are sent by Obsidian rather than curl, which refuses link-local addresses but follows redirects. JavaScript components run inside the plugin too, so they can't import other files, but they have Raindown's [services](#services). Reading view shows `<{ }>` as Raindown renders it, in Markdown, which Obsidian renders.
 
 ### Editor server
 

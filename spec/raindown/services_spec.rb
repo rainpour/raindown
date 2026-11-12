@@ -2,6 +2,7 @@
 
 require 'raindown'
 require 'raindown/node_injector'
+require 'raindown/services/local'
 require 'tmpdir'
 
 RSpec.describe Raindown::Services do
@@ -52,6 +53,15 @@ RSpec.describe Raindown::Services do
 
     expect(services.call('read', ['a.txt'])).to eq('A')
     expect { services.call('instance_eval', ['1']) }.to raise_error(described_class::Error, /no instance_eval service/)
+  end
+
+  it "asks an app's own host, when it has one" do
+    host = ->(root, name, args) { [root, name, args] }
+    described_class.host = host
+
+    expect(services.read('a.md')).to eq([services.root, 'read', ['a.md']])
+  ensure
+    described_class.host = nil
   end
 
   it 'is given to a Ruby node that takes raindown:, for its project' do
