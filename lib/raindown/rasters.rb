@@ -22,15 +22,22 @@ module Raindown
     end
 
     # What the node whose directive's on the line, counted from 0, in the file shows behind its text, a Scene or a
-    # Raster, for an app, and the characters of its lines to dim, as { painting:, quiet: }, with options like width:
-    # and height: for its rasterize.
+    # Raster, for an app, and the characters of its lines to dim, to embolden and to draw as large as a line is tall,
+    # as { painting:, quiet:, bold:, large: }, with options like width: and height: for its rasterize.
     def rasterize(path:, line:, **options)
       Nodes.load(path)
       node = node_on(path, line)
       raise ArgumentError, "Nothing on line #{line + 1} of #{path} rasterizes" unless node
 
       metadata = Pages.for(path)
-      { painting: node.rasterize(metadata:, **options).to_h, quiet: node.respond_to?(:quiet) ? node.quiet(metadata:) : [] }
+      { painting: node.rasterize(metadata:, **options).to_h, **%i[quiet bold large].to_h { [it, spans(node, it, metadata)] } }
+    end
+
+    # The spans a node gives for its lines, like the ones to dim, or none.
+    def spans(node, name, metadata)
+      return [] unless node.respond_to?(name)
+
+      node.public_send(name, metadata:)
     end
 
     # The node on the line, read with outdent blocks' lines without their <, as anywhere else.

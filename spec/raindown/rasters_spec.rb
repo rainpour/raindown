@@ -10,11 +10,13 @@ RSpec.describe Raindown::Rasters do
   end
 
   it "rasterizes the node on a line, in an outdent block too, and says there's none on another" do
+    allow(Raindown::Forecast).to receive(:for).and_return(nil)
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, '.raindown'))
       path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\n^^^^\n< weather:\n") }
 
-      expect(described_class.rasterize(path:, line: 5, width: 40, height: 20)[:painting]).to eq(painter: 'valley', data: { branches: [] })
+      expect(described_class.rasterize(path:, line: 5, width: 40, height: 20)[:painting])
+        .to eq(painter: 'valley', data: { branches: [], now: nil, sky: Raindown::Sky.of({}) })
       expect { described_class.rasterize(path:, line: 4, width: 40, height: 20) }.to raise_error(ArgumentError, /line 5/)
     end
   end

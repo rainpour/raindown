@@ -5,46 +5,90 @@ require_relative '../config'
 require_relative '../node'
 require_relative '../scene'
 require_relative 'branch_tree'
+require_relative 'forecast'
 
 module Raindown
-  # The node behind weather:, a project's forecast, which apps draw a sky behind, like over a valley in the app. In a
-  # code project, it's the branches that aren't merged into main, and the branches off them, by when they were made:
+  # The node behind weather:, the weather where you are, from Open-Meteo, now and for the week, which apps draw a sky
+  # behind, like over a valley in the app. Where you are is your time zone's city, or a place you name, like
+  # weather: Brisbane:
   #   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   #   < weather:
-  #   < login · 4 commits
-  #   <     -> login-tests · 2 commits
-  # A notes project's forecast is still to come, so it writes nothing yet. In an app that draws pixels, it shows a
-  # valley behind its text, by day or by night, with a constellation for each branch, a star a commit, which the app
-  # paints itself, from the branches it gives it.
+  #   < ╭────────────╮╭────────────╮ …
+  #   < │        ☁️  ││        🌦️  │
+  #   < │  Today     ││  Fri       │
+  #   < │  20° 10°   ││  19° 14°   │
+  #   < │  UV 8      ││  UV 4      │
+  #   < │            ││            │
+  #   < ╰────────────╯╰────────────╯
+  # In an app that draws pixels, it shows a valley behind its text, by day or by night, which the app paints itself,
+  # from the weather now it gives it, and in a code project, a constellation for each of its branches that aren't merged
+  # into main, a star a commit.
   class Weather < Node
-    # How long its branches are kept, as an app asks for its sky about once a second.
+    # How long its branches and weather are kept, as an app asks for its sky about once a second.
     FRESH_FOR = 5
 
-    def rewrite(metadata: NoMetadata)
-      branches(metadata).map(&:to_s).join("\n")
+    def initialize(place = nil)
+      @place = place
+      super()
     end
 
-    # Its valley, with its branches' names and commits for their constellations, at any size, which the app paints.
+    def rewrite
+      forecast_lines.join("\n")
+    end
+
+    # Its valley, with its branches' names and commits for their constellations, and the weather now, with its sky, how
+    # much cloud, rain, snow, fog, storm and wind there is, as Sky gives it, at any size, which the app paints. Without
+    # the weather, its sky's clear, but for what RAINDOWN_SKY sets. For a place it names, it's that place's time of day
+    # too, from how far ahead of UTC its clocks are, in seconds, as utc_offset.
     def rasterize(metadata: NoMetadata, **)
-      Scene.new(name: 'valley', data: { branches: branches(metadata).map { { name: it.name, commits: it.commits } } })
+      report = forecast
+      now = report && { temperature: report.temperature, unit: report.unit, code: report.code, words: report.words }
+      branches = branches(metadata).map { { name: it.name, commits: it.commits } }
+      data = { branches:, now:, sky: report&.sky || Sky.of({}) }
+      data[:utc_offset] = report.utc_offset if @place && report
+      Scene.new(name: 'valley', data:)
     end
 
-    # The characters of its lines an app dims, so its branches' names stand out: each line's arrow and count, as
-    # [line, from, to], its lines counted from the first it writes.
-    def quiet(metadata: NoMetadata)
-      spans = branches(metadata).each_with_index.flat_map do |branch, line|
-        from = branch.indent + branch.arrow.length
-        [[line, branch.indent, from], [line, from + branch.name.length, branch.to_s.length]]
-      end
-      spans.reject { |_, from, to| from == to }
+    # The characters of its lines an app dims, so the weather stands out, its cards' borders, as [line, from, to], its
+    # lines counted from the first it writes.
+    def quiet(**)
+      forecast&.quiet || []
     end
 
-    # Its lines as they're written, keeping their spaces, so each branch stays where it was drawn.
-    def render(metadata: NoMetadata)
-      %(<pre class="weather">#{CGI.escapeHTML(rewrite(metadata:))}</pre>)
+    # The characters of its lines an app emboldens, its cards' days, as [line, from, to].
+    def bold(**)
+      forecast&.bold || []
+    end
+
+    # The characters of its lines an app draws as large as a line is tall, its cards' emoji, as [line, from, to].
+    def large(**)
+      forecast&.large || []
+    end
+
+    # Its lines as they're written, keeping their spaces, so its cards stay as they're drawn.
+    def render
+      %(<pre class="weather">#{CGI.escapeHTML(rewrite)}</pre>)
     end
 
     private
+
+    # The weather now and the week's, as ForecastCards draws it, or none when it can't be found.
+    def forecast_lines
+      forecast&.lines || []
+    end
+
+    def forecast
+      found_at, report = @forecast
+      return report if found_at && Time.now - found_at < FRESH_FOR
+
+      report = begin
+        Forecast.for(@place)
+      rescue Forecast::Error
+        nil
+      end
+      @forecast = [Time.now, report]
+      report
+    end
 
     # Its branches, found again once they're FRESH_FOR seconds old, or none in a notes project.
     def branches(metadata)
