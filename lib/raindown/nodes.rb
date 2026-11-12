@@ -1,22 +1,18 @@
 # frozen_string_literal: true
 
-require_relative 'chart/chart'
 require_relative 'fragments'
-require_relative 'grid'
-require_relative 'image'
-require_relative 'weather/weather'
 require_relative 'js/js_nodes'
-require_relative 'list'
 require_relative 'markdown_nodes'
 require_relative 'node'
-require_relative 'painting/painting'
 require_relative 'problem'
 require_relative 'stat'
-require_relative 'table/table'
-require_relative 'toc/toc'
-require_relative 'world'
 
 module Raindown
+  # Raindown's own nodes, each loaded the first time it's used, like when a note names it, so starting Raindown doesn't
+  # load what a session may never use, like the weather's, or what they use, like unicode-display_width's tables.
+  { Chart: 'chart/chart', Grid: 'grid', Image: 'image', List: 'list', Painting: 'painting/painting', Table: 'table/table',
+    TOC: 'toc/toc', Weather: 'weather/weather', World: 'world' }.each { |name, path| autoload(name, File.join(__dir__, path)) }
+
   # Nodes are LowNodes that a node block writes into the Markdown and renders into the HTML.
   # A project keeps them in a .raindown folder, which is loaded with Dirload, beside its JavaScript and Markdown
   # Components, if any.

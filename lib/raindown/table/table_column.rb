@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'unicode/display_width'
-
 module Raindown
   # A table's column: its alignment, from its delimiter cell's colons, and its width, that of its widest cell, or as wide
   # as its delimiter when that's equals signs, like |====|, which is fixed. An equals sign typed into dashes, like

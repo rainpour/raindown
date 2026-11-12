@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'unicode/display_width'
 require_relative 'node'
 require_relative 'grid_directives'
 require_relative 'grid_wrapping'

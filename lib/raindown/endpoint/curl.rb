@@ -2,7 +2,6 @@
 
 require 'open3'
 require 'shellwords'
-require 'uri'
 require_relative 'curl_request'
 require_relative 'curl_response'
 

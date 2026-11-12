@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'unicode/display_width'
-
 require_relative 'file_cell'
 require_relative 'markdown_table'
 require_relative 'matched_rows'

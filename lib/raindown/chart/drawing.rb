@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'unicode/display_width'
-
 require_relative '../node'
 
 module Raindown

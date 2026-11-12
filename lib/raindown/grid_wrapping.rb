@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'unicode/display_width'
-
 module Raindown
   # A grid: row's cells' text wrapped to their widths, unless they fit it.
   module GridWrapping

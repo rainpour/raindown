@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'date'
-require 'unicode/display_width'
 
 module Raindown
   # A forecast's days as little cards side by side, in text, each with an emoji for its weather in its padding at its

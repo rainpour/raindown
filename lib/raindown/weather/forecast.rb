@@ -2,7 +2,6 @@
 
 require 'date'
 require 'digest'
-require 'fileutils'
 require 'json'
 require_relative '../http_json'
 require_relative 'forecast_cards'

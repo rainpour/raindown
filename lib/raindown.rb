@@ -3,6 +3,14 @@
 require 'antlers'
 require 'antlers/api'
 
+# Libraries that take a while to load, loaded the first time they're used: FileUtils and URI, and unicode-display_width,
+# which reads its tables of characters' widths as it loads.
+autoload :FileUtils, 'fileutils'
+autoload :URI, 'uri'
+module Unicode
+  autoload :DisplayWidth, 'unicode/display_width'
+end
+
 require_relative 'elements'
 require_relative 'raindown/bare_directives'
 require_relative 'raindown/code'

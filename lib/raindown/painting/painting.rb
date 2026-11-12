@@ -2,7 +2,6 @@
 
 require 'cgi/escape'
 require 'date'
-require 'fileutils'
 require 'json'
 require_relative '../node'
 require_relative 'rijksmuseum'

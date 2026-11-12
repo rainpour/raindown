@@ -2,7 +2,6 @@
 
 # Loaded when first used, as it loads strscan, a native extension, which slows a packed executable's start.
 autoload :CSV, 'csv'
-require 'fileutils'
 
 module Raindown
   # The CSV or TSV file behind a table:, as rows of cells as wide as each other, written back in its own format.
