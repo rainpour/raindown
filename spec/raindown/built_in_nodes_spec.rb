@@ -262,5 +262,38 @@ RSpec.describe 'Raindown built-in nodes' do
 
       expect(Raindown.render(markdown:, bare: true)).to include('<img src="pictures/cat.png" alt="cat"')
     end
+
+    context "with one of Raindown's own directives in a cell" do
+      before do
+        painting = Raindown::Rijksmuseum::Painting.new(title: 'Misty Sea, the North Sea at dusk', creator: 'Jan Toorop',
+                                                       date: '1899', image: 'https://iiif.micr.io/mPymb/full/max/0/default.jpg',
+                                                       url: 'https://id.rijksmuseum.nl/200100988')
+        allow(Raindown::Painting).to receive(:today).and_return(painting)
+      end
+
+      it "writes its output into the cell's lines below it, a line each, wrapped, keeping the row as tall as it was" do
+        blank = '|               |               |'
+        markdown = "grid:\n+---------------+---------------+\n| a             | painting:     |\n#{"#{blank}\n" * 5}" \
+                   "+---------------+---------------+\n"
+
+        expect(rewrite(markdown, path: 'notes.rd')).to eq(<<~MARKDOWN)
+          grid:
+          +---------------+---------------+
+          | a             | painting:     |
+          |               | *Misty Sea,   |
+          |               | the North Sea |
+          |               | at dusk*      |
+          |               | Jan Toorop    |
+          |               | 1899          |
+          +---------------+---------------+
+        MARKDOWN
+      end
+
+      it "leaves a cell whose first line only looks like one, like a note's, as it's written" do
+        markdown = "grid:\n+----------+----------+\n| Note: hi | b        |\n+----------+----------+\n"
+
+        expect(rewrite(markdown, path: 'notes.rd')).to eq(markdown)
+      end
+    end
   end
 end

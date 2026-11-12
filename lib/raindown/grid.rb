@@ -2,6 +2,7 @@
 
 require 'unicode/display_width'
 require_relative 'node'
+require_relative 'grid_directives'
 require_relative 'grid_wrapping'
 
 module Raindown
@@ -17,7 +18,8 @@ module Raindown
   # row's cells share its width, in characters, equally, a cell's text wrapping onto the row's next lines. With
   # cell: :fit, a cell whose text needs more grows into the room the others don't need instead, and widens the grid when
   # there's none. A new grid, with no rules yet, is 80 wide. With width:, it's always width: wide, and a row whose cells
-  # need more than that, with cell: :fit, shares it equally, its text wrapping.
+  # need more than that, with cell: :fit, shares it equally, its text wrapping. A cell that starts with one of
+  # Raindown's own content directives, like painting:, runs it, as GridDirectives does.
   class Grid < Node
     RULE = /\A\s*\+[-+]*\+?\s*\z/
     # A reference definition, like [cat]: pictures/cat.png, which an image like ![cat] in a cell takes its path from.
@@ -32,7 +34,7 @@ module Raindown
     end
 
     def rewrite(written: [])
-      rows = rows_of(written)
+      rows = rows_run(written)
       widths = widths_of(rows, written)
       lines = [rule(widths.first)]
       rows.each_with_index do |row, index|
@@ -52,6 +54,9 @@ module Raindown
     end
 
     private
+
+    # Its rows, with their cells' directives run.
+    def rows_run(written) = rows_of(written).map { GridDirectives.run(it) }
 
     # The rows between its rules, each line of each as its cells' text, or a new grid when it has none.
     def rows_of(written)
@@ -110,7 +115,7 @@ module Raindown
     def wrapped(row, widths)
       return row if @fit && needs_of(row).zip(widths).all? { |need, width| need <= width }
 
-      GridWrapping.wrapped(row, widths)
+      GridWrapping.wrapped(row, widths, kept: GridDirectives.columns(row))
     end
 
     # Room shared equally among cells, by their indexes, the first a character wider when it doesn't share evenly.

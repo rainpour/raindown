@@ -371,7 +371,7 @@ Raindown redraws the grid as you edit it:
 - Add a line inside a row to make it taller.
 - Add or remove a `-` in any rule to make the whole grid wider or narrower.
 
-The cells in a row share its width equally. Text that's too long wraps onto the row's next lines, and the row grows to fit. A word that's longer than its cell, like an image's path, isn't wrapped. To keep image paths short, use a reference like `![cat]`, with `[cat]: cat.png` on its own line below the grid.
+The cells in a row share its width equally. Text that's too long wraps onto the row's next lines, and the row grows to fit. A cell that starts with one of Raindown's own directives, like `painting:`, runs it, writing its output into the cell's lines below it, each line wrapped on its own, in the cell's blank lines at its end, so the row stays as tall as it was if there are enough. A word that's longer than its cell, like an image's path, isn't wrapped. To keep image paths short, use a reference like `![cat]`, with `[cat]: cat.png` on its own line below the grid.
 
 A new grid is 80 characters wide. Options:
 
