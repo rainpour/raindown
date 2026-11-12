@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 
 require_relative '../node'
+require_relative '../scene'
 
 module Raindown
   # JavaScript Components, the .js and .mjs files in a project's .raindown folder, which export classes with rewrite and
@@ -45,12 +46,18 @@ module Raindown
       return if Dir.glob(EXTENSIONS.map { "*#{it}" }, base: folder).empty?
 
       host.request(op: 'load', folder:).fetch('nodes').each do |node|
-        node_classes[node['name']] ||= JSNode.for(name: node['name'], render: node['render'])
+        file = node['file'] && File.join(folder, node['file'])
+        node_classes[node['name']] ||= JSNode.for(name: node['name'], render: node['render'], rasterize: node['rasterize'], file:)
       end
     end
 
     def node_class(name)
       node_classes[name]
+    end
+
+    # The names of the folder's JavaScript Components that rasterize.
+    def rasterizing(folder)
+      node_classes.select { |_, node| node.method_defined?(:rasterize) && File.dirname(node.file) == folder }.keys
     end
 
     def host
@@ -64,16 +71,21 @@ module Raindown
 
   # A JavaScript Component, made in the NodeJS process with its props, where its rewrite and render are sent.
   class JSNode < Node
-    # A class for each JavaScript Component, which renders its own HTML when the component has render.
-    def self.for(name:, render:)
+    # A class for each JavaScript Component, from its file, which renders its own HTML when the component has render,
+    # and rasterizes when it has rasterize.
+    def self.for(name:, render:, rasterize: false, file: nil)
       Class.new(self) do
         define_singleton_method(:name) { name }
+        define_singleton_method(:file) { file }
         define_method(:render) { |**context| js_output(:render, context) } if render
+        define_method(:rasterize) { |**| scene } if rasterize && file
       end
     end
 
     def initialize(*args, **props)
       super()
+      @args = args
+      @props = props
       JSNodes.host.request(op: 'new', id: object_id, name: self.class.name, args:, props:)
     end
 
@@ -82,6 +94,12 @@ module Raindown
     end
 
     private
+
+    # What it shows behind its text, which an app paints by running its rasterize itself, every frame: the node scene,
+    # with its file's source, read again each time, so a change shows, and its value and props, to make it with.
+    def scene
+      Scene.new(name: 'node', data: { node: self.class.name, source: File.read(self.class.file), args: @args, props: @props })
+    end
 
     def js_output(method, context)
       JSNodes.host.request(op: 'call', id: object_id, method:, context: json_context(**context)).fetch('value').to_s

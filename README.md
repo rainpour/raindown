@@ -666,6 +666,28 @@ export class Changelog {
 
 It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content. A Ruby node of the same name is used instead. JavaScript Components need [Node.js](https://nodejs.org) 22 or later on your `PATH`, which runs them in one process of their own, and only projects that have them need it. What they log goes to stderr. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `list:` or `chart:`.
 
+In the [app](https://github.com/rainpour/raindown-app), a JavaScript Component can paint behind its text, like `weather:`'s valley, with `rasterize`, which the app runs itself, in its page, every frame. It's given the area to paint, from the component's directive down to two lines past its block, as `{ width, height, setPixel, time, textEnds, cell }`: `setPixel(x, y, color)` takes a colour as `0xRRGGBB`, `time` is the time now in milliseconds, for animating, `textEnds` is where the text ends on each row, in pixels across, and `cell` is a character's width and height. The app makes the component from its file's source, with its props, so a change to the file shows the next time the app asks, every few seconds. Like the page's own JavaScript, `rasterize` can't use Node's APIs or import other files:
+
+```js
+// .raindown/twinkle.js
+export class Twinkle {
+  constructor({ stars = 40 }) {
+    this.stars = stars
+  }
+
+  rewrite() {
+    return ""
+  }
+
+  rasterize({ width, height, setPixel, time }) {
+    for (let star = 0; star < this.stars; star++) {
+      const bright = Math.sin(time / 400 + star) > 0.5
+      if (bright) setPixel((star * 97) % width, (star * 53) % height, 0xeceff4)
+    }
+  }
+}
+```
+
 #### Markdown Components
 
 A Markdown file in `.raindown` named like a component, like `BookCard.md`, is a component too, with no code. Its props are its variables, and its front matter is their defaults:

@@ -21,6 +21,40 @@ RSpec.describe Raindown::Rasters do
     end
   end
 
+  context 'with a JavaScript Component that rasterizes' do
+    # A host answering as NodeJS would, with the component the folder's file has.
+    let(:host) do
+      Class.new do
+        def request(**message)
+          return {} unless message[:op] == 'load'
+
+          { 'nodes' => [{ 'name' => 'SpecJsSky', 'render' => false, 'rasterize' => true, 'file' => 'spec_js_sky.js' }] }
+        end
+      end.new
+    end
+    let(:source) { "export class SpecJsSky { rewrite() { return '' } rasterize(area) {} }\n" }
+
+    around do |example|
+      Raindown::JSNodes.host = host
+      example.run
+    ensure
+      Raindown::JSNodes.host = nil
+      Raindown::JSNodes.node_classes.delete('SpecJsSky')
+    end
+
+    it "names it for its project's files, and gives an app its source and props to run its rasterize with" do
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.raindown'))
+        File.write(File.join(dir, '.raindown', 'spec_js_sky.js'), source)
+        path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\nSpecJsSky: stars: 3\n") }
+
+        expect(described_class.names(path)).to eq(%w[weather SpecJsSky])
+        expect(described_class.rasterize(path:, line: 4, width: 40, height: 20)[:painting])
+          .to eq(painter: 'node', data: { node: 'SpecJsSky', source:, args: [], props: { stars: 3 } })
+      end
+    end
+  end
+
   it "gives an app a node's own pixels as their bytes" do
     raster = Raindown::Raster.new(2, 1).tap { it[1, 0] = 0x88c0d0 }
 

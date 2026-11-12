@@ -16,9 +16,17 @@ module Raindown
   module Rasters
     module_function
 
-    # The names of Raindown's own nodes that rasterize, like weather.
-    def names
-      Nodes::BUILT_INS.select { |_, name| Raindown.const_get(name).method_defined?(:rasterize) }.keys
+    # The names of Raindown's own nodes that rasterize, like weather, and, for a file, its project's JavaScript
+    # Components that do.
+    def names(path = nil)
+      built_in = Nodes::BUILT_INS.select { |_, name| Raindown.const_get(name).method_defined?(:rasterize) }.keys
+      return built_in unless path
+
+      Nodes.load(path)
+      folder = Nodes.find_folder(File.dirname(File.expand_path(path)))
+      return built_in unless folder
+
+      built_in + JSNodes.rasterizing(folder)
     end
 
     # What the node whose directive's on the line, counted from 0, in the file shows behind its text, a Scene or a
