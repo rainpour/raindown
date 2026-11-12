@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'net/http'
-require 'openssl'
 
 module Raindown
   # JSON from the web, for nodes that ask an API, like painting:'s museum and weather:'s forecast, following a redirect
-  # or two, and raising an Error when it can't be reached or doesn't answer with JSON.
+  # or two, and raising an Error when it can't be reached or doesn't answer with JSON. Net::HTTP is loaded when it's
+  # first asked, as where there are no sockets, like WebAssembly in the Obsidian plugin, it can't be.
   module HTTPJSON
     TIMEOUT = 10
 
@@ -15,6 +14,18 @@ module Raindown
     module_function
 
     def get(url, headers: {}, redirects: 3)
+      load_web
+      json_from(url, headers, redirects)
+    end
+
+    def load_web
+      require 'net/http'
+      require 'openssl'
+    rescue LoadError
+      raise Error, "Raindown can't reach the web here"
+    end
+
+    def json_from(url, headers, redirects)
       response = request(URI(url), headers)
       redirect = response.is_a?(Net::HTTPRedirection) && redirects.positive?
       return get(URI.join(url, response['location']).to_s, headers:, redirects: redirects - 1) if redirect
