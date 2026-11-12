@@ -113,7 +113,7 @@ Shape how the Markdown around them renders, like Liquid or Jinja: [variables](#v
 
 #### Content directives
 
-Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [lists](#lists) with `list:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [images](#images) with `image:`, [grids](#grids) with `grid:`, [weather](#weather) with `weather:`, a [world map](#world) with `world:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they're write-in: they only render into the HTML, taking what's between their tags as input, and write nothing into the file.
+Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [lists](#lists) with `list:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [images](#images) with `image:`, [grids](#grids) with `grid:`, [weather](#weather) with `weather:`, a [world map](#world) with `world:`, a [painting](#painting) with `painting:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they're write-in: they only render into the HTML, taking what's between their tags as input, and write nothing into the file.
 
 ### Raindown files
 
@@ -409,6 +409,19 @@ In the [app](https://github.com/rainpour/raindown-app), its `rasterize` shows a 
 |                          |                          |
 +--------------------------+--------------------------+
 ```
+
+### Painting
+
+`painting:` shows a painting from the [Rijksmuseum](https://www.rijksmuseum.nl)'s collection in the [app](https://github.com/rainpour/raindown-app), a different one each day, in a gilded frame. It writes the painting's title, its painter and when it was made, a line each:
+
+```
+painting:
+*Misty Sea*
+Jan Toorop
+1899
+```
+
+The app paints the framed painting like an image, as big as fits over them, the directive and the blank lines below them, but the last, or over a [grid](#grids)'s cell it's in. While the cursor's there, their text shows instead, to edit. `:painting` shows just the painting, writing nothing. In the HTML it's the painting's image, with its title, painter and date as its caption, linking to it in the collection.
 
 ### Outdent
 

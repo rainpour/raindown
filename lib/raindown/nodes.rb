@@ -9,6 +9,7 @@ require_relative 'js/js_nodes'
 require_relative 'list'
 require_relative 'markdown_nodes'
 require_relative 'node'
+require_relative 'painting/painting'
 require_relative 'problem'
 require_relative 'stat'
 require_relative 'table/table'
@@ -31,7 +32,8 @@ module Raindown
     # Lowercase directives for Raindown's own nodes. A project's own TOC, List, Chart, Table, Image, Grid or Weather node
     # replaces Raindown's.
     BUILT_INS = { 'toc' => 'TOC', 'list' => 'List', 'chart' => 'Chart', 'table' => 'Table', 'image' => 'Image',
-                  'grid' => 'Grid', 'weather' => 'Weather', 'world' => 'World' }.freeze
+                  'grid' => 'Grid', 'weather' => 'Weather', 'world' => 'World',
+                  'painting' => 'Painting' }.freeze
     # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers, with its slot's HTML, as a
     # fragment, when it has one.
     PLACEHOLDER = /<!-- raindown:node (\d+)(?: slot (\d+))? -->/
