@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -61 ▐█│████████████████████████████▍ +1,084
-────────────────────────────────────────────────────
-19450d8   -4  ▕│▊                                +28
-ec0b22e   -7  ▕│██▍                              +92
-cea4d12   -2  ▕│█████▉                          +222
-de32227   -2  ▕│█▎                               +49
-436f54b  -46 ▕█│██████████████████▏             +693
+Total    -86  ████████│██████████████████████ +235
+──────────────────────────────────────────────────
+e8b3c60  -18        ▐█│███▌                    +37
+3a86dbf  -19        ██│██▍                     +25
+5f10cb6   -2         ▕│▉                        +9
+098854c   -6         ▐│▌                        +5
+bfa5a4e  -41      ████│██████████████▉        +159
 ```
 <!-- :Commits -->
 
@@ -433,7 +433,7 @@ A block can reach the top and left edges of the page. Put a line of `^` above it
 < login -> login-tests
 ```
 
-Directives work inside it as anywhere else, and Raindown keeps each line's `<` when it writes back. In the HTML, the block is a `<div class="outdent">`, which your page's styles can take to its edges.
+Directives work inside it as anywhere else, and Raindown keeps each line's `<` when it writes back. In the HTML, the block is a `<div class="outdent">`, which your page's styles can take to its edges. In the [app](https://github.com/rainpour/raindown-app), a node that paints behind its text, like `weather:`'s valley, fills the whole block, from the page's top and left edges down to its last `<` line, so more `<` lines, even empty ones, make it taller.
 
 ### Tables
 
@@ -668,7 +668,7 @@ It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come
 
 Raindown runs JavaScript Components itself, in [QuickJS](https://bellard.org/quickjs/), so there's nothing to install. A component's file can import others by their paths from it, like `../lib/release.mjs`, and has `setTimeout`, `URL`, `TextEncoder` and `TextDecoder`, but not Node's APIs, like `fs`. For the web, the project's files, a cache and git, it has Raindown's [services](#services), which work the same in the terminal and in the [app](https://github.com/rainpour/raindown-app)'s page. What it logs goes to stderr.
 
-In the [app](https://github.com/rainpour/raindown-app), a JavaScript Component can paint behind its text, like `weather:`'s valley, with `rasterize`, which the app runs itself, in its page, every frame. It's given the area to paint, from the component's directive down to two lines past its block, as `{ width, height, setPixel, time, textEnds, cell, raindown }`: `setPixel(x, y, color)` takes a colour as `0xRRGGBB`, `time` is the time now in milliseconds, for animating, `textEnds` is where the text ends on each row, in pixels across, `cell` is a character's width and height, and `raindown` is Raindown's [services](#services), for what it paints from, like a map's tiles. `rasterize` is called every frame, so it can't wait for them: it starts what it fetches once, and paints what it has, like a component of the same props kept between frames. The app makes the component from its file's source, with its props, so a change to the file shows the next time the app asks, every few seconds. Like the page's own JavaScript, `rasterize` can't use Node's APIs or import other files:
+In the [app](https://github.com/rainpour/raindown-app), a JavaScript Component can paint behind its text, like `weather:`'s valley, with `rasterize`, which the app runs itself, in its page, every frame. It's given the area to paint, from the component's directive down to two lines past its block, or the whole [outdent](#outdent) block it's in, as `{ width, height, setPixel, putPixels, time, textEnds, cell, button, raindown }`: `setPixel(x, y, color)` takes a colour as `0xRRGGBB`, `putPixels(colors)` paints the whole area at once, from its colours as `0xRRGGBB`, row by row, like a `Uint32Array` of `width * height`, much faster than a pixel at a time for a picture, like a map, `time` is the time now in milliseconds, for animating, `textEnds` is where the text ends on each row, in pixels across, `cell` is a character's width and height, `button({ x, y, width, height, set })` makes a rectangle it's painted a button, and `raindown` is Raindown's [services](#services), for what it paints from, like a map's tiles. `rasterize` is called every frame, so it can't wait for them: it starts what it fetches once, and paints what it has, like a component of the same props kept between frames. A button only ever changes props the component's directive already has, the ones in `set`, as typing them there would, like a zoom button's `set: { zoom: 8 }`, which changes `zoom: 9` on its line to `zoom: 8`. Its directive decides what its graphic shows and which buttons it has: a component only paints a button for a prop it was given, and the app ignores one for a prop the directive hasn't got, so `RadarMap: Hobart zoom: 9` has zoom buttons and `RadarMap: Hobart` hasn't, and a click never adds to the directive, only changes what's written there, which can be undone. The component paints the button itself, each frame it's there, and the app shows a pointer over it. The app makes the component from its file's source, with its props, so a change to the file shows the next time the app asks, every few seconds. Like the page's own JavaScript, `rasterize` can't use Node's APIs or import other files:
 
 ```js
 // .raindown/twinkle.js
