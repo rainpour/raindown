@@ -14,6 +14,7 @@ RSpec.describe Raindown::Services do
 
     expect(services.list('**/*.md')).to eq(['notes/a.md'])
     expect(services.read('notes/a.md')).to eq("# A\n")
+    expect(services.read('notes/a.md', 'encoding' => 'base64')).to eq(["# A\n"].pack('m0'))
     expect { services.read('../elsewhere') }.to raise_error(described_class::Error, /outside the project/)
     expect { services.read('missing.md') }.to raise_error(described_class::Error, /no missing.md/)
   end
@@ -74,7 +75,7 @@ RSpec.describe Raindown::Services do
     host = ->(root, name, args) { [root, name, args] }
     described_class.host = host
 
-    expect(services.read('a.md')).to eq([services.root, 'read', ['a.md']])
+    expect(services.read('a.md')).to eq([services.root, 'read', ['a.md', {}]])
   ensure
     described_class.host = nil
   end

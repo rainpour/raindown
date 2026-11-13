@@ -53,7 +53,7 @@ module Raindown
     # The response to a request, as { status, headers, body }, following redirects, its body as text.
     def fetch(url, options = {}) = call('fetch', [url, options])
 
-    def read(path) = call('read', [path])
+    def read(path, options = {}) = call('read', [path, options])
 
     # The project's files matching a pattern, like 'notes/*.md', from its root.
     def list(pattern = '**/*') = call('list', [pattern])

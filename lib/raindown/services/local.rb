@@ -42,7 +42,10 @@ module Raindown
         raise Error, "Couldn't reach #{url}: #{e.message}"
       end
 
-      def read(path)
+      # A file's text, or its bytes as Base64 with encoding: 'base64', for a file that isn't text, like an image.
+      def read(path, options = {})
+        return [File.binread(inside(path))].pack('m0') if options.transform_keys(&:to_s)['encoding'] == 'base64'
+
         File.read(inside(path))
       rescue Errno::ENOENT
         raise Error, "There's no #{path}"
