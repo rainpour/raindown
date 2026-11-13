@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -308 ██████████████████████│████████▎ +117
-───────────────────────────────────────────────────
-1338ea3    -8                      ▐│▋           +8
-b4cc01f  -236      ▐████████████████│█          +15
-7111f77   -26                     ██│████▏      +59
-411da3d   -31                    ▕██│█▉         +27
-f90572a    -7                      ▐│▋           +8
+Total    -328  ███████████████████████│███████ +99
+──────────────────────────────────────────────────
+687116f   -52                     ▐███│▍        +6
+f800221    -6                        ▐│▊       +11
+1338ea3    -8                        ▐│▌        +8
+b4cc01f  -236        ▐████████████████│█       +15
+7111f77   -26                       ██│████▏   +59
 ```
 <!-- :Commits -->
 
@@ -614,6 +614,19 @@ Changelog: limit=3
 ```
 
 Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`, separated by spaces or commas, like `table: 'data.csv', total: true`. Bare or in comments, a word is text, like `folder: notes`, and a variable is in braces, like `{author.name}`, while in `<{ }>` a word is a variable. Like YAML, unquoted text after `name:` runs up to the next prop, so `title: Hello world limit: 3` has two, while after `name=` it's one word. Quote text with a word and colon inside, like `title: 'Read this: now'`, and words that read as values, like `'1.10'` or `'true'`. Quoted text means the same in every way a directive's written. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `rewrite` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and `rewrite` can take `written:`, the lines it wrote last time, which a block's `render` can take too, and `comment:`, and they get the ones they ask for. A node's comment is a comment on its own line straight below its directive, like a `table:`'s `<!-- 2 rows · 3f2a9c -->`, for what it needs to know the next time it writes, which isn't Markdown to show. `rewrite` returns its comment with its Markdown as `Raindown::Written.new(markdown, comment: '2 rows · 3f2a9c')`, which Raindown writes as `<!-- 2 rows · 3f2a9c -->` below the directive, and passes back as `comment:`, the text inside it, the next time. A comment that's a directive, like `<!-- toc: -->`, isn't a node's comment, and the comment's left out of the HTML. A node takes edits when its `rewrite` takes `written:`: like `table:`, it can see what was changed since it wrote, and write that back to its source. In `<{ }>` a node is write-in: a self-closing `<{ Changelog }>`, a bare `:Changelog`, or a `<{ Changelog: }>` block only renders, with `render`, never `rewrite`, and writes nothing into the file. A block's Markdown between its tags is its input, which `render` gets as `slot:`, in HTML. In `<{ }>` a node's props can be loop variables, like `<{ Changelog limit=n }>` in a `for:`, and it can be in another node's slot. A self-closing node can also be `<{ :Changelog }>`, which a lowercase name needs, like `<{ :toc }>`, as `<{ toc }>` is a variable. A node needs a `render` to be write-in, and raises without one. Raindown's own nodes have one, and `<{ table: }>` shows its file without writing to it. A `Raindown::Node` renders its `rewrite` as HTML, unless its `rewrite` takes `written:`, which needs a `render` of its own, so rendering a page never writes to a node's source. Raindown keeps one instance of each node and its props while it runs, so `rewrite` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `rewrite` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+
+In the [app](https://github.com/rainpour/raindown-app), a Ruby Component can paint behind its text with `rasterize`, like a [JavaScript one](#javascript-components), in the same space. It's given `area:`, with its `width` and `height`, the `time`, `text_ends`, `cell`, `set_pixel(x, y, color)`, `put_pixels(colors)` and `button(x:, y:, width:, height:, set:)`, and can take `raindown:` and `metadata:`, like `rewrite`. Raindown runs it and sends its pixels to the app, so it's painted again when its size or the text changes, or in the seconds it returns, a minute at the soonest, as each time is a trip to Ruby: it doesn't animate, which a JavaScript Component, run in the app's page, can. A pixel it doesn't set shows what's behind it.
+
+```ruby
+class Stripes < Raindown::Node
+  def rewrite = ''
+
+  def rasterize(area:)
+    area.put_pixels(Array.new(area.width * area.height) { |at| (at / area.width).even? ? 0x2e3440 : 0x3b4252 })
+    60
+  end
+end
+```
 
 #### JavaScript Components
 
