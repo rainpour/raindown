@@ -263,23 +263,20 @@ RSpec.describe 'Raindown built-in nodes' do
       expect(Raindown.render(markdown:, bare: true)).to include('<img src="pictures/cat.png" alt="cat"')
     end
 
-    context "with one of Raindown's own directives in a cell" do
+    context "with a node's directive in a cell" do
       before do
-        painting = Raindown::Rijksmuseum::Painting.new(title: 'Misty Sea, the North Sea at dusk', creator: 'Jan Toorop',
-                                                       date: '1899', image: 'https://iiif.micr.io/mPymb/full/max/0/default.jpg',
-                                                       url: 'https://id.rijksmuseum.nl/200100988')
-        allow(Raindown::Painting).to receive(:today).and_return(painting)
+        stub_const('Credit', Class.new(Raindown::Node) { def rewrite = "*Misty Sea, the North Sea at dusk*\nJan Toorop\n1899" })
       end
 
       it "writes its output into the cell's lines below it, a line each, wrapped, keeping the row as tall as it was" do
         blank = '|               |               |'
-        markdown = "grid:\n+---------------+---------------+\n| a             | painting:     |\n#{"#{blank}\n" * 5}" \
+        markdown = "grid:\n+---------------+---------------+\n| a             | Credit:       |\n#{"#{blank}\n" * 5}" \
                    "+---------------+---------------+\n"
 
         expect(rewrite(markdown, path: 'notes.rd')).to eq(<<~MARKDOWN)
           grid:
           +---------------+---------------+
-          | a             | painting:     |
+          | a             | Credit:       |
           |               | *Misty Sea,   |
           |               | the North Sea |
           |               | at dusk*      |

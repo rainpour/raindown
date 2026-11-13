@@ -10,8 +10,8 @@ require_relative 'stat'
 module Raindown
   # Raindown's own nodes, each loaded the first time it's used, like when a note names it, so starting Raindown doesn't
   # load what a session may never use, like the weather's, or what they use, like unicode-display_width's tables.
-  { Chart: 'chart/chart', Grid: 'grid', Image: 'image', List: 'list', Painting: 'painting/painting', Table: 'table/table',
-    TOC: 'toc/toc', Weather: 'weather/weather', World: 'world' }.each { |name, path| autoload(name, File.join(__dir__, path)) }
+  { Chart: 'chart/chart', Grid: 'grid', Image: 'image', List: 'list', Table: 'table/table', TOC: 'toc/toc',
+    Weather: 'weather/weather', World: 'world' }.each { |name, path| autoload(name, File.join(__dir__, path)) }
 
   # Nodes are LowNodes that a node block writes into the Markdown and renders into the HTML.
   # A project keeps them in a .raindown folder, which is loaded with Dirload, beside its JavaScript and Markdown
@@ -28,8 +28,7 @@ module Raindown
     # Lowercase directives for Raindown's own nodes. A project's own TOC, List, Chart, Table, Image, Grid or Weather node
     # replaces Raindown's.
     BUILT_INS = { 'toc' => 'TOC', 'list' => 'List', 'chart' => 'Chart', 'table' => 'Table', 'image' => 'Image',
-                  'grid' => 'Grid', 'weather' => 'Weather', 'world' => 'World',
-                  'painting' => 'Painting' }.freeze
+                  'grid' => 'Grid', 'weather' => 'Weather', 'world' => 'World' }.freeze
     # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers, with its slot's HTML, as a
     # fragment, when it has one.
     PLACEHOLDER = /<!-- raindown:node (\d+)(?: slot (\d+))? -->/
