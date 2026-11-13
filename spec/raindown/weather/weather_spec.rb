@@ -55,9 +55,10 @@ RSpec.describe Raindown::Weather do
     end
 
     it "dims its cards' borders and emboldens their days" do
-      expect(described_class.new.quiet(metadata:)).to eq(report.quiet)
-      expect(described_class.new.bold(metadata:)).to eq([[2, 3, 8], [2, 17, 20]])
-      expect(described_class.new.large(metadata:)).to eq([[1, 9, 11], [1, 23, 25]])
+      formatting = described_class.new.formatting(metadata:)
+      expect(formatting[:quiet]).to eq(report.quiet)
+      expect(formatting[:bold]).to eq([[2, 3, 8], [2, 17, 20]])
+      expect(formatting[:large]).to eq([[1, 9, 11], [1, 23, 25]])
     end
 
     it 'gives the valley the weather it kept without waiting for Open-Meteo, asking for it again meanwhile' do

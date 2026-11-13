@@ -15,9 +15,9 @@ RSpec.describe Raindown::Rasters do
       FileUtils.mkdir_p(File.join(dir, '.raindown'))
       path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\n^^^^\n< weather:\n") }
 
-      expect(described_class.rasterize(path:, line: 5, width: 40, height: 20)[:painting])
+      expect(described_class.repaint(path:, line: 5, width: 40, height: 20)[:painting])
         .to eq(painter: 'valley', data: { branches: [], now: nil, sky: Raindown::Sky.of({}) })
-      expect { described_class.rasterize(path:, line: 4, width: 40, height: 20) }.to raise_error(ArgumentError, /line 5/)
+      expect { described_class.repaint(path:, line: 4, width: 40, height: 20) }.to raise_error(ArgumentError, /line 5/)
     end
   end
 
@@ -49,7 +49,7 @@ RSpec.describe Raindown::Rasters do
         path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\nSpecJsSky: stars: 3\n") }
 
         expect(described_class.names(path)).to eq(%w[weather SpecJsSky])
-        expect(described_class.rasterize(path:, line: 4, width: 40, height: 20)[:painting])
+        expect(described_class.repaint(path:, line: 4, width: 40, height: 20)[:painting])
           .to eq(painter: 'node', data: { node: 'SpecJsSky', source:, args: [], props: { stars: 3 }, root: File.expand_path(dir) })
       end
     end

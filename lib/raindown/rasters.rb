@@ -30,22 +30,23 @@ module Raindown
     end
 
     # What the node whose directive's on the line, counted from 0, in the file shows behind its text, a Scene or a
-    # Raster, for an app, and the characters of its lines to dim, to embolden and to draw as large as a line is tall,
-    # as { painting:, quiet:, bold:, large: }, with options like width: and height: for its rasterize.
-    def rasterize(path:, line:, **options)
+    # Raster, for an app, and how it formats the characters of its lines, as { painting:, formatting: }, with options
+    # like width: and height: for its rasterize.
+    def repaint(path:, line:, **options)
       Nodes.load(path)
       node = node_on(path, line)
       raise ArgumentError, "Nothing on line #{line + 1} of #{path} rasterizes" unless node
 
       metadata = Pages.for(path)
-      { painting: node.rasterize(metadata:, **options).to_h, **%i[quiet bold large].to_h { [it, spans(node, it, metadata)] } }
+      { painting: node.rasterize(metadata:, **options).to_h, formatting: formatting(node, metadata) }
     end
 
-    # The spans a node gives for its lines, like the ones to dim, or none.
-    def spans(node, name, metadata)
-      return [] unless node.respond_to?(name)
+    # The characters of a node's lines to dim, to embolden and to draw as large as a line is tall, as { quiet:, bold:,
+    # large: }, each [line, from, to], its lines counted from the first it writes, from its formatting, or none.
+    def formatting(node, metadata)
+      return {} unless node.respond_to?(:formatting)
 
-      node.public_send(name, metadata:)
+      node.formatting(metadata:)
     end
 
     # The node on the line, read with outdent blocks' lines without their <, as anywhere else.

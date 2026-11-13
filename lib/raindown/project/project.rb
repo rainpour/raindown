@@ -77,10 +77,10 @@ module Raindown
       end
     end
 
-    # The pixels of the node on a line of a file that rasterizes, like weather:, and the characters of its lines to dim,
-    # as { raster:, quiet: }, with its options, like width: and height:.
-    def rasterize(path, line, **options)
-      Rasters.rasterize(path:, line:, **options)
+    # What the node on a line of a file that rasterizes, like weather:, shows behind its text, and how it formats its
+    # lines, as { painting:, formatting: }, with its options, like width: and height:.
+    def repaint(path, line, **options)
+      Rasters.repaint(path:, line:, **options)
     end
 
     def write_back(path)

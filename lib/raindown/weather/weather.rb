@@ -53,20 +53,14 @@ module Raindown
       Scene.new(name: 'valley', data:)
     end
 
-    # The characters of its lines an app dims, so the weather stands out, its cards' borders, as [line, from, to], its
-    # lines counted from the first it writes.
-    def quiet(**)
-      forecast_now&.quiet || []
-    end
+    # The characters of its lines an app formats, as [line, from, to], its lines counted from the first it writes: its
+    # cards' borders dimmed, as quiet, so the weather stands out, their days in bold, and their emoji as large as a line
+    # is tall.
+    def formatting(**)
+      report = forecast_now
+      return {} unless report
 
-    # The characters of its lines an app emboldens, its cards' days, as [line, from, to].
-    def bold(**)
-      forecast_now&.bold || []
-    end
-
-    # The characters of its lines an app draws as large as a line is tall, its cards' emoji, as [line, from, to].
-    def large(**)
-      forecast_now&.large || []
+      { quiet: report.quiet, bold: report.bold, large: report.large }
     end
 
     # Its lines as they're written, keeping their spaces, so its cards stay as they're drawn.
