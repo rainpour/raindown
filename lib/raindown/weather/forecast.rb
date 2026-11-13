@@ -20,7 +20,7 @@ module Raindown
     DAYS = 7
     # What it asks Open-Meteo for now, for its sky as well as its temperature and weather.
     CURRENT = 'temperature_2m,weather_code,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,rain,showers,' \
-              'snowfall,wind_speed_10m,visibility'
+              'snowfall,wind_speed_10m,visibility,uv_index'
     # The countries that measure in Fahrenheit.
     FAHRENHEIT = %w[US LR MM].freeze
     # What the WMO's weather codes, which Open-Meteo answers with, are in words.
@@ -43,6 +43,10 @@ module Raindown
     # and how far ahead of UTC the place's clocks are, in seconds.
     Report = Data.define(:place, :temperature, :code, :unit, :days, :conditions, :utc_offset) do
       def words = WORDS.fetch(code, 'unknown')
+
+      # How strong the sun's ultraviolet is now, its UV index, or nil when it wasn't given, like in a forecast kept from
+      # before it was asked for.
+      def uv = conditions['uv_index']
 
       # Its lines, the days' cards, as ForecastCards draws them.
       def lines = ForecastCards.lines(days)

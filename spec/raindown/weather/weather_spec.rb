@@ -10,7 +10,7 @@ RSpec.describe Raindown::Weather do
     place = Raindown::Forecast::Place.new(name: 'Melbourne', latitude: -37.8167, longitude: 144.9667, country: 'AU')
     days = [Raindown::Forecast::Day.new(date: '2026-11-12', high: 20.0, low: 10.4, code: 3, uv: 8.4),
             Raindown::Forecast::Day.new(date: '2026-11-13', high: 19.2, low: 13.9, code: 53, uv: 4.35)]
-    conditions = { 'temperature_2m' => 19.7, 'weather_code' => 3, 'cloud_cover' => 100, 'rain' => 0.0 }
+    conditions = { 'temperature_2m' => 19.7, 'weather_code' => 3, 'cloud_cover' => 100, 'rain' => 0.0, 'uv_index' => 8.6 }
     Raindown::Forecast::Report.new(place:, temperature: 19.7, code: 3, unit: '°C', days:, conditions:, utc_offset: 39_600)
   end
 
@@ -63,7 +63,7 @@ RSpec.describe Raindown::Weather do
     it 'gives the valley the weather now, and its sky' do
       data = described_class.new.rasterize(metadata:).to_h[:data]
 
-      expect(data[:now]).to eq(temperature: 19.7, unit: '°C', code: 3, words: 'overcast')
+      expect(data[:now]).to eq(temperature: 19.7, unit: '°C', code: 3, words: 'overcast', uv: 9)
       expect(data[:sky]).to include(cloud: 1.0, rain: 0.0, temperature: 19.7)
     end
   end
