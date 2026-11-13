@@ -34,7 +34,8 @@ module Raindown
         response = request(URI(url), options)
         return redirected(url, response, options) if redirect?(response, options)
 
-        { 'status' => response.code.to_i, 'headers' => response.to_hash.transform_values { it.join(', ') }, 'body' => response.body.to_s }
+        headers = response.to_hash.transform_values { it.join(', ') }
+        { 'status' => response.code.to_i, 'headers' => headers, 'body' => body_of(response, options) }
       rescue SocketError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError => e
         raise Error, "Couldn't reach #{url}: #{e.message}"
       end
@@ -85,6 +86,13 @@ module Raindown
       end
 
       private
+
+      # Its body as UTF-8 text, or as Base64 with encoding: 'base64', for a file that isn't text, like an image.
+      def body_of(response, options)
+        return [response.body.to_s].pack('m0') if options['encoding'] == 'base64'
+
+        response.body.to_s.dup.force_encoding(Encoding::UTF_8).scrub
+      end
 
       def git_error(args, errors)
         return "git #{args.first} failed" if errors.strip.empty?
