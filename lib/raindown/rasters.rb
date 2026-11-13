@@ -57,7 +57,7 @@ module Raindown
     end
 
     # What the node shows: a Scene, for one of an app's own painters to paint, like weather:'s valley, or else the area
-    # it painted, painted again in the seconds it gave, if it did.
+    # it painted, painted again in the milliseconds it gave, if it did.
     def painting_of(node, area, metadata)
       painted = Nodes.call(node, :rasterize, area:, metadata:)
       return painted.to_h if painted.is_a?(Scene)

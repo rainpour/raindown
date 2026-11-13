@@ -5,12 +5,10 @@ module Raindown
   # JavaScript Component's, painted in Ruby: its width and height, in pixels, the time, where the text ends on each of
   # its rows, in pixels across, a character's width and height, as cell, its pixels, each set as 0xRRGGBB, one at a time
   # or all at once, and the buttons it's painted, which, clicked, change the props in set on its node's directive. Its
-  # rasterize gives how many seconds until it's painted again, no sooner than SOONEST, as each time is a trip to Ruby
-  # and its pixels back, so it doesn't animate, or nothing, for when its size or text changes. A pixel it doesn't set
-  # shows what's behind it.
+  # rasterize gives how many milliseconds until it's painted again, like a JavaScript one's, or nothing, for when its
+  # size or text changes, which an app makes it wait longer for when painting it takes long, as each time is a trip
+  # to Ruby and its pixels back. A pixel it doesn't set shows what's behind it.
   class Area
-    SOONEST = 60
-
     attr_reader :width, :height, :time, :text_ends, :cell, :buttons
 
     def initialize(width:, height:, text_ends: [], cell: [8, 16], time: Time.now)
@@ -46,11 +44,10 @@ module Raindown
       @pixels.map { it.nil? ? 0 : (it << 8) | 0xff }.pack('N*')
     end
 
-    # For an app, its pixels' bytes in Base64, to copy in as they are, its buttons, and how many seconds until it's
-    # painted again, if it said.
+    # For an app, its pixels' bytes in Base64, to copy in as they are, its buttons, and how many milliseconds until
+    # it's painted again, if it said.
     def to_h(again = nil)
-      refresh = again && [again, SOONEST].max
-      { painter: 'pixels', width:, height:, pixels: [to_bytes].pack('m0'), buttons:, refresh: }
+      { painter: 'pixels', width:, height:, pixels: [to_bytes].pack('m0'), buttons:, again: }
     end
   end
 end

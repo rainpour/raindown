@@ -77,7 +77,7 @@ RSpec.describe Raindown::Rasters do
           def rasterize(area:, raindown:)
             area.set_pixel(1, 0, 0x88c0d0)
             area.button(x: 0, y: 0, width: 1, height: 1, set: { dots: 2 })
-            raindown.root && 5
+            raindown.root && 250
           end
         end
       RUBY
@@ -85,7 +85,7 @@ RSpec.describe Raindown::Rasters do
 
     after { Object.send(:remove_const, :SpecRubyDots) if Object.const_defined?(:SpecRubyDots) }
 
-    it 'names it, and gives an app its pixels, those it left clear, its buttons, and when to paint it again, a minute at the soonest' do
+    it 'names it, and gives an app its pixels, those it left clear, its buttons, and when to paint it again' do
       Dir.mktmpdir do |dir|
         FileUtils.mkdir_p(File.join(dir, '.raindown'))
         File.write(File.join(dir, '.raindown', 'spec_ruby_dots.rb'), source)
@@ -94,7 +94,7 @@ RSpec.describe Raindown::Rasters do
         expect(described_class.names(path)).to eq(%w[weather SpecRubyDots])
         expect(described_class.repaint(path:, line: 4, width: 2, height: 1)[:painting])
           .to eq(painter: 'pixels', width: 2, height: 1, pixels: [['0000000088c0d0ff'].pack('H*')].pack('m0'),
-                 buttons: [{ x: 0, y: 0, width: 1, height: 1, set: { dots: 2 } }], refresh: 60)
+                 buttons: [{ x: 0, y: 0, width: 1, height: 1, set: { dots: 2 } }], again: 250)
       end
     end
   end
@@ -102,6 +102,6 @@ RSpec.describe Raindown::Rasters do
   it 'paints all of its pixels at once, as 0xRRGGBB, and gives no time to paint it again unless asked' do
     area = Raindown::Area.new(width: 2, height: 1).tap { it.put_pixels([0x2e3440, 0x88c0d0]) }
 
-    expect(area.to_h).to include(pixels: [['2e3440ff88c0d0ff'].pack('H*')].pack('m0'), refresh: nil)
+    expect(area.to_h).to include(pixels: [['2e3440ff88c0d0ff'].pack('H*')].pack('m0'), again: nil)
   end
 end
