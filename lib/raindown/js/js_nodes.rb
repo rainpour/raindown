@@ -73,7 +73,7 @@ module Raindown
         define_singleton_method(:name) { name }
         define_singleton_method(:file) { file }
         define_method(:render) { |**context| js_output(:render, context) } if render
-        define_method(:rasterize) { |**| scene } if rasterize && file
+        define_method(:rasterize) { |metadata: NoMetadata, **| scene(metadata) } if rasterize && file
       end
     end
 
@@ -91,9 +91,11 @@ module Raindown
     private
 
     # What it shows behind its text, which an app paints by running its rasterize itself, every frame: the node scene,
-    # with its file's source, read again each time, so a change shows, and its value and props, to make it with.
-    def scene
-      Scene.new(name: 'node', data: { node: self.class.name, source: File.read(self.class.file), args: @args, props: @props })
+    # with its file's source, read again each time, so a change shows, its value and props, to make it with, and its
+    # project's root, for the services the app gives it as raindown.
+    def scene(metadata)
+      data = { node: self.class.name, source: File.read(self.class.file), args: @args, props: @props, root: Services.for(metadata).root }
+      Scene.new(name: 'node', data:)
     end
 
     # Its output, with the project's root for its services, which its host gives it as raindown.

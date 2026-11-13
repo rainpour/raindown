@@ -50,7 +50,7 @@ RSpec.describe Raindown::Rasters do
 
         expect(described_class.names(path)).to eq(%w[weather SpecJsSky])
         expect(described_class.rasterize(path:, line: 4, width: 40, height: 20)[:painting])
-          .to eq(painter: 'node', data: { node: 'SpecJsSky', source:, args: [], props: { stars: 3 } })
+          .to eq(painter: 'node', data: { node: 'SpecJsSky', source:, args: [], props: { stars: 3 }, root: File.expand_path(dir) })
       end
     end
   end
