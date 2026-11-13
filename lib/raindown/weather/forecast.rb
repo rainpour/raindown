@@ -47,8 +47,8 @@ module Raindown
       def words = WORDS.fetch(code, 'unknown')
 
       # How strong the sun's ultraviolet is now, its UV index, or nil when it wasn't given, like in a forecast kept from
-      # before it was asked for.
-      def uv = conditions['uv_index']
+      # before it was asked for. Its conditions' names are text as Open-Meteo gives them, and symbols as they're kept.
+      def uv = conditions.transform_keys(&:to_s)['uv_index']
 
       # Its lines, the days' cards, as ForecastCards draws them.
       def lines = ForecastCards.lines(days)

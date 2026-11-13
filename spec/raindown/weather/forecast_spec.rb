@@ -72,6 +72,13 @@ RSpec.describe Raindown::Forecast do
     expect(Raindown::HTTPJSON).to have_received(:get).with(a_string_including('api.open-meteo.com/v1/forecast')).thrice
   end
 
+  it 'gives the UV index now, as Open-Meteo gives it and as it was kept' do
+    answer['current']['uv_index'] = 3.2
+
+    expect(described_class.for(zone: 'Australia/Melbourne').uv).to eq(3.2)
+    expect(described_class.cached(zone: 'Australia/Melbourne').uv).to eq(3.2)
+  end
+
   it 'has nowhere to forecast for without a time zone with a city' do
     expect(described_class.for(zone: 'Etc/UTC')).to be_nil
   end
