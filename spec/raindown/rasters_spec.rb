@@ -53,6 +53,19 @@ RSpec.describe Raindown::Rasters do
           .to eq(painter: 'node', data: { node: 'SpecJsSky', source:, args: [], props: { stars: 3 }, root: File.expand_path(dir) })
       end
     end
+
+    it "finds it in a grid's cell by the column its cell starts at" do
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.raindown'))
+        File.write(File.join(dir, '.raindown', 'spec_js_sky.js'), source)
+        grid = "grid:\n+----------+----------------+\n| a        | SpecJsSky:     |\n+----------+----------------+\n"
+        path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\n#{grid}") }
+
+        expect(described_class.repaint(path:, line: 6, column: 12, width: 40, height: 20)[:painting])
+          .to include(painter: 'node', data: include(node: 'SpecJsSky'))
+        expect { described_class.repaint(path:, line: 6, column: 1, width: 40, height: 20) }.to raise_error(ArgumentError, /line 7/)
+      end
+    end
   end
 
   it "gives an app a node's own pixels as their bytes" do
