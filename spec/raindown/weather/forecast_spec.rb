@@ -54,6 +54,24 @@ RSpec.describe Raindown::Forecast do
     expect(described_class.for(zone: 'Australia/Melbourne').temperature).to eq(19.7)
   end
 
+  it "asks again for the place it kept, without finding it again, and waits a minute when it can't be reached" do
+    found = { 'results' => [{ 'name' => 'Hobart', 'latitude' => -42.88, 'longitude' => 147.33, 'country_code' => 'AU' }] }
+    allow(Raindown::HTTPJSON).to receive(:get).with(a_string_including('geocoding')).and_return(found)
+    described_class.for('Hobart')
+    later = Time.now.to_i + described_class::FRESH_FOR + 1
+    allow(Time).to receive(:now).and_return(Time.at(later))
+
+    allow(Raindown::HTTPJSON).to receive(:get).and_raise(Raindown::HTTPJSON::Error, 'offline')
+    expect(described_class.for('Hobart').temperature).to eq(19.7)
+    expect(Raindown::HTTPJSON).to have_received(:get).with(a_string_including('geocoding')).once
+
+    described_class.for('Hobart')
+    expect(Raindown::HTTPJSON).to have_received(:get).with(a_string_including('api.open-meteo.com/v1/forecast')).twice
+    allow(Time).to receive(:now).and_return(Time.at(later + described_class::RETRY_AFTER))
+    described_class.for('Hobart')
+    expect(Raindown::HTTPJSON).to have_received(:get).with(a_string_including('api.open-meteo.com/v1/forecast')).thrice
+  end
+
   it 'has nowhere to forecast for without a time zone with a city' do
     expect(described_class.for(zone: 'Etc/UTC')).to be_nil
   end

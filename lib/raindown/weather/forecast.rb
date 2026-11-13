@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'date'
-require 'digest'
 require 'json'
 require_relative '../http_json'
+require_relative 'forecast_cache'
 require_relative 'forecast_cards'
 require_relative 'sky'
 
@@ -17,6 +17,8 @@ module Raindown
     FORECAST = 'https://api.open-meteo.com/v1/forecast'
     ZONE_TAB = '/usr/share/zoneinfo/zone.tab'
     FRESH_FOR = 15 * 60
+    # How long after Open-Meteo couldn't be reached it's asked again, using what was kept meanwhile.
+    RETRY_AFTER = 60
     DAYS = 7
     # What it asks Open-Meteo for now, for its sky as well as its temperature and weather.
     CURRENT = 'temperature_2m,weather_code,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,rain,showers,' \
@@ -73,24 +75,37 @@ module Raindown
       new(place_name, zone:).report
     end
 
+    # The forecast last kept for a place you name, or else where you are, however old, or nil, without asking for it.
+    def self.cached(place_name = nil, zone: TimeZone.name)
+      new(place_name, zone:).cached
+    end
+
     def initialize(place_name, zone:)
       @place_name = place_name
       @zone = zone
+      @cache = Cache.new(place_name || zone.to_s)
     end
 
-    # The forecast, from the cache while it's fresh, or else asked for again, or from the cache however old it is when
-    # Open-Meteo can't be reached, or nil when it never has been.
+    # The forecast, from the cache while it's fresh, or else asked for again, for the place it was kept for, so it's not
+    # looked up again, or from the cache however old it is when Open-Meteo can't be reached, which isn't asked again for
+    # RETRY_AFTER seconds, or nil when it never has been.
     def report
-      cached, fresh = cached_report
+      cached, fresh = @cache.report
       return cached if fresh
 
-      place = self.place
+      place = cached&.place || self.place
       return unless place
 
-      fetched(place).tap { cache(it) }
+      fetched(place).tap { @cache.keep(it) }
     rescue Error
-      cached || raise
+      raise unless cached
+
+      @cache.unreached
+      cached
     end
+
+    # The forecast kept for this place, however old, or nil, without asking Open-Meteo.
+    def cached = @cache.report.first
 
     # The place to forecast for, as its name, latitude, longitude and country.
     def place
@@ -132,26 +147,6 @@ module Raindown
         Day.new(date: daily['time'][index], high: daily['temperature_2m_max'][index], low: daily['temperature_2m_min'][index],
                 code: daily['weather_code'][index], uv: daily['uv_index_max']&.at(index))
       end
-    end
-
-    # The forecast kept for this place, and whether it's still fresh, which it isn't with fewer days than DAYS, or nil.
-    def cached_report
-      kept = JSON.parse(File.read(cache_file), symbolize_names: true)
-      report = Report.new(**kept[:report], place: Place.new(**kept[:report][:place]), days: kept[:report][:days].map { Day.new(**it) })
-      [report, Time.now.to_i - kept[:at] < FRESH_FOR && report.days.size >= DAYS]
-    rescue Errno::ENOENT, JSON::ParserError, ArgumentError, TypeError, NoMethodError
-      [nil, false]
-    end
-
-    def cache(report)
-      FileUtils.mkdir_p(File.dirname(cache_file))
-      kept = report.to_h.merge(place: report.place.to_h, days: report.days.map(&:to_h))
-      File.write(cache_file, JSON.generate(at: Time.now.to_i, report: kept))
-    end
-
-    def cache_file
-      key = Digest::SHA256.hexdigest(@place_name || @zone.to_s)[0, 12]
-      File.join(ENV.fetch('XDG_CACHE_HOME', File.join(Dir.home, '.cache')), 'raindown', "forecast-#{key}.json")
     end
 
     # Your time zone, like Australia/Melbourne, and its city, from tzdata.

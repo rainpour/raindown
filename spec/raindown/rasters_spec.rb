@@ -10,7 +10,7 @@ RSpec.describe Raindown::Rasters do
   end
 
   it "rasterizes the node on a line, in an outdent block too, and says there's none on another" do
-    allow(Raindown::Forecast).to receive(:for).and_return(nil)
+    allow(Raindown::Forecast).to receive_messages(for: nil, cached: nil)
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, '.raindown'))
       path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\n^^^^\n< weather:\n") }

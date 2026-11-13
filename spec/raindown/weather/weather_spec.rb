@@ -22,14 +22,14 @@ RSpec.describe Raindown::Weather do
     end
   end
 
-  before { allow(Raindown::Forecast).to receive(:for).and_return(nil) }
+  before { allow(Raindown::Forecast).to receive_messages(for: nil, cached: nil) }
 
   it "writes nothing in a notes project when there's no weather to be found" do
     expect(described_class.new.rewrite).to eq('')
   end
 
   context 'with the weather' do
-    before { allow(Raindown::Forecast).to receive(:for).and_return(report) }
+    before { allow(Raindown::Forecast).to receive_messages(for: report, cached: report) }
 
     it "writes the weather now and the next days' where you are" do
       expect(described_class.new.rewrite).to eq(<<~TEXT.chomp)
@@ -58,6 +58,20 @@ RSpec.describe Raindown::Weather do
       expect(described_class.new.quiet(metadata:)).to eq(report.quiet)
       expect(described_class.new.bold(metadata:)).to eq([[2, 3, 8], [2, 17, 20]])
       expect(described_class.new.large(metadata:)).to eq([[1, 9, 11], [1, 23, 25]])
+    end
+
+    it 'gives the valley the weather it kept without waiting for Open-Meteo, asking for it again meanwhile' do
+      asked = Queue.new
+      allow(Raindown::Forecast).to receive(:for) do
+        asked << true
+        sleep 0.2
+        report
+      end
+
+      started = Time.now
+      expect(described_class.new.rasterize(metadata:).to_h[:data][:now]).to include(temperature: 19.7)
+      expect(Time.now - started).to be < 0.1
+      expect(asked.pop(timeout: 1)).to be(true)
     end
 
     it 'gives the valley the weather now, and its sky' do
