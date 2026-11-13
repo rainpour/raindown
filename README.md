@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -307 ██████████████████████│████████▎ +116
+Total    -308 ██████████████████████│████████▎ +117
 ───────────────────────────────────────────────────
-b4cc01f  -236      █████████████████│█▏         +15
+1338ea3    -8                      ▐│▋           +8
+b4cc01f  -236      ▐████████████████│█          +15
 7111f77   -26                     ██│████▏      +59
 411da3d   -31                    ▕██│█▉         +27
 f90572a    -7                      ▐│▋           +8
-33664b2    -7                      ▐│▌           +7
 ```
 <!-- :Commits -->
 
@@ -113,7 +113,7 @@ Shape how the Markdown around them renders, like Liquid or Jinja: [variables](#v
 
 #### Content directives
 
-Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [lists](#lists) with `list:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [images](#images) with `image:`, [grids](#grids) with `grid:`, [weather](#weather) with `weather:`, a [world map](#world) with `world:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they're write-in: they only render into the HTML, taking what's between their tags as input, and write nothing into the file.
+Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [lists](#lists) with `list:`, [charts](#charts) with `chart:`, [tables](#tables) with `table:`, [images](#images) with `image:`, [grids](#grids) with `grid:`, [weather](#weather) with `weather:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks. Written bare, they write back and show in bold in the HTML, so you can see where a page's content comes from. In HTML comments, like `<!-- toc: -->` and `<!-- :toc -->`, they write back and stay hidden, in the HTML and on GitHub. In `<{ }>`, like `<{ :toc }>`, they're write-in: they only render into the HTML, taking what's between their tags as input, and write nothing into the file.
 
 ### Raindown files
 
@@ -398,17 +398,6 @@ weather:
 ```
 
 In the [app](https://github.com/rainpour/raindown-app), its `rasterize` shows a valley behind it: sunny by day, or misty mountains under the stars by night, at the time of day where you are, or in the place it names. In a code project, its sky has a constellation for each branch that isn't merged into `main` yet, a star for each commit. A project's [kind](#config) says which it is. In its top right corner is the UV index now and today's at its strongest, like UV 7.8 / 8.7, under a clear sky, as the Bureau of Meteorology and NOAA give it, as sun protection goes by. Its weather is the weather now: cloud dulls its sky, and the sun or moon shows through it, fainter, and hides the stars, rain and snow fall over it, slanting in the wind, fog hides the far hills, a storm darkens it with lightning now and then, and the cold makes it bluer and the heat warmer. To see any weather, set it with `RAINDOWN_SKY`, like `RAINDOWN_SKY="rain=0.8,cloud=1"`, with any of `cloud`, `rain`, `snow`, `fog`, `storm` and `wind`, from 0 to 1, and `temperature`, in °C. `raindown init` adds one to `.raindown/dashboard.md`, which the app shows when you open the project.
-
-### World
-
-`world:` shows a map of the world in the [app](https://github.com/rainpour/raindown-app), NASA's Blue Marble, with the night where it is now, and the lights of the world's cities coming on in the dark. It writes nothing into the file, and the app paints it like an image, as big as fits, keeping its shape. Alone on its line, it fills its line and the blank lines below it, but the last. In a [grid](#grids)'s cell, like `:world`, it fills the cell:
-
-```
-+--------------------------+--------------------------+
-| :world                   | Where it's night now     |
-|                          |                          |
-+--------------------------+--------------------------+
-```
 
 ### Outdent
 
