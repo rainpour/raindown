@@ -75,7 +75,7 @@ RSpec.describe Raindown::Rasters do
           def rewrite = ''
 
           def rasterize(area:, raindown:)
-            area.set_pixel(1, 0, 0x88c0d0)
+            area.pixels[1, 0] = 0x88c0d0
             area.button(x: 0, y: 0, width: 1, height: 1, set: { dots: 2 })
             raindown.root && 250
           end
@@ -100,7 +100,7 @@ RSpec.describe Raindown::Rasters do
   end
 
   it 'paints all of its pixels at once, as 0xRRGGBB, and gives no time to paint it again unless asked' do
-    area = Raindown::Area.new(width: 2, height: 1).tap { it.put_pixels([0x2e3440, 0x88c0d0]) }
+    area = Raindown::Area.new(width: 2, height: 1).tap { it.pixels = [0x2e3440, 0x88c0d0] }
 
     expect(area.to_h).to include(pixels: [['2e3440ff88c0d0ff'].pack('H*')].pack('m0'), again: nil)
   end
