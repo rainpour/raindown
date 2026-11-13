@@ -4,13 +4,13 @@ require 'date'
 
 module Raindown
   # A forecast's days as little cards side by side, in text, each with an emoji for its weather in its padding at its
-  # top right, its day, its high and low, and its UV index at its strongest, padded inside:
+  # top right, its day, its high and low, and its weather in words, on two lines, padded inside:
   #   ╭────────────╮╭────────────╮
-  #   │        ☁️  ││        🌦️  │
+  #   │        ☁️  ││        🌧️  │
   #   │  Today     ││  Fri       │
   #   │  20° 10°   ││  19° 14°   │
-  #   │  UV 8      ││  UV 4      │
-  #   │            ││            │
+  #   │  overcast  ││  light     │
+  #   │            ││  rain      │
   #   ╰────────────╯╰────────────╯
   module ForecastCards
     # How wide a card's padding is on each side, its text inside it, and the card inside its borders.
@@ -25,6 +25,9 @@ module Raindown
       77 => '❄️', 80 => '🌦️', 81 => '🌦️', 82 => '🌧️', 85 => '🌨️', 86 => '🌨️', 95 => '⛈️', 96 => '⛈️', 99 => '⛈️'
     }.freeze
     UNKNOWN = '❔'
+    # Shorter words for the weather where the WMO's don't fit a card's two lines, and how many lines they have.
+    SHORTER = { 86 => 'heavy snow', 95 => 'storms', 96 => 'storms, hail', 99 => 'storms, hail' }.freeze
+    WORD_LINES = 2
     EMOJI_WIDTH = 2
     EMOJI_GAP = 2
 
@@ -35,10 +38,10 @@ module Raindown
       days.each_with_index.map { |day, index| card(day, index) }.transpose.map(&:join)
     end
 
-    # A card's lines: its top border, its padding with its weather's emoji at its right, its day, temperatures and UV
-    # index, a blank line and its bottom.
+    # A card's lines: its top border, its padding with its weather's emoji at its right, its day, temperatures, its
+    # weather in words on two lines, and its bottom.
     def card(day, index)
-      texts = [label(day, index), temperatures(day), "UV #{day.uv.to_f.round}", '']
+      texts = [label(day, index), temperatures(day), *words(day)]
       pad = ' ' * PADDING
       ["╭#{'─' * WIDTH}╮", "│#{top_padding(day)}│", *texts.map { "│#{pad}#{fit(it)}#{pad}│" }, "╰#{'─' * WIDTH}╯"]
     end
@@ -53,6 +56,16 @@ module Raindown
     # Text padded, by how wide it shows, to the card's text's width.
     def fit(text)
       text + (' ' * [TEXT - Unicode::DisplayWidth.of(text, emoji: :all), 0].max)
+    end
+
+    # The day's weather in words, like partly cloudy, wrapped to the card's text's width, on WORD_LINES lines.
+    def words(day)
+      wrapped = SHORTER.fetch(day.code, day.words).split.each_with_object([]) do |word, lines|
+        next lines << word if lines.empty? || "#{lines.last} #{word}".length > TEXT
+
+        lines[-1] = "#{lines.last} #{word}"
+      end
+      (wrapped + ([''] * WORD_LINES)).first(WORD_LINES)
     end
 
     def label(day, index)

@@ -29,8 +29,8 @@ RSpec.describe Raindown::Forecast do
 
     expect(report.lines).to eq(['╭────────────╮╭────────────╮', '│        ☁️  ││        🌧️  │',
                                 '│  Today     ││  Fri       │',
-                                '│  20° 10°   ││  19° 14°   │', '│  UV 8      ││  UV 4      │',
-                                '│            ││            │',
+                                '│  20° 10°   ││  19° 14°   │', '│  overcast  ││  light     │',
+                                '│            ││  rain      │',
                                 '╰────────────╯╰────────────╯'])
     expect(Raindown::HTTPJSON).to have_received(:get).with(a_string_including('latitude=-37.8167&longitude=144.9667'))
   end
@@ -77,6 +77,12 @@ RSpec.describe Raindown::Forecast do
 
     expect(described_class.for(zone: 'Australia/Melbourne')).to have_attributes(uv: 7.8, uv_peak: 8.4)
     expect(described_class.cached(zone: 'Australia/Melbourne')).to have_attributes(uv: 7.8, uv_peak: 8.4)
+  end
+
+  it "writes a card's weather in words on two lines, shorter where they don't fit" do
+    words = [2, 96, 0].map { Raindown::ForecastCards.words(described_class::Day.new(date: '2026-11-13', high: 20, low: 10, code: it, uv: 5)) }
+
+    expect(words).to eq([%w[partly cloudy], ['storms,', 'hail'], ['clear', '']])
   end
 
   it 'has nowhere to forecast for without a time zone with a city' do

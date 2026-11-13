@@ -14,11 +14,11 @@ module Raindown
   #   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   #   < weather:
   #   < ╭────────────╮╭────────────╮ …
-  #   < │        ☁️  ││        🌦️  │
+  #   < │        ☁️  ││        🌧️  │
   #   < │  Today     ││  Fri       │
   #   < │  20° 10°   ││  19° 14°   │
-  #   < │  UV 8      ││  UV 4      │
-  #   < │            ││            │
+  #   < │  overcast  ││  light     │
+  #   < │            ││  rain      │
   #   < ╰────────────╯╰────────────╯
   # In an app that draws pixels, it shows a valley behind its text, by day or by night, which the app paints itself,
   # from the weather now it gives it, and in a code project, a constellation for each of its branches that aren't merged

@@ -384,7 +384,7 @@ Where [bare directives](#directives) work, you can leave out `grid:`. A block th
 
 ### Weather
 
-`weather:` writes the weather where you are for the week, today and the next six days each on a little card, with an emoji for its weather, its high and low and its UV index at its strongest under a clear sky, as the Bureau of Meteorology and NOAA give it, from [Open-Meteo](https://open-meteo.com). Where you are is your time zone's city, like Melbourne for `Australia/Melbourne`, or a place you name, like `weather: Brisbane`. Temperatures are in Fahrenheit in the US, and Celsius elsewhere. The weather's kept for 15 minutes, and kept when Open-Meteo can't be reached, so it isn't lost while you're offline:
+`weather:` writes the weather where you are for the week, today and the next six days each on a little card, with an emoji for its weather, its high and low and its weather in words, like partly cloudy, from [Open-Meteo](https://open-meteo.com). Where you are is your time zone's city, like Melbourne for `Australia/Melbourne`, or a place you name, like `weather: Brisbane`. Temperatures are in Fahrenheit in the US, and Celsius elsewhere. The weather's kept for 15 minutes, and kept when Open-Meteo can't be reached, so it isn't lost while you're offline:
 
 ```md
 weather:
@@ -392,8 +392,8 @@ weather:
 │        ☁️  ││        🌦️  ││        🌦️  ││        🌦️  ││        ⛅  ││        ☀️  ││        🌤️  │
 │  Today     ││  Fri       ││  Sat       ││  Sun       ││  Mon       ││  Tue       ││  Wed       │
 │  20° 10°   ││  19° 14°   ││  16° 13°   ││  17° 12°   ││  21° 11°   ││  25° 13°   ││  24° 15°   │
-│  UV 8      ││  UV 4      ││  UV 4      ││  UV 7      ││  UV 6      ││  UV 9      ││  UV 8      │
-│            ││            ││            ││            ││            ││            ││            │
+│  overcast  ││  drizzle   ││  drizzle   ││  light     ││  partly    ││  clear     ││  mostly    │
+│            ││            ││            ││  showers   ││  cloudy    ││            ││  clear     │
 ╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯
 ```
 

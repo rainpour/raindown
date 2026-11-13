@@ -37,7 +37,7 @@ RSpec.describe Raindown::Weather do
         │        ☁️  ││        🌦️  │
         │  Today     ││  Fri       │
         │  20° 10°   ││  19° 14°   │
-        │  UV 8      ││  UV 4      │
+        │  overcast  ││  drizzle   │
         │            ││            │
         ╰────────────╯╰────────────╯
       TEXT
