@@ -42,7 +42,7 @@ RSpec.describe Raindown::Services do
       it['content-type'] = 'application/json'
       allow(it).to receive(:body).and_return('{"ok":true}')
     end
-    allow(Net::HTTP).to receive(:start).and_return(response)
+    allow(described_class::Connections).to receive(:request).and_return(response)
 
     expect(services.fetch('https://example.com/a', method: 'post', body: '{}'))
       .to eq('status' => 200, 'headers' => { 'content-type' => 'application/json' }, 'body' => '{"ok":true}')
@@ -50,7 +50,7 @@ RSpec.describe Raindown::Services do
 
   it 'fetches a body as UTF-8 text, as a JSON answer without a charset comes' do
     response = Net::HTTPOK.new('1.1', '200', 'OK').tap { allow(it).to receive(:body).and_return('{"name":"Zürich"}'.b) }
-    allow(Net::HTTP).to receive(:start).and_return(response)
+    allow(described_class::Connections).to receive(:request).and_return(response)
 
     body = services.fetch('https://example.com/place')['body']
     expect([body, body.encoding]).to eq(['{"name":"Zürich"}', Encoding::UTF_8])
@@ -58,7 +58,7 @@ RSpec.describe Raindown::Services do
 
   it "fetches a body that isn't text, like an image, as Base64" do
     response = Net::HTTPOK.new('1.1', '200', 'OK').tap { allow(it).to receive(:body).and_return("\x89PNG\x00\xff".b) }
-    allow(Net::HTTP).to receive(:start).and_return(response)
+    allow(described_class::Connections).to receive(:request).and_return(response)
 
     expect(services.fetch('https://example.com/a.png', 'encoding' => 'base64')['body'].unpack1('m0')).to eq("\x89PNG\x00\xff".b)
   end

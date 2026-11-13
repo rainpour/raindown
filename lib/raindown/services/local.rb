@@ -6,11 +6,13 @@ require 'json'
 require 'net/http'
 require 'open3'
 require 'openssl'
+require_relative 'connections'
 
 module Raindown
   class Services
-    # The services on the desktop and in the terminal, in Raindown's own process: the web with Net::HTTP, the
-    # project's files, a cache in ~/.cache/raindown and git, which it runs.
+    # The services on the desktop and in the terminal, in Raindown's own process: the web with Net::HTTP, keeping its
+    # connections open for the next request to a host, the project's files, a cache in ~/.cache/raindown and git,
+    # which it runs.
     class Local
       TIMEOUT = 10
       METHODS = %w[Get Head Post Put Patch Delete].freeze
@@ -36,7 +38,7 @@ module Raindown
 
         headers = response.to_hash.transform_values { it.join(', ') }
         { 'status' => response.code.to_i, 'headers' => headers, 'body' => body_of(response, options) }
-      rescue SocketError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError => e
+      rescue SocketError, SystemCallError, IOError, Timeout::Error, OpenSSL::SSL::SSLError => e
         raise Error, "Couldn't reach #{url}: #{e.message}"
       end
 
@@ -106,9 +108,7 @@ module Raindown
 
         http_request = Net::HTTP.const_get(method).new(uri, options['headers'] || {})
         http_request.body = options['body'] if options['body']
-        Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: TIMEOUT, read_timeout: TIMEOUT) do |http|
-          http.request(http_request)
-        end
+        Connections.request(uri, http_request, timeout: TIMEOUT)
       end
 
       def redirected(url, response, options)
