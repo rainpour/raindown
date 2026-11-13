@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -56 ▐██████│███████████████████████▋ +206
+Total    -45 ▕██████│███████████████████████▉ +176
 ──────────────────────────────────────────────────
-89fb71c   -9       █│█                          +9
-8956f23   -5       ▐│▊                          +7
-8275329  -10      ▕█│█████████████▏           +115
-8f0ca8a  -14      ▐█│████▍                     +38
-e8b3c60  -18      ██│████▎                     +37
+33664b2   -7       █│█                          +7
+89fb71c   -9      ▕█│█▎                         +9
+8956f23   -5       ▐│█                          +7
+8275329  -10      ▐█│███████████████▋         +115
+8f0ca8a  -14      ██│█████▏                    +38
 ```
 <!-- :Commits -->
 
@@ -668,7 +668,7 @@ It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come
 
 Raindown runs JavaScript Components itself, in [QuickJS](https://bellard.org/quickjs/), so there's nothing to install. A component's file can import others by their paths from it, like `../lib/release.mjs`, and has `setTimeout`, `URL`, `TextEncoder` and `TextDecoder`, but not Node's APIs, like `fs`. For the web, the project's files, a cache and git, it has Raindown's [services](#services), which work the same in the terminal and in the [app](https://github.com/rainpour/raindown-app)'s page. What it logs goes to stderr.
 
-In the [app](https://github.com/rainpour/raindown-app), a JavaScript Component can paint behind its text, like `weather:`'s valley, with `rasterize`, which the app runs itself, in its page, whenever it draws the note. It's given the area to paint, from the component's directive down to two lines past its block, or the whole [outdent](#outdent) block it's in, as `{ width, height, setPixel, putPixels, time, textEnds, cell, button, again, raindown }`: `setPixel(x, y, color)` takes a colour as `0xRRGGBB`, `putPixels(colors)` paints the whole area at once, from its colours as `0xRRGGBB`, row by row, like a `Uint32Array` of `width * height`, much faster than a pixel at a time for a picture, like a map, `time` is the time now in milliseconds, for animating, `textEnds` is where the text ends on each row, in pixels across, `cell` is a character's width and height, `button({ x, y, width, height, set })` makes a rectangle it's painted a button, `again(ms)` asks for it to be painted again in so many milliseconds, and `raindown` is Raindown's [services](#services), for what it paints from, like a map's tiles. The app draws the note for an edit, a scroll or a click, and otherwise only when a component asks, with `again`: `again(0)` on every frame for a scene that moves, like falling rain, or the time to its next change for one that changes now and then, like a radar map's next frame, which it can also call later, once what it was waiting for arrives. `rasterize` can't wait for that: it starts what it fetches once, paints what it has, and asks to be painted again when the rest arrives, like a component of the same props kept between paints. A button only ever changes props the component's directive already has, the ones in `set`, as typing them there would, like a zoom button's `set: { zoom: 8 }`, which changes `zoom: 9` on its line to `zoom: 8`. Its directive decides what its graphic shows and which buttons it has: a component only paints a button for a prop it was given, and the app ignores one for a prop the directive hasn't got, so `RadarMap: Hobart zoom: 9` has zoom buttons and `RadarMap: Hobart` hasn't, and a click never adds to the directive, only changes what's written there, which can be undone. The component paints the button itself, each time it's painted, and the app shows a pointer over it. The app makes the component from its file's source, with its props, so a change to the file shows the next time the app asks, every few seconds. Like the page's own JavaScript, `rasterize` can't use Node's APIs or import other files:
+In the [app](https://github.com/rainpour/raindown-app), a JavaScript Component can paint behind its text, like `weather:`'s valley, with `rasterize`, which the app runs itself, in its page, whenever it draws the note. It's given the area to paint, from the component's directive down to two lines past its block, or the whole [outdent](#outdent) block it's in, as `{ width, height, setPixel, putPixels, time, textEnds, cell, button, raindown }`: `setPixel(x, y, color)` takes a colour as `0xRRGGBB`, `putPixels(colors)` paints the whole area at once, from its colours as `0xRRGGBB`, row by row, like a `Uint32Array` of `width * height`, much faster than a pixel at a time for a picture, like a map, `time` is the time now in milliseconds, for animating, `textEnds` is where the text ends on each row, in pixels across, `cell` is a character's width and height, `button({ x, y, width, height, set })` makes a rectangle it's painted a button, and `raindown` is Raindown's [services](#services), for what it paints from, like a map's tiles. `rasterize` returns how many milliseconds until it's to be painted again: `0` for every frame, for a scene that moves, like falling rain, the time to its next change for one that changes now and then, like a radar map's next frame, or nothing to wait until the app next draws the note, for an edit, a scroll or a click. It can't wait for what it fetches: it starts it once, paints what it has, and returns a short time while the rest loads, so it shows once it's there, like a component of the same props kept between paints. A button only ever changes props the component's directive already has, the ones in `set`, as typing them there would, like a zoom button's `set: { zoom: 8 }`, which changes `zoom: 9` on its line to `zoom: 8`. Its directive decides what its graphic shows and which buttons it has: a component only paints a button for a prop it was given, and the app ignores one for a prop the directive hasn't got, so `RadarMap: Hobart zoom: 9` has zoom buttons and `RadarMap: Hobart` hasn't, and a click never adds to the directive, only changes what's written there, which can be undone. The component paints the button itself, each time it's painted, and the app shows a pointer over it. The app makes the component from its file's source, with its props, so a change to the file shows the next time the app asks, every few seconds. Like the page's own JavaScript, `rasterize` can't use Node's APIs or import other files:
 
 ```js
 // .raindown/twinkle.js
@@ -686,6 +686,7 @@ export class Twinkle {
       const bright = Math.sin(time / 400 + star) > 0.5
       if (bright) setPixel((star * 97) % width, (star * 53) % height, 0xeceff4)
     }
+    return 0
   }
 }
 ```
