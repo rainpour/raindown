@@ -38,13 +38,15 @@ module Raindown
       forecast_lines.join("\n")
     end
 
-    # Its valley, with its branches' names and commits for their constellations, and the weather now, with its UV index,
-    # rounded, and its sky, how much cloud, rain, snow, fog, storm and wind there is, as Sky gives it, at any size, which
-    # the app paints. Without the weather, its sky's clear, but for what RAINDOWN_SKY sets. For a place it names, it's
-    # that place's time of day too, from how far ahead of UTC its clocks are, in seconds, as utc_offset.
+    # Its valley, with its branches' names and commits for their constellations, and the weather now, with its UV index
+    # now and today's at its strongest, to a decimal place, and its sky, how much cloud, rain, snow, fog, storm and wind there is,
+    # as Sky gives it, at any size, which the app paints. Without the weather, its sky's clear, but for what RAINDOWN_SKY
+    # sets. For a place it names, it's that place's time of day too, from how far ahead of UTC its clocks are, in
+    # seconds, as utc_offset.
     def rasterize(metadata: NoMetadata, **)
       report = forecast_now
-      now = report && { temperature: report.temperature, unit: report.unit, code: report.code, words: report.words, uv: report.uv&.round }
+      now = report && { temperature: report.temperature, unit: report.unit, code: report.code, words: report.words,
+                        uv: report.uv&.round(1), uv_peak: report.uv_peak&.round(1) }
       branches = branches(metadata).map { { name: it.name, commits: it.commits } }
       data = { branches:, now:, sky: report&.sky || Sky.of({}) }
       data[:utc_offset] = report.utc_offset if @place && report

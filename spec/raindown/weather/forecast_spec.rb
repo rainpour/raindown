@@ -8,7 +8,7 @@ RSpec.describe Raindown::Forecast do
   let(:answer) do
     { 'current' => { 'temperature_2m' => 19.7, 'weather_code' => 3 },
       'daily' => { 'time' => %w[2026-11-12 2026-11-13], 'weather_code' => [3, 61], 'temperature_2m_max' => [20.0, 19.2],
-                   'uv_index_max' => [8.4, 4.35],
+                   'uv_index_clear_sky_max' => [8.4, 4.35],
                    'temperature_2m_min' => [10.4, 13.9] } }
   end
 
@@ -72,11 +72,11 @@ RSpec.describe Raindown::Forecast do
     expect(Raindown::HTTPJSON).to have_received(:get).with(a_string_including('api.open-meteo.com/v1/forecast')).thrice
   end
 
-  it 'gives the UV index now, as Open-Meteo gives it and as it was kept' do
-    answer['current']['uv_index'] = 3.2
+  it "gives the UV index now and at today's strongest, under a clear sky, as Open-Meteo gives it and as it was kept" do
+    answer['current']['uv_index_clear_sky'] = 7.8
 
-    expect(described_class.for(zone: 'Australia/Melbourne').uv).to eq(3.2)
-    expect(described_class.cached(zone: 'Australia/Melbourne').uv).to eq(3.2)
+    expect(described_class.for(zone: 'Australia/Melbourne')).to have_attributes(uv: 7.8, uv_peak: 8.4)
+    expect(described_class.cached(zone: 'Australia/Melbourne')).to have_attributes(uv: 7.8, uv_peak: 8.4)
   end
 
   it 'has nowhere to forecast for without a time zone with a city' do

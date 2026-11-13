@@ -22,7 +22,7 @@ module Raindown
     DAYS = 7
     # What it asks Open-Meteo for now, for its sky as well as its temperature and weather.
     CURRENT = 'temperature_2m,weather_code,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,rain,showers,' \
-              'snowfall,wind_speed_10m,visibility,uv_index'
+              'snowfall,wind_speed_10m,visibility,uv_index_clear_sky'
     # The countries that measure in Fahrenheit.
     FAHRENHEIT = %w[US LR MM].freeze
     # What the WMO's weather codes, which Open-Meteo answers with, are in words.
@@ -46,9 +46,13 @@ module Raindown
     Report = Data.define(:place, :temperature, :code, :unit, :days, :conditions, :utc_offset) do
       def words = WORDS.fetch(code, 'unknown')
 
-      # How strong the sun's ultraviolet is now, its UV index, or nil when it wasn't given, like in a forecast kept from
+      # How strong the sun's ultraviolet is now under a clear sky, its UV index, as the Bureau of Meteorology and NOAA give
+      # it, the most it could be, as sun protection goes by, or nil when it wasn't given, like in a forecast kept from
       # before it was asked for. Its conditions' names are text as Open-Meteo gives them, and symbols as they're kept.
-      def uv = conditions.transform_keys(&:to_s)['uv_index']
+      def uv = conditions.transform_keys(&:to_s)['uv_index_clear_sky']
+
+      # How strong the sun's ultraviolet gets today, at its strongest, under a clear sky, or nil.
+      def uv_peak = days.first&.uv
 
       # Its lines, the days' cards, as ForecastCards draws them.
       def lines = ForecastCards.lines(days)
@@ -121,7 +125,7 @@ module Raindown
 
     def fetched(place)
       query = { latitude: place.latitude, longitude: place.longitude, current: CURRENT,
-                daily: 'weather_code,temperature_2m_max,temperature_2m_min,uv_index_max', timezone: 'auto',
+                daily: 'weather_code,temperature_2m_max,temperature_2m_min,uv_index_clear_sky_max', timezone: 'auto',
                 forecast_days: DAYS }
       query[:temperature_unit] = 'fahrenheit' if fahrenheit?(place)
       report_of(place, HTTPJSON.get("#{FORECAST}?#{URI.encode_www_form(query)}"), unit_of(place))
@@ -145,7 +149,7 @@ module Raindown
       daily = answer.fetch('daily')
       daily.fetch('time').each_index.map do |index|
         Day.new(date: daily['time'][index], high: daily['temperature_2m_max'][index], low: daily['temperature_2m_min'][index],
-                code: daily['weather_code'][index], uv: daily['uv_index_max']&.at(index))
+                code: daily['weather_code'][index], uv: daily['uv_index_clear_sky_max']&.at(index))
       end
     end
 

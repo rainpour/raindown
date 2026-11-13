@@ -384,7 +384,7 @@ Where [bare directives](#directives) work, you can leave out `grid:`. A block th
 
 ### Weather
 
-`weather:` writes the weather where you are for the week, today and the next six days each on a little card, with an emoji for its weather, its high and low and its UV index at its strongest, from [Open-Meteo](https://open-meteo.com). Where you are is your time zone's city, like Melbourne for `Australia/Melbourne`, or a place you name, like `weather: Brisbane`. Temperatures are in Fahrenheit in the US, and Celsius elsewhere. The weather's kept for 15 minutes, and kept when Open-Meteo can't be reached, so it isn't lost while you're offline:
+`weather:` writes the weather where you are for the week, today and the next six days each on a little card, with an emoji for its weather, its high and low and its UV index at its strongest under a clear sky, as the Bureau of Meteorology and NOAA give it, from [Open-Meteo](https://open-meteo.com). Where you are is your time zone's city, like Melbourne for `Australia/Melbourne`, or a place you name, like `weather: Brisbane`. Temperatures are in Fahrenheit in the US, and Celsius elsewhere. The weather's kept for 15 minutes, and kept when Open-Meteo can't be reached, so it isn't lost while you're offline:
 
 ```md
 weather:
@@ -397,7 +397,7 @@ weather:
 ╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯
 ```
 
-In the [app](https://github.com/rainpour/raindown-app), its `rasterize` shows a valley behind it: sunny by day, or misty mountains under the stars by night, at the time of day where you are, or in the place it names. In a code project, its sky has a constellation for each branch that isn't merged into `main` yet, a star for each commit. A project's [kind](#config) says which it is. Its weather is the weather now: cloud greys its sky and hides the sun, or the moon and stars, rain and snow fall over it, slanting in the wind, fog hides the far hills, a storm darkens it with lightning now and then, and the cold makes it bluer and the heat warmer. To see any weather, set it with `RAINDOWN_SKY`, like `RAINDOWN_SKY="rain=0.8,cloud=1"`, with any of `cloud`, `rain`, `snow`, `fog`, `storm` and `wind`, from 0 to 1, and `temperature`, in °C. `raindown init` adds one to `.raindown/dashboard.md`, which the app shows when you open the project.
+In the [app](https://github.com/rainpour/raindown-app), its `rasterize` shows a valley behind it: sunny by day, or misty mountains under the stars by night, at the time of day where you are, or in the place it names. In a code project, its sky has a constellation for each branch that isn't merged into `main` yet, a star for each commit. A project's [kind](#config) says which it is. In its top right corner is the UV index now and today's at its strongest, like UV 7.8 / 8.7, under a clear sky, as the Bureau of Meteorology and NOAA give it, as sun protection goes by. Its weather is the weather now: cloud dulls its sky, and the sun or moon shows through it, fainter, and hides the stars, rain and snow fall over it, slanting in the wind, fog hides the far hills, a storm darkens it with lightning now and then, and the cold makes it bluer and the heat warmer. To see any weather, set it with `RAINDOWN_SKY`, like `RAINDOWN_SKY="rain=0.8,cloud=1"`, with any of `cloud`, `rain`, `snow`, `fog`, `storm` and `wind`, from 0 to 1, and `temperature`, in °C. `raindown init` adds one to `.raindown/dashboard.md`, which the app shows when you open the project.
 
 ### World
 
