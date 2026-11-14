@@ -9,6 +9,7 @@ require_relative '../node_blocks'
 require_relative '../nodes'
 require_relative '../pages/pages'
 require_relative '../projects'
+require_relative '../project_nodes'
 require_relative '../rasters'
 require_relative '../workers/workers'
 require_relative '../stat'
@@ -75,6 +76,11 @@ module Raindown
       rescue StandardError
         []
       end
+    end
+
+    # The project's own nodes, from its .raindown folder, as an app lists them, and why any couldn't be loaded.
+    def nodes
+      { nodes: ProjectNodes.of(root), errors: @load_errors }
     end
 
     # What the node on a line of a file that rasterizes, like weather:, shows behind its text, and how it formats its

@@ -30,4 +30,23 @@ RSpec.describe Raindown::Project do
     expect(project.endpoints.map(&:url)).to eq(['https://example.com/users'])
     expect(project.outline(notes).directives.map(&:name)).to eq(['endpoint'])
   end
+
+  context 'with nodes of its own' do
+    after do
+      Object.send(:remove_const, :SpecProjectStars) if Object.const_defined?(:SpecProjectStars)
+      Raindown::MarkdownNodes.node_classes.delete('SpecProjectCard')
+    end
+
+    it 'lists them, Ruby and Markdown, with their files and whether they rasterize' do
+      ruby = "class SpecProjectStars < Raindown::Node\n  def rewrite = ''\n  def rasterize(area:) = nil\nend\n"
+      File.write(File.join(@root, '.raindown', 'spec_project_stars.rb'), ruby)
+      File.write(File.join(@root, '.raindown', 'SpecProjectCard.md'), "A card\n")
+
+      expect(project.nodes).to eq(
+        nodes: [{ name: 'SpecProjectCard', kind: 'markdown', file: '.raindown/SpecProjectCard.md', rasterizes: false },
+                { name: 'SpecProjectStars', kind: 'ruby', file: '.raindown/spec_project_stars.rb', rasterizes: true }],
+        errors: []
+      )
+    end
+  end
 end
