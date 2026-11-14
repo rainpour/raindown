@@ -166,7 +166,7 @@ module Raindown
       def render(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
         abort('--html renders a file, not a directory') if File.directory?(path)
-        Nodes.load(path)
+        warn(*Nodes.load(path).map { "raindown: #{it}" })
 
         metadata = Pages.for(path)
         rewrite = Rewriter.update(path:, bare:, execute:, metadata:)
@@ -200,7 +200,7 @@ module Raindown
         ensure_exists(path)
         return Watcher::Supervisor.new(directory: path, bare:, execute:).start if File.directory?(path)
 
-        Nodes.load(path)
+        warn(*Nodes.load(path).map { "raindown: #{it}" })
         Watcher::FileWatcher.new(path:, bare:, execute:).start
       end
 

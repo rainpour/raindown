@@ -11,7 +11,7 @@ module Raindown
   # optionally render, like Ruby nodes. They run in QuickJS, inside Raindown, so they need nothing installed, or in a
   # host of an app's own, like its page. Wherever they run, they get Raindown's services as raindown in their context.
   # A host answers requests, which JSON can hold, with request(**message):
-  #   { op: 'load', folder }                     → { nodes: [{ name, render, rasterize, file }] }
+  #   { op: 'load', folder }                     → { nodes: [{ name, render, rasterize, file }], errors: [{ file, error }] }
   #   { op: 'new', id, name, args, props }       → {}
   #   { op: 'call', id, method, context, root }  → { value }
   # and raises an Error for a request that fails.
@@ -29,14 +29,23 @@ module Raindown
 
     module_function
 
-    # Loads the JavaScript Components in a .raindown folder, starting their host the first time a folder has any.
+    # Loads the JavaScript Components in a .raindown folder, starting their host the first time a folder has any, and
+    # gives why any file couldn't be loaded, like ".raindown/sky.mjs: SyntaxError: …", or why none could, when the host
+    # couldn't load them, so the folder's other nodes still load.
     def load(folder)
-      return if Dir.glob(EXTENSIONS.map { "*#{it}" }, base: folder).empty?
+      return [] if Dir.glob(EXTENSIONS.map { "*#{it}" }, base: folder).empty?
 
-      host.request(op: 'load', folder:).fetch('nodes').each do |node|
-        file = node['file'] && File.join(folder, node['file'])
-        node_classes[node['name']] ||= JSNode.for(name: node['name'], render: node['render'], rasterize: node['rasterize'], file:)
-      end
+      reply = host.request(op: 'load', folder:)
+      reply.fetch('nodes').each { add(folder, it) }
+      reply.fetch('errors', []).map { "#{Nodes::FOLDER}/#{it['file']}: #{it['error']}" }
+    rescue Error => e
+      ["#{Nodes::FOLDER}: #{e.message}"]
+    end
+
+    # A node as the host described it, unless one of its name is already loaded.
+    def add(folder, node)
+      file = node['file'] && File.join(folder, node['file'])
+      node_classes[node['name']] ||= JSNode.for(name: node['name'], render: node['render'], rasterize: node['rasterize'], file:)
     end
 
     def node_class(name)

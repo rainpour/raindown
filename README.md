@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -135 ▕████████████│█████████████████▉ +200
-───────────────────────────────────────────────────
-ad01662    -4             ▐│█▌                  +17
-1adc602   -24           ▕██│██                  +23
-ae27848   -49         ▐████│████████████▊      +143
-687116f   -52         ▐████│▌                    +6
-f800221    -6             ▐│█                   +11
+Total    -60 ▐███████│██████████████████████▋ +186
+──────────────────────────────────────────────────
+0d533c7   -0         │██▌                      +20
+161c00f   -0         │████████▊                +72
+f3a1363  -32     ████│██████▋                  +54
+ad01662   -4        ▐│██▏                      +17
+1adc602  -24      ███│██▊                      +23
 ```
 <!-- :Commits -->
 
@@ -572,6 +572,8 @@ Every response in the file is checked, whether it's just run or was already ther
 
 > [!NOTE]
 > A node is how a directive is built and a component is how it's rendered. Nodes that start with a capital letter like `Changelog:` are components. Nodes like `if:` are templating.
+
+Each file in `.raindown` loads on its own, so one that can't be, like one with a syntax error, leaves the others working. Raindown says why it couldn't, with its file and line: in the terminal as it starts, in the warnings of a file it writes back, and in the app's settings, under Plugins.
 
 #### Ruby Components
 

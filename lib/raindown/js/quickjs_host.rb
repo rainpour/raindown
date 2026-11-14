@@ -24,11 +24,11 @@ module Raindown
       end
 
       def request(**message)
-        import(message[:folder]) if message[:op] == 'load'
+        errors = import(message[:folder]) if message[:op] == 'load'
         reply = JSON.parse(@vm.call('__raindown.request', JSON.generate(sent(message))))
         raise Error, reply['error'] if reply['error']
 
-        reply
+        reply.merge('errors' => errors || [])
       rescue Quickjs::RuntimeError => e
         raise Error, e.message
       end
@@ -43,12 +43,13 @@ module Raindown
         { op: 'load', files: files(message[:folder]) }
       end
 
-      # Each of the folder's files, but one that can't be, which says why on stderr, so the others still load.
+      # Each of the folder's files, but one that can't be, so the others still load, and why any couldn't be.
       def import(folder)
-        files(folder).each do |file|
+        files(folder).filter_map do |file|
           @vm.import('* as exports', filename: file, code_to_expose: "__raindown.register(#{JSON.generate(file)}, exports)")
+          nil
         rescue Quickjs::RuntimeError => e
-          warn "Couldn't load #{file}: #{e.message}"
+          { 'file' => File.basename(file), 'error' => e.message }
         end
       end
 

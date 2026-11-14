@@ -17,10 +17,12 @@ module Raindown
                       **Config.render_options(path))
     end
 
+    # Its warnings say why any of the project's nodes couldn't be loaded too.
     def rewrite_markdown(markdown, path:, bare: false, execute: false)
-      Nodes.load(path)
+      load_errors = Nodes.load(path)
       rewrite = Rewriter.rewrite(content: markdown, path:, bare:, execute:, metadata: Pages.for(path))
-      { output: rewrite.content, warnings: rewrite.failures.map { "Endpoint check failed: #{it}" } + rewrite.problems }
+      failures = rewrite.failures.map { "Endpoint check failed: #{it}" }
+      { output: rewrite.content, warnings: load_errors + failures + rewrite.problems }
     end
   end
 end

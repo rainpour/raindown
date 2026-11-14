@@ -35,17 +35,47 @@ module Raindown
 
     module_function
 
-    # Loads the .raindown folder beside the file or in the nearest directory above it, once per process.
+    # Loads the .raindown folder beside the file or in the nearest directory above it, once per process, and gives why
+    # any of its files couldn't be loaded, like ".raindown/stars.rb:3: syntax errors found". Each file loads on its own,
+    # so one that can't be leaves the others loaded.
     def load(path)
       folder = find_folder(File.dirname(File.expand_path(path)))
-      return if folder.nil? || loaded.include?(folder)
+      return [] if folder.nil?
+      return load_errors[folder] if loaded.include?(folder)
 
+      loaded << folder
+      load_errors[folder] = load_ruby(folder) + JSNodes.load(folder) + MarkdownNodes.load(folder)
+    end
+
+    # Dirload's steps, for the folder's Ruby files, as dirload(folder) takes them, a file that fails one being left out
+    # of the next, and why each failed.
+    def load_ruby(folder)
       require 'lownode'
       require 'dirload'
-      loaded << folder
-      dirload(folder)
-      JSNodes.load(folder)
-      MarkdownNodes.load(folder)
+      files = Dirload.file_paths(absolute_path: folder).map { [it, Dirload.find_adapter(file_path: it)] }
+      errors = {}
+      %i[mapload preload evaluate].each do |step|
+        files.each do |file, adapter|
+          next if adapter.nil? || errors.key?(file)
+
+          adapter.public_send(step, file_path: file)
+        rescue StandardError, ScriptError => e
+          errors[file] = e.message
+        end
+      end
+      errors.map { |file, message| load_error(folder, file, message) }
+    end
+
+    # Why a file couldn't be loaded, by its path from the project, with its line, when the error has it.
+    def load_error(folder, file, message)
+      listed = file.delete_prefix("#{File.dirname(folder)}/")
+      return "#{listed}#{message.delete_prefix(file)}" if message.start_with?("#{file}:")
+
+      "#{listed}: #{message}"
+    end
+
+    def load_errors
+      @load_errors ||= {}
     end
 
     def find_folder(directory)

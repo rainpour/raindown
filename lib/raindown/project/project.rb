@@ -39,11 +39,10 @@ module Raindown
       @root = root
       @bare = bare
       @execute = execute
-      @load_errors = []
       @file_errors = []
-      Nodes.load(File.join(root, Nodes::FOLDER))
+      @load_errors = Nodes.load(File.join(root, Nodes::FOLDER))
     rescue StandardError, ScriptError => e
-      @load_errors << "#{File.basename(root)}/#{Nodes::FOLDER}: #{e.message}"
+      @load_errors = ["#{File.basename(root)}/#{Nodes::FOLDER}: #{e.message}"]
     end
 
     # A file's lines, headings and directives.

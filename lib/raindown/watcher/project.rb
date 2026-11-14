@@ -17,9 +17,9 @@ module Raindown
         @execute = execute
       end
 
-      # Loads the project's nodes from its .raindown folder.
+      # Loads the project's nodes from its .raindown folder, saying why any couldn't be.
       def start
-        Nodes.load(File.join(root, Nodes::FOLDER))
+        Nodes.load(File.join(root, Nodes::FOLDER)).each { warn "[#{name}] raindown: #{it}" }
       rescue StandardError, ScriptError => e
         raise if ENV['RAINDOWN_DEBUG']
 

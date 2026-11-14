@@ -19,11 +19,13 @@ module Raindown
 
     module_function
 
+    # Its templates are read as they're written, so loading one can't fail, and there are never errors to give.
     def load(folder)
       Dir.glob(EXTENSIONS.map { "*#{it}" }, base: folder).each do |file|
         name = File.basename(file, '.*')
         node_classes[name] ||= MarkdownNode.for(name:, path: File.join(folder, file)) if name.match?(NAME)
       end
+      []
     end
 
     # Whether a file is a Markdown Component, by its extension and name, so .raindown/data/blueprints.md isn't one.

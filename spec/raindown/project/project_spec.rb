@@ -57,5 +57,16 @@ RSpec.describe Raindown::Project do
         errors: []
       )
     end
+
+    it "lists the others when one can't be loaded, and says why it couldn't, by its file and line" do
+      File.write(File.join(@root, '.raindown', 'a_broken.rb'), "class SpecProjectBroken < Raindown::Node\n  def rewrite = (\nend\n")
+      stars = "class SpecProjectStars < Raindown::Node\n  def rewrite = ''\nend\n"
+      File.write(File.join(@root, '.raindown', 'spec_project_stars.rb'), stars)
+      File.write(File.join(@root, '.raindown', 'SpecProjectCard.md'), "A card\n")
+
+      expect(project.nodes[:nodes].map { it[:name] }).to eq(%w[SpecProjectCard SpecProjectStars])
+      expect(project.nodes[:errors]).to contain_exactly(start_with('.raindown/a_broken.rb:3: syntax error'))
+      expect(project.rewrite_markdown("# Notes\n", notes)[:warnings]).to eq(project.nodes[:errors])
+    end
   end
 end
