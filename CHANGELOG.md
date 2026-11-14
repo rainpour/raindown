@@ -5,6 +5,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- A Ruby node's `rasterize(area:)` paints its own pixels, like a JavaScript Component's, with `area.pixels[x, y] = color` or `area.pixels = colors`, and `area.button`, and the app paints a slow one less often
+- A project's components run in a grid's cells, like Raindown's own nodes
+- Read a project's file, or fetch one that isn't text, like an image, as Base64 with `encoding: 'base64'`
+- A JavaScript Component's `rasterize` gets Raindown's services as `raindown`
+- `weather:` gives the UV index now and at today's strongest, and writes each card's weather in words
+- A project's own nodes are listed for an app, with their kind, file and whether they rasterize, and why any couldn't be loaded
+
+### Changed
+
+- `rasterize` returns how many milliseconds until it's painted again, or nothing to wait for a change, in place of `again`, and is given all of its space, even what's scrolled off screen
+- An app asks a node to repaint, getting its painting and how it formats its lines as `formatting: { quiet, bold, large }`
+- Each of a project's node files loads on its own, so one that can't be leaves the others working, and Raindown says why with its file and line
+- A file's JavaScript Components are asked for what they write in one request, so `document` is the file as it was before any node wrote, and a host answers `{ op: 'call', calls }`, making each node as it's first called
+- A project's Worker writes Markdown back, with its nodes as they are now
+- `fetch` keeps its connections open for the next request to a host
+- `weather:` paints the forecast it kept without waiting for Open-Meteo
+
+### Removed
+
+- `painting:` and `world:`, which are now components a project can have of its own
+
 ## 0.20.1
 
 ### Fixed
