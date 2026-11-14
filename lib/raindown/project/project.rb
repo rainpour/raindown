@@ -4,6 +4,7 @@ require_relative '../actions'
 require_relative '../bare_directives'
 require_relative '../chart/chart'
 require_relative '../document'
+require_relative '../editing'
 require_relative '../front_matter'
 require_relative '../node_blocks'
 require_relative '../nodes'
@@ -76,6 +77,16 @@ module Raindown
       rescue StandardError
         []
       end
+    end
+
+    # Markdown in one of the project's files, as Raindown would write it back, with its nodes, as { output, warnings }.
+    def rewrite_markdown(markdown, path)
+      Editing.rewrite_markdown(markdown, path:, bare: @bare)
+    end
+
+    # The names of the nodes that rasterize, Raindown's own and the project's, for a file in it.
+    def rasterizing(path)
+      Rasters.names(path)
     end
 
     # The project's own nodes, from its .raindown folder, as an app lists them, and why any couldn't be loaded.

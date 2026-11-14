@@ -37,6 +37,15 @@ RSpec.describe Raindown::Project do
       Raindown::MarkdownNodes.node_classes.delete('SpecProjectCard')
     end
 
+    it 'writes Markdown back with them, and names those that rasterize' do
+      ruby = "class SpecProjectStars < Raindown::Node\n  def rewrite = '***'\n  def rasterize(area:) = nil\nend\n"
+      File.write(File.join(@root, '.raindown', 'spec_project_stars.rb'), ruby)
+
+      expect(project.rewrite_markdown("<!-- SpecProjectStars: -->\n<!-- :SpecProjectStars -->\n", notes)[:output])
+        .to eq("<!-- SpecProjectStars: -->\n***\n<!-- :SpecProjectStars -->\n")
+      expect(project.rasterizing(notes)).to eq(%w[weather SpecProjectStars])
+    end
+
     it 'lists them, Ruby and Markdown, with their files and whether they rasterize' do
       ruby = "class SpecProjectStars < Raindown::Node\n  def rewrite = ''\n  def rasterize(area:) = nil\nend\n"
       File.write(File.join(@root, '.raindown', 'spec_project_stars.rb'), ruby)
