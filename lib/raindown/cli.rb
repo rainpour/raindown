@@ -81,6 +81,9 @@ module Raindown
     def self.run(argv)
       # Markdown is UTF-8 whatever the locale, as an app opened from the Dock, like Obsidian, starts Raindown without one.
       Encoding.default_external = Encoding::UTF_8
+      # Ruby leaves YJIT off unless asked, which makes nodes that compute in loops several times faster. A Ruby built
+      # without it, like ruby.wasm's, has no RubyVM::YJIT.
+      RubyVM::YJIT.enable if defined?(RubyVM::YJIT)
       return if command(argv) || Skeleton.run_command(argv)
 
       argv = with_path(argv)
