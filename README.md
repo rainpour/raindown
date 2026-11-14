@@ -24,13 +24,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
 <!-- Commits: limit=5 -->
 ```
-Total    -60 ▐███████│██████████████████████▋ +186
+Total    -70 ▐██████│███████████████████████▌ +253
 ──────────────────────────────────────────────────
-0d533c7   -0         │██▌                      +20
-161c00f   -0         │████████▊                +72
-f3a1363  -32     ████│██████▋                  +54
-ad01662   -4        ▐│██▏                      +17
-1adc602  -24      ███│██▊                      +23
+df1838c  -34    ▕███│████████▍                 +90
+0d533c7   -0        │█▉                        +20
+161c00f   -0        │██████▋                   +72
+f3a1363  -32     ███│█████                     +54
+ad01662   -4       ▐│█▋                        +17
 ```
 <!-- :Commits -->
 
@@ -657,7 +657,7 @@ export class Changelog {
 }
 ```
 
-It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content, and `raindown` is Raindown's [services](#services). A Ruby node of the same name is used instead. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `list:` or `chart:`.
+It is used like any component like `<!-- Changelog: limit=3 -->`. Its props come first in the constructor, then the value before them, if any. Its methods get the context as one object, where `metadata` is `{ root, files }`, with each file's front matter and path but not its content, and `raindown` is Raindown's [services](#services). A file's components are asked for what they write together, in one request to where they run, so `document` is the file as it was before any node wrote, not what the nodes below just wrote, as a Ruby node sees. A Ruby node of the same name is used instead. They can't subclass Raindown's own nodes, like `Chart`, so they can't replace `toc:`, `list:` or `chart:`.
 
 Raindown runs JavaScript Components itself, in [QuickJS](https://bellard.org/quickjs/), so there's nothing to install. A component's file can import others by their paths from it, like `../lib/release.mjs`, and has `setTimeout`, `URL`, `TextEncoder` and `TextDecoder`, but not Node's APIs, like `fs`. For the web, the project's files, a cache and git, it has Raindown's [services](#services), which work the same in the terminal and in the [app](https://github.com/rainpour/raindown-app)'s page. What it logs goes to stderr.
 

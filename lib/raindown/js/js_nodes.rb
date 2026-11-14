@@ -12,9 +12,10 @@ module Raindown
   # host of an app's own, like its page. Wherever they run, they get Raindown's services as raindown in their context.
   # A host answers requests, which JSON can hold, with request(**message):
   #   { op: 'load', folder }                     → { nodes: [{ name, render, rasterize, file }], errors: [{ file, error }] }
-  #   { op: 'new', id, name, args, props }       → {}
-  #   { op: 'call', id, method, context, root }  → { value }
-  # and raises an Error for a request that fails.
+  #   { op: 'call', calls: [{ id, name, args, props, method, context, root }] }
+  #                                              → { answers: [{ value } or { error }] }
+  # and raises an Error for a request that fails. A call makes its node, with its args and props, the first time its id
+  # is called, so a node takes one request, and calls go together, so a note's nodes take one between them.
   module JSNodes
     EXTENSIONS = %w[.js .mjs].freeze
     # Raindown's services for JavaScript nodes, which every host runs before its own script, like an app's page.
@@ -50,6 +51,18 @@ module Raindown
 
     def node_class(name)
       node_classes[name]
+    end
+
+    # The answers to calls of JavaScript nodes' methods, from JSNode#call_for, asked of their host together: each one's
+    # output, or an Error for one that raised.
+    def call(calls)
+      return [] if calls.empty?
+
+      host.request(op: 'call', calls:).fetch('answers').map do |answer|
+        next Error.new(answer['error']) if answer['error']
+
+        answer['value'].to_s
+      end
     end
 
     # The names of the folder's JavaScript Components that rasterize.
@@ -90,11 +103,17 @@ module Raindown
       super()
       @args = args
       @props = props
-      JSNodes.host.request(op: 'new', id: object_id, name: self.class.name, args:, props:)
     end
 
     def rewrite(**context)
       js_output(:rewrite, context)
+    end
+
+    # A call of its method, for JSNodes.call, with what its host makes it with the first time, and its project's root,
+    # for its services, which its host gives it as raindown.
+    def call_for(method, context)
+      { id: object_id, name: self.class.name, args: @args, props: @props, method:, root: Services.for(context[:metadata]).root,
+        context: json_context(**context) }
     end
 
     private
@@ -107,10 +126,11 @@ module Raindown
       Scene.new(name: 'node', data:)
     end
 
-    # Its output, with the project's root for its services, which its host gives it as raindown.
     def js_output(method, context)
-      root = Services.for(context[:metadata]).root
-      JSNodes.host.request(op: 'call', id: object_id, method:, root:, context: json_context(**context)).fetch('value').to_s
+      output = JSNodes.call([call_for(method, context)]).first
+      raise output if output.is_a?(JSNodes::Error)
+
+      output
     end
 
     # JSON can't hold Pages, so the metadata is its root and each file's front matter and path, nor the services, which

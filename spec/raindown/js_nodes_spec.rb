@@ -53,6 +53,22 @@ RSpec.describe Raindown::JSNodes do
       .to include("> Couldn't write: Broken\n")
   end
 
+  it "asks for all of a note's JavaScript Components together, the throwing one writing its error alone" do
+    project('spec_js_count.mjs' => <<~JS)
+      export class SpecJsCount {
+        constructor({ n }) { this.n = n }
+        rewrite() { if (this.n === 2) throw new Error('Two'); return `Count ${this.n}` }
+      }
+    JS
+    allow(described_class.host).to receive(:request).and_call_original
+    content = (1..3).map { "<!-- SpecJsCount: n=#{it} -->\n<!-- :SpecJsCount -->\n" }.join
+
+    markdown = Raindown::NodeInjector.rewrite(content:)
+
+    expect(markdown).to include("Count 1\n", "> Couldn't write: Two\n", "Count 3\n")
+    expect(described_class.host).to have_received(:request).with(hash_including(op: 'call')).once
+  end
+
   it "imports other files by their paths from the node's" do
     dir = Dir.mktmpdir
     FileUtils.mkdir_p(File.join(dir, 'lib'))

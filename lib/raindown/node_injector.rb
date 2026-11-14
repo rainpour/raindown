@@ -31,6 +31,7 @@ module Raindown
       @problems = []
       @bare = BareDirectives.enabled?(path:, content:, bare:)
       @metadata = metadata
+      @ahead = {}
     end
 
     # Outdented blocks' directives are written first, then the rest of the file's.
@@ -50,6 +51,7 @@ module Raindown
       end
       return content if blocks.empty?
 
+      @ahead = written_ahead(lines, blocks)
       # From the bottom up, so the lines above each block stay where they are, so its problems are put back in order.
       problems = @problems
       @problems = []
@@ -59,20 +61,34 @@ module Raindown
     end
 
     def block_lines(lines, block)
-      comment, written = comment_and_written(Problem.without_alert(written_lines(lines, block)))
-      # The document as it's written so far, from the bottom up, so a node sees what the nodes below it just wrote, like
-      # the TOC the headings they write.
-      context = { document: lines.join, metadata: @metadata, bare: @bare, comment:, written: }
-      written = written_lines_of(node_written(block, context))
+      written = written_lines_of(node_written(block, context_of(lines, block)))
       return [*directive(lines, block), *bare(written, block)] unless block[:close]
 
       delimited(lines, block, written)
     end
 
+    # The document as it's written so far, from the bottom up, so a node sees what the nodes below it just wrote, like
+    # the TOC the headings they write.
+    def context_of(lines, block)
+      comment, written = comment_and_written(Problem.without_alert(written_lines(lines, block)))
+      { document: lines.join, metadata: @metadata, bare: @bare, comment:, written: }
+    end
+
+    # What the JavaScript nodes among the blocks write, by each block's line, asked of their host together, as a request
+    # costs about as much as a node. So they see the document as it was before the blocks wrote, not what the nodes
+    # below them just wrote. A host that can't be asked leaves each to be asked alone, to say why in its place.
+    def written_ahead(lines, blocks)
+      ahead = blocks.select { it[:node].is_a?(JSNode) }
+      calls = ahead.map { it[:node].call_for(:rewrite, context_of(lines, it)) }
+      ahead.map { it[:open] }.zip(JSNodes.call(calls)).to_h
+    rescue JSNodes::Error
+      {}
+    end
+
     # A node that raises writes why in its place, like a Problem, so the rest of the file still writes back.
     def node_written(block, context)
       @problems << block[:node].warning if block[:node].is_a?(Problem)
-      written = Nodes.call(block[:node], :rewrite, **context)
+      written = written_by(block, context)
       return written if written.is_a?(Written)
 
       Written.new(written.to_s)
@@ -80,6 +96,14 @@ module Raindown
       problem = Problem.new("Couldn't write: #{e.message}", block[:open] + 1)
       @problems << problem.warning
       Written.new(problem.rewrite(written: context[:written]))
+    end
+
+    # What the block's node writes, as it was asked ahead, or asked now.
+    def written_by(block, context)
+      output = @ahead.fetch(block[:open]) { return Nodes.call(block[:node], :rewrite, **context) }
+      raise output if output.is_a?(JSNodes::Error)
+
+      output
     end
 
     # The directive, what the node wrote and the end tag, straight after each other, as a comment on its own line ends
