@@ -70,7 +70,8 @@ module Raindown
         output = Directives.render("#{html.chomp}\n")
         next output if commonmark
 
-        output.gsub(/[\u{E000}\u{E001}]/, CODE_BRACES.invert)
+        # With tr, as a regex of the placeholders reads the output a character at a time, taking three times as long.
+        output.tr(CODE_BRACES.values.join, CODE_BRACES.keys.join)
       end
     end
   end
@@ -119,8 +120,9 @@ module Raindown
     preserve_code(doc:)
 
     html = highlight_code? ? doc.to_html(options: HTML_OPTIONS) : unhighlighted_html(doc:)
-    html.gsub('<!-- ANTLERS', '<{').gsub('ANTLERS -->', '}>')
-        .gsub(/[\u{E000}\u{E001}]/, CODE_BRACE_ENTITIES)
+    html = html.gsub('<!-- ANTLERS', '<{').gsub('ANTLERS -->', '}>')
+    # Each placeholder's found as text, which is several times faster than a regex of both.
+    CODE_BRACE_ENTITIES.reduce(html) { |text, (brace, entity)| text.gsub(brace, entity) }
   end
 
   # Code blocks without highlighting, with a language class for highlighting in the browser.

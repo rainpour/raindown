@@ -15,8 +15,10 @@ module Raindown
 
     # The block opening at index, closed by a fence of the same character that's at least as long.
     def at(lines, index)
-      fence, language = lines[index]&.match(FENCE)&.captures
-      return unless fence
+      # Most lines open no fence, and match? makes no match to find that out.
+      return unless lines[index]&.match?(FENCE)
+
+      fence, language = lines[index].match(FENCE).captures
 
       close = (index + 1...lines.length).find { |i| lines[i].match?(CLOSINGS[fence]) }
       { open: index, close:, language:, body: lines[index + 1...close].join } if close

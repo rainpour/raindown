@@ -5,8 +5,9 @@ require_relative 'code_blocks'
 module Raindown
   # Finds code in Markdown the way Commonmarker reads it: code spans and fenced, indented or quoted code blocks.
   module Code
-    # A code span on one line, like `{x}`, between runs of the same number of backticks.
-    SPAN = /(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)/n
+    # A code span on one line, like `{x}`, between runs of the same number of backticks, from the run it opens with.
+    SPAN = /\G(`+)(?!`).+?(?<!`)\1(?!`)/n
+    NOT_BACKTICK = /[^`]/n
 
     module_function
 
@@ -47,8 +48,19 @@ module Raindown
       ranges
     end
 
+    # The line's spans, each matched from its next run of backticks, which byteindex finds without a regex, so the
+    # text between spans is never scanned, and nor is a line without a backtick, as most are. A run that opens no span
+    # is passed over whole.
     def span_ranges(line, start)
-      line.b.to_enum(:scan, SPAN).map { (start + ::Regexp.last_match.begin(0))...(start + ::Regexp.last_match.end(0)) }
+      bytes = line.b
+      ranges = []
+      from = 0
+      while (open = bytes.byteindex('`', from))
+        from = SPAN.match(bytes, open)&.end(0)
+        ranges << ((start + open)...(start + from)) if from
+        from ||= bytes.byteindex(NOT_BACKTICK, open) || break
+      end
+      ranges
     end
 
     def range(position, line_offsets)
