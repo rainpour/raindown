@@ -54,7 +54,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         if: ${{ !matrix.alpine }}
         with:
-          ruby-version: '3.4'
+          ruby-version: '4.0'
           bundler-cache: true
 
       - name: Build
@@ -67,10 +67,10 @@ jobs:
         if: ${{ matrix.alpine }}
         run: |
           # Ruby's configure, which tebako runs to build native extensions, needs bash, not busybox's sh.
-          docker run --rm -v "$PWD:/work" -w /work -e TEBAKO_PLATFORM -e CONFIG_SHELL=/bin/bash alpine:3.22 sh -euc '
-            apk add --no-cache bash build-base curl git linux-headers ncurses-dev openssl-dev ruby ruby-dev yaml-dev
+          # Ruby's own image, as Alpine 3.22's Ruby is 3.4, which Raindown's gems no longer install on.
+          docker run --rm -v "$PWD:/work" -w /work -e TEBAKO_PLATFORM -e CONFIG_SHELL=/bin/bash ruby:4.0-alpine3.22 sh -euc '
+            apk add --no-cache bash build-base curl git linux-headers ncurses-dev openssl-dev yaml-dev
             git config --global --add safe.directory /work
-            gem install bundler --no-document
             bundle install
             bundle exec rake tebako TEBAKO=/work/.tools/tebako
           '

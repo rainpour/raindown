@@ -16,14 +16,14 @@ require_relative '../lib/version'
 #     bin/raindown           the entry point
 #     raindown/              the gem: raindown.gemspec, lib/, bin/
 module TebakoBuild
-  RUBY_VERSION = '3.4.10'
+  RUBY_VERSION = '4.0.7'
   # Tebako 2.8.27 defaults to runtime 0.16.23, whose packages can't boot on macOS (tamatebako/tebako#738).
   RUNTIME_VERSION = '0.16.32'
   ROOT = 'tmp/tebako/root'
   GEM_DIR = "#{ROOT}/raindown".freeze
   GEM_FILES = ['bin/raindown', 'lib/', 'raindown.gemspec'].freeze
 
-  # Gems are installed in the package for Ruby's ABI version, which is 3.4.0 for every Ruby 3.4.
+  # Gems are installed in the package for Ruby's ABI version, which is 4.0.0 for every Ruby 4.0.
   GEMS_DIR = "lib/ruby/gems/#{RUBY_VERSION.sub(/\.\d+\z/, '.0')}".freeze
   # Precompiled native gems like commonmarker ship a build for each Ruby, of which the package only runs one.
   OTHER_RUBIES = %w[3.1 3.2 3.3 3.4 3.5 4.0 4.1] - [RUBY_VERSION[/\A\d+\.\d+/]]
