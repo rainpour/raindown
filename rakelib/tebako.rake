@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'digest'
 require 'fileutils'
 require 'rbconfig'
 require_relative '../lib/version'
@@ -106,6 +107,44 @@ module TebakoBuild
     "raindown-#{Raindown::VERSION.tr('.', '_')}-#{ENV.fetch('TEBAKO_PLATFORM', platform)}"
   end
 
+  def press(*options)
+    system(ENV.fetch('TEBAKO', 'tebako'), 'press',
+           '--root', ROOT,
+           '--entry-point', 'bin/raindown',
+           '--Ruby', RUBY_VERSION,
+           '--tebako-version', RUNTIME_VERSION,
+           '--mode', 'self-contained',
+           '--quiet-notices',
+           # DwarFS compresses the package about 15% smaller than the default, for a slower first run while it unpacks.
+           '--format', 'dwarfs',
+           *EXCLUDES.flat_map { ['--exclude', it] },
+           *options,
+           '--output', output, exception: true)
+  end
+
+  # Tebako's macOS runtime has the hardened runtime and allow-jit, which only covers memory mapped with MAP_JIT, while
+  # YJIT makes the code it compiles executable with mprotect, so macOS kills the binary as soon as it runs it. The
+  # runtime the first press downloaded is signed again, ad hoc, with tebako's entitlements and unsigned executable
+  # memory too, and its checksums updated, so the second press, with --prefer-local, carries it in the package.
+  def allow_yjit
+    folder = File.join(Dir.home, '.tebako', 'runtimes', "ruby-#{RUBY_VERSION}-#{RUNTIME_VERSION}-#{platform}")
+    runtime = File.join(folder, "tebako-runtime-#{RUNTIME_VERSION}-#{RUBY_VERSION}-#{platform}")
+    signed = Digest::SHA256.file(runtime).hexdigest
+    system('codesign', '--force', '--sign', '-', '--options', 'runtime', '--entitlements', 'rakelib/runtime.entitlements',
+           runtime, exception: true)
+    resigned = Digest::SHA256.file(runtime).hexdigest
+    checksummed(folder, signed, resigned)
+    # Raindown turns YJIT on only when tebako's cached runtime is this one (lib/raindown/yjit.rb).
+    File.write("#{GEM_DIR}/yjit_runtime", "#{File.basename(folder)} #{resigned}\n")
+  end
+
+  # The checksums tebako keeps beside a cached runtime, of the runtime as it's now signed.
+  def checksummed(folder, signed, resigned)
+    %w[sha256 origin].map { File.join(folder, it) }.select { File.exist?(it) }.each do |file|
+      File.write(file, File.read(file).gsub(signed, resigned))
+    end
+  end
+
   # Tebako adds .exe to the output on Windows.
   def output
     "pkg/#{payload_name}"
@@ -129,16 +168,9 @@ desc 'Build a standalone raindown executable for this platform with tebako'
 task :tebako do
   TebakoBuild.stage
   FileUtils.mkdir_p('pkg')
+  TebakoBuild.press
+  next unless TebakoBuild.platform.start_with?('macos')
 
-  sh ENV.fetch('TEBAKO', 'tebako'), 'press',
-     '--root', TebakoBuild::ROOT,
-     '--entry-point', 'bin/raindown',
-     '--Ruby', TebakoBuild::RUBY_VERSION,
-     '--tebako-version', TebakoBuild::RUNTIME_VERSION,
-     '--mode', 'self-contained',
-     '--quiet-notices',
-     # DwarFS compresses the package about 15% smaller than the default, for a slower first run while it unpacks.
-     '--format', 'dwarfs',
-     *TebakoBuild::EXCLUDES.flat_map { ['--exclude', it] },
-     '--output', TebakoBuild.output
+  TebakoBuild.allow_yjit
+  TebakoBuild.press('--prefer-local')
 end
