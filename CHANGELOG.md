@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Changed
+
+- Raindown turns on YJIT when it starts, where its Ruby has it, like the released binaries, so components that compute in loops run several times faster
+
 ## 0.21.0
 
 ### Added
