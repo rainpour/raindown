@@ -1,1 +1,5 @@
 *.rd linguist-language=Markdown
+*.md filter=raindown
+*.rd filter=raindown
+*.markdown filter=raindown
+*.raindown filter=raindown

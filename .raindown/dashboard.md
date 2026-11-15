@@ -1,24 +1,27 @@
 ---
 raindown: true
+skeleton: true
 ---
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 < weather: Hobart
 < ╭────────────╮╭────────────╮╭────────────╮╭────────────╮╭────────────╮╭────────────╮╭────────────╮
-< │        🌦️  ││        🌦️  ││        🌦️  ││        ⛅  ││        ☁️  ││        🌤️  ││        ☁️  │
-< │  Today     ││  Sat       ││  Sun       ││  Mon       ││  Tue       ││  Wed       ││  Thu       │
-< │  17° 12°   ││  19° 11°   ││  13° 6°    ││  16° 5°    ││  18° 8°    ││  15° 6°    ││  18° 8°    │
-< │  light     ││  showers   ││  heavy     ││  partly    ││  overcast  ││  mostly    ││  overcast  │
-< │  drizzle   ││            ││  drizzle   ││  cloudy    ││            ││  clear     ││            │
+< │        🌦️  ││        ⛅  ││        ☁️  ││        ☁️  ││        ☁️  ││        ⛈️  ││        ☁️  │
+< │  Today     ││  Mon       ││  Tue       ││  Wed       ││  Thu       ││  Fri       ││  Sat       │
+< │  13° 6°    ││  17° 5°    ││  19° 10°   ││  17° 7°    ││  19° 9°    ││  25° 14°   ││  26° 14°   │
+< │  light     ││  partly    ││  overcast  ││  overcast  ││  overcast  ││  storms    ││  overcast  │
+< │  drizzle   ││  cloudy    ││            ││            ││            ││            ││            │
 < ╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯╰────────────╯
-
+<
+<
+<
 
 
 +-----------------------------------------------------+----------------------------------------------------+
-| world:                                              | painting:                                          |
-|                                                     | *The Falcon Hunt*                                  |
-|                                                     | Philips Wouwerman (mentioned on object)            |
-|                                                     | c. 1658 - c. 1660                                  |
+| world:                                              | painting: *The Falcon Hunt* Philips Wouwerman      |
+|                                                     | (mentioned on object) c. 1658 - c. 1660            |
+|                                                     |                                                    |
+|                                                     |                                                    |
 |                                                     |                                                    |
 |                                                     |                                                    |
 |                                                     |                                                    |
