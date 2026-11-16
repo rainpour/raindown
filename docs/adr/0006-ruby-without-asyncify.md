@@ -1,6 +1,6 @@
 # 6. Running Ruby without Asyncify in the Obsidian plugin
 
-- Status: Accepted
+- Status: Accepted, with garbage collection changed by [ADR 7](0007-collecting-garbage-between-requests.md)
 - Date: 2026-11-16
 
 ## Context
@@ -20,7 +20,7 @@ WebAssembly now has what each of those needs without Asyncify:
 **`scripts/ruby_wasm.rb --jspi` builds the one without Asyncify**, with `wasm/patches/jspi/ruby-4.0-jspi.patch` and the shapes patch, rather than the jumps patch, from wasi-sdk 34 and Binaryen 131, which `bin/build` downloads:
 
 1. **`setjmp` is wasi-libc's**, from WebAssembly's exception handling, and `vm_exec` takes Ruby's own path with it.
-2. **Garbage collection reads only the stack in memory**, as the configure runs `--flatten`, `--coalesce-locals` and `--spill-pointers` after linking, in place of `--asyncify`, and fails the build if it can't.
+2. **Garbage collection reads only the stack in memory**, as the configure runs `--flatten`, `--coalesce-locals` and `--spill-pointers` after linking, in place of `--asyncify`, and fails the build if it can't. [ADR 7](0007-collecting-garbage-between-requests.md) drops `--spill-pointers`, and collects only between requests.
 3. **Each Fiber is a stack of JSPI's**, which a switch suspends until something switches back to it, so Fibers switch in Ruby the worker called through `WebAssembly.promising`.
 4. **Ruby waits for JavaScript with `RbWasmJSPI.wait`**, which suspends the stack until the promise settles, rather than switching to a Fiber that JavaScript resumes, which a stack of JSPI's can't do.
 
