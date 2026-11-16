@@ -80,7 +80,7 @@ module Raindown
     def written_ahead(lines, blocks)
       ahead = blocks.select { it[:node].is_a?(JSNode) }
       calls = ahead.map { it[:node].call_for(:rewrite, context_of(lines, it)) }
-      ahead.map { it[:open] }.zip(JSNodes.call(calls)).to_h
+      ahead.map { it[:open] }.zip(JSNodes.call(calls, metadata: @metadata)).to_h
     rescue JSNodes::Error
       {}
     end

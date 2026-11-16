@@ -107,6 +107,26 @@ RSpec.describe Raindown::JSNodes do
     end
   end
 
+  it "gives each of a note's JavaScript Components the project's files, sent once for them" do
+    dir = project('spec_js_files.mjs' => <<~JS)
+      export class SpecJsFiles {
+        constructor({ n }) { this.n = n }
+        rewrite({ metadata }) { return `${this.n}: ${metadata.files.length} files` }
+      }
+    JS
+    %w[a b].each { File.write(File.join(dir, "#{it}.md"), "---\ntitle: #{it}\n---\n") }
+    metadata = Raindown::Pages.for(File.join(dir, 'notes.rd'))
+    allow(described_class.host).to receive(:request).and_call_original
+    content = "<!-- SpecJsFiles: n=1 -->\n<!-- :SpecJsFiles -->\n<!-- SpecJsFiles: n=2 -->\n<!-- :SpecJsFiles -->\n"
+
+    markdown = Raindown::NodeInjector.rewrite(content:, metadata:)
+
+    files = metadata.list.size
+    expect(markdown).to include("1: #{files} files\n", "2: #{files} files\n")
+    expect(described_class.host).to have_received(:request)
+      .with(hash_including(op: 'call', metadata: hash_including(files: have_attributes(size: files)))).once
+  end
+
   def project_in(dir, files)
     FileUtils.mkdir_p(File.join(dir, '.raindown'))
     files.each { |name, source| File.write(File.join(dir, '.raindown', name), source) }

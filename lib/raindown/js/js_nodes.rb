@@ -12,10 +12,12 @@ module Raindown
   # host of an app's own, like its page. Wherever they run, they get Raindown's services as raindown in their context.
   # A host answers requests, which JSON can hold, with request(**message):
   #   { op: 'load', folder }                     → { nodes: [{ name, render, rasterize, file }], errors: [{ file, error }] }
-  #   { op: 'call', calls: [{ id, name, args, props, method, context, root }] }
+  #   { op: 'call', calls: [{ id, name, args, props, method, context, root }], metadata }
   #                                              → { answers: [{ value } or { error }] }
   # and raises an Error for a request that fails. A call makes its node, with its args and props, the first time its id
-  # is called, so a node takes one request, and calls go together, so a note's nodes take one between them.
+  # is called, so a node takes one request, and calls go together, so a note's nodes take one between them. The
+  # metadata, its project's root and each file's front matter and path, is sent once for them, as it's every file's, and
+  # each call's context gets it.
   module JSNodes
     EXTENSIONS = %w[.js .mjs].freeze
     # Raindown's services for JavaScript nodes, which every host runs before its own script, like an app's page.
@@ -53,16 +55,22 @@ module Raindown
       node_classes[name]
     end
 
-    # The answers to calls of JavaScript nodes' methods, from JSNode#call_for, asked of their host together: each one's
-    # output, or an Error for one that raised.
-    def call(calls)
+    # The answers to calls of JavaScript nodes' methods, from JSNode#call_for, asked of their host together, with the
+    # metadata they share: each one's output, or an Error for one that raised.
+    def call(calls, metadata: NoMetadata)
       return [] if calls.empty?
 
-      host.request(op: 'call', calls:).fetch('answers').map do |answer|
+      host.request(op: 'call', calls:, metadata: json_metadata(metadata)).fetch('answers').map do |answer|
         next Error.new(answer['error']) if answer['error']
 
         answer['value'].to_s
       end
+    end
+
+    # JSON can't hold Pages, so the metadata is its root and each file's front matter and path.
+    def json_metadata(metadata)
+      root = metadata.root if metadata.respond_to?(:root)
+      { root:, files: metadata.list.map(&:metadata) }
     end
 
     # The names of the folder's JavaScript Components that rasterize.
@@ -127,17 +135,15 @@ module Raindown
     end
 
     def js_output(method, context)
-      output = JSNodes.call([call_for(method, context)]).first
+      output = JSNodes.call([call_for(method, context)], metadata: context.fetch(:metadata, NoMetadata)).first
       raise output if output.is_a?(JSNodes::Error)
 
       output
     end
 
-    # JSON can't hold Pages, so the metadata is its root and each file's front matter and path, nor the services, which
-    # its host makes again.
-    def json_context(metadata: NoMetadata, **context)
-      root = metadata.root if metadata.respond_to?(:root)
-      { **context.except(:raindown), metadata: { root:, files: metadata.list.map(&:metadata) } }
+    # Without the metadata, which JSNodes.call sends once for a note's calls, or the services, which its host makes again.
+    def json_context(**context)
+      context.except(:raindown, :metadata)
     end
   end
 end
