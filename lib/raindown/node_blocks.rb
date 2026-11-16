@@ -33,6 +33,8 @@ module Raindown
     SELF_CLOSING = /\A( {0,3})<\{\s*(?::|(?=[A-Z]))(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
     BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
     BARE_GRID = /\A {0,3}\+-[-+]*\+[ \t]*$/
+    DIRECTIVES = { open: OPEN, comment_open: COMMENT_OPEN, self_closing: SELF_CLOSING }.freeze
+    BARE_DIRECTIVES = { **DIRECTIVES, bare_open: BARE_OPEN, bare_self_closing: BARE_SELF_CLOSING }.freeze
     # Unquoted text after name:, like YAML's, runs up to the next prop, so title: Hello world limit: 3 has two. A comma
     # before the next prop, like data.csv, total: true, separates them like a space, while one in text, like Hello,
     # world, is part of it.
@@ -42,6 +44,15 @@ module Raindown
     PROP = /(\w+)(?:=|:[ \t]+)("[^"]*"|'[^']*'|(?<==)\S+?(?=,?(?:\s|\z))|#{UNQUOTED})/
     # A value before the props is the node's argument.
     ARG = /\A("[^"]*"|'[^']*'|[^\s"']#{UNQUOTED}|[^\s"'])(?:,\s*|\s+|\z)/
+    PROP_FIRST = /\A#{PROP}/
+    # A whole number, or text in quotes without escapes, read without parsing it as Ruby, as most values are.
+    INTEGER = /\A-?(?:0|[1-9]\d*)\z/
+    PLAIN_QUOTED = /\A(?:'[^'\\]*'|"[^"\\#]*")\z/
+    # The line ending a block, by its node's name and whether it's in a comment, compiled once for each.
+    END_TAGS = Hash.new do |tags, (name, comment)|
+      first, last = comment ? Directives::COMMENT : Directives::DELIMITERS
+      tags[[name, comment]] = /\A {0,3}#{Regexp.escape(first)}\s*:#{Regexp.escape(name)}\s*#{Regexp.escape(last)}[ \t]*$/
+    end
 
     module_function
 
@@ -156,9 +167,8 @@ module Raindown
 
     # The directive on the line and which kind it is, or nil.
     def directive(line, bare:)
-      patterns = { open: OPEN, comment_open: COMMENT_OPEN, self_closing: SELF_CLOSING }
-      patterns.merge!(bare_open: BARE_OPEN, bare_self_closing: BARE_SELF_CLOSING) if bare
-
+      patterns = DIRECTIVES
+      patterns = BARE_DIRECTIVES if bare
       patterns.each do |pattern, regexp|
         match = line.match(regexp)
         return [match, pattern] if match
@@ -178,7 +188,7 @@ module Raindown
     # The end tag written the same way as the directive: in a comment, or in Antlers' delimiters.
     def end_tag(lines, open, name, comment:)
       first, last = comment ? Directives::COMMENT : Directives::DELIMITERS
-      tag = /\A {0,3}#{Regexp.escape(first)}\s*:#{Regexp.escape(name)}\s*#{Regexp.escape(last)}[ \t]*$/
+      tag = END_TAGS[[name, comment]]
       close = (open + 1...lines.length).find { |index| lines[index].match?(tag) }
       raise MissingEndTag, "#{first} #{name}: #{last} on line #{open + 1} needs #{first} :#{name} #{last}" unless close
 
@@ -187,7 +197,7 @@ module Raindown
 
     # The props, after a value that's the node's argument when it comes first, like 'data.csv' in chart: 'data.csv'.
     def args(text, variables, antlers: true)
-      arg = text.match(ARG) unless text.match?(/\A#{PROP}/)
+      arg = text.match(ARG) unless text.match?(PROP_FIRST)
       return [props(text, variables, antlers:)] unless arg
 
       [props(arg.post_match, variables, antlers:), [value(arg[1], variables, antlers:)]]
@@ -205,6 +215,9 @@ module Raindown
     # author.name, while bare or in a comment, which read like Markdown, it's text, like notes in list: folder: notes,
     # and only one in braces is a variable, like {author.name}.
     def value(value, variables, antlers: true)
+      return value.to_i if value.match?(INTEGER)
+      return value[1..-2] if value.match?(PLAIN_QUOTED)
+
       Lowkey::ValueParser.parse(value) do
         next value[1..-2] if value.match?(/\A(["']).*\1\z/)
         next Variables.value(variables, value[1..-2]) if !antlers && value.match?(/\A\{.+\}\z/)

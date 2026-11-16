@@ -27,7 +27,7 @@ module Raindown
       # The services for a project, by its root, made once.
       def at(root)
         @at ||= {}
-        @at[File.expand_path(root)] ||= new(root:)
+        @at[root] ||= @at[File.expand_path(root)] ||= new(root:)
       end
 
       # The services for the page being written, from its metadata's root, or else the current folder.

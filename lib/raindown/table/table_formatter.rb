@@ -13,6 +13,8 @@ module Raindown
     CONTINUATION = /\A\s*\|\+/
 
     def self.rewrite(content:, **)
+      return content unless content.include?('|')
+
       new(content:).format
     end
 
