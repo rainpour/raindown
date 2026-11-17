@@ -5,6 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- `Raindown::Edition`, what a product built on Raindown does with it: Raindown itself, or Components, the Obsidian plugin for beginners, with only Markdown Components, in a vault's `Components` folder, and none of Raindown's own nodes, endpoints or lining up of tables
+
+### Changed
+
+- A component's directive, like `BookCard: title: Dune`, can be bare in any note, writing up to the next blank line, as only a component the project has starts one, while Raindown's own, like `toc:`, still need bare directives turned on
+
+### Fixed
+
+- A Markdown Component writes back in WebAssembly, like the Obsidian plugin's, which has no Commonmarker, rather than failing to load it
+- A Markdown Component reads its template from the folder it was loaded from last, rather than the first, like in the app, with several projects
+
 ## 0.23.0
 
 ### Added

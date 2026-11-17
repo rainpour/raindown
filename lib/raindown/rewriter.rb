@@ -22,6 +22,8 @@ module Raindown
     def rewrite(content:, path:, bare: false, execute: false, metadata: NoMetadata)
       injector = NodeInjector.new(content:, path:, bare:, metadata:)
       injected = injector.call
+      return Rewrite.new(original: content, content: injected, failures: [], problems: injector.problems) unless Raindown.edition.full?
+
       # Only a file naming an endpoint has one to run, so the rest aren't read again for one.
       if injected.include?('endpoint:')
         endpoints = EndpointRunner.new(content: injected, path:, bare: BareDirectives.enabled?(path:, content: injected, bare:), execute:)

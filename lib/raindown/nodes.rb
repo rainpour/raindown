@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'edition'
 require_relative 'fragments'
 require_relative 'js/js_nodes'
 require_relative 'markdown_nodes'
@@ -35,16 +36,25 @@ module Raindown
 
     module_function
 
-    # Loads the .raindown folder beside the file or in the nearest directory above it, once per process, and gives why
-    # any of its files couldn't be loaded, like ".raindown/stars.rb:3: syntax errors found". Each file loads on its own,
-    # so one that can't be leaves the others loaded.
+    # Loads the .raindown folder beside the file or in the nearest directory above it, or the edition's own, like
+    # Components', once per process, and gives why any of its files couldn't be loaded, like ".raindown/stars.rb:3:
+    # syntax errors found". Each file loads on its own, so one that can't be leaves the others loaded. An edition that
+    # isn't full only has Markdown Components.
     def load(path)
       folder = find_folder(File.dirname(File.expand_path(path)))
       return [] if folder.nil?
       return load_errors[folder] if loaded.include?(folder)
 
       loaded << folder
-      load_errors[folder] = load_ruby(folder) + JSNodes.load(folder) + MarkdownNodes.load(folder)
+      load_errors[folder] = load_folder(folder)
+    end
+
+    # The folder's components loaded, with why any couldn't be: only its Markdown Components in an edition that isn't
+    # full.
+    def load_folder(folder)
+      return MarkdownNodes.load(folder) unless Raindown.edition.full?
+
+      load_ruby(folder) + JSNodes.load(folder) + MarkdownNodes.load(folder)
     end
 
     # Dirload's steps, for the folder's Ruby files, as dirload(folder) takes them, a file that fails one being left out
@@ -80,7 +90,7 @@ module Raindown
 
     def find_folder(directory)
       loop do
-        folder = File.join(directory, FOLDER)
+        folder = File.join(directory, Raindown.edition.folder)
         return folder if File.directory?(folder)
 
         parent = File.dirname(directory)
@@ -94,9 +104,9 @@ module Raindown
       @loaded ||= []
     end
 
-    # The node class a block names, when it's loaded.
+    # The node class a block names, when it's loaded, and Raindown's own, in a full edition.
     def node_class(name)
-      return loaded_class(name) unless BUILT_INS.key?(name)
+      return loaded_class(name) unless BUILT_INS.key?(name) && Raindown.edition.full?
 
       loaded_class(BUILT_INS[name]) || Raindown.const_get(BUILT_INS[name])
     end
