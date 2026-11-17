@@ -20,7 +20,7 @@ module Raindown
     def plugs(key)
       @plugs ||= {}
       return @plugs[key] if @plugs.key?(key)
-      return @plugs[key] = [] unless @features.plugs.key?(key)
+      return @plugs[key] = [] unless @features.key?(key)
 
       @plugs[key] = @features[key].to_a
     end
