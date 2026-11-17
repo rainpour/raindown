@@ -12,7 +12,8 @@ module Raindown
     module_function
 
     # Byte ranges of code in the Markdown, from Commonmarker's line and column positions, or rendering Markdown, which
-    # doesn't load Commonmarker, its fenced blocks and code spans.
+    # doesn't load Commonmarker, or without it, like in WebAssembly, where the Obsidian plugin writes back a Markdown
+    # Component's template, its fenced blocks and code spans.
     def ranges(markdown)
       return scanned_ranges(markdown) unless Raindown.commonmark?
 
@@ -24,6 +25,8 @@ module Raindown
       end
 
       ranges
+    rescue LoadError
+      scanned_ranges(markdown)
     end
 
     # The byte offset each line starts at, and the end's.
