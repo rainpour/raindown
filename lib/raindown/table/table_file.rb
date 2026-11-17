@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+# FileUtils makes a new file's folders. It's loaded with a table:, rather than when one's made, so the Obsidian plugin's
+# trace, which writes back tables but needn't make one, packs it.
+require 'fileutils'
+
 # Loaded when first used, as it loads strscan, a native extension, which slows a packed executable's start.
 autoload :CSV, 'csv'
 

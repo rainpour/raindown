@@ -18,7 +18,7 @@ module Raindown
     # Without commonmark, it's Markdown, for the editor to render itself.
     def render_markdown(markdown, path:, bare: false, commonmark: true)
       Nodes.load(path)
-      Raindown.render(markdown:, metadata: Pages.for(path), bare: bare || BareDirectives.file?(path), commonmark:,
+      Raindown.render(markdown:, metadata: Raindown.edition.metadata(path), bare: bare || BareDirectives.file?(path), commonmark:,
                       **Config.render_options(path))
     end
 
@@ -27,7 +27,7 @@ module Raindown
     def rewrite_markdown(markdown, path:, bare: false, execute: false, actions: [])
       load_errors = Nodes.load(path)
       markdown = acted(markdown, actions, path:, bare:)
-      rewrite = Rewriter.rewrite(content: markdown, path:, bare:, execute:, metadata: Pages.for(path))
+      rewrite = Rewriter.rewrite(content: markdown, path:, bare:, execute:, metadata: Raindown.edition.metadata(path))
       failures = rewrite.failures.map { "Endpoint check failed: #{it}" }
       { output: rewrite.content, warnings: load_errors + failures + rewrite.problems }
     end
