@@ -2,7 +2,7 @@
 
 # Raindown
 
-Raindown is a Markdown superset for AI, APIs, Docs and humans.
+A [Markdown superset](https://raindown.dev/) where data stays current and reads well everywhere. Use for AI, APIs, Docs, READMEs and personal organisation. **Stay sane out there.**
 
 <!-- CodeDebt: -->
 ```
