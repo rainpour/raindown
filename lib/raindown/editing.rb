@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../raindown'
+require_relative 'action'
 require_relative 'rewriter'
 
 module Raindown
@@ -17,12 +18,20 @@ module Raindown
                       **Config.render_options(path))
     end
 
-    # Its warnings say why any of the project's nodes couldn't be loaded too.
-    def rewrite_markdown(markdown, path:, bare: false, execute: false)
+    # Its warnings say why any of the project's nodes couldn't be loaded too. Each action an input took, like a button's,
+    # as { line:, set: }, or with column: for a directive in a grid's cell, is taken first, as Action takes it.
+    def rewrite_markdown(markdown, path:, bare: false, execute: false, actions: [])
       load_errors = Nodes.load(path)
+      markdown = acted(markdown, actions, path:, bare:)
       rewrite = Rewriter.rewrite(content: markdown, path:, bare:, execute:, metadata: Pages.for(path))
       failures = rewrite.failures.map { "Endpoint check failed: #{it}" }
       { output: rewrite.content, warnings: load_errors + failures + rewrite.problems }
+    end
+
+    def acted(markdown, actions, path:, bare:)
+      actions.reduce(markdown) do |text, action|
+        Action.new(**action.transform_keys(&:to_sym)).apply(text, bare: BareDirectives.enabled?(path:, content: text, bare:))
+      end
     end
   end
 end

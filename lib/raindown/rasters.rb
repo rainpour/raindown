@@ -48,12 +48,20 @@ module Raindown
     # grid's cell is by the column its cell starts at, after its |.
     def repaint(path:, line:, column: nil, **space)
       Nodes.load(path)
-      node = node_on(path, line, column)
+      node, props = node_on(path, line, column)
       raise ArgumentError, "Nothing on line #{line + 1} of #{path} rasterizes" unless node
 
       metadata = Pages.for(path)
-      area = Area.new(**space)
-      { painting: painting_of(node, area, metadata), formatting: formatting(node, metadata) }
+      painting = painting_of(node, Area.new(**space), metadata)
+      { painting: with_buttons_for(painting, props), formatting: formatting(node, metadata) }
+    end
+
+    # The painting with only the buttons for props its directive has, so the directive decides which it has, as a
+    # button changes them with an Action, which only changes those.
+    def with_buttons_for(painting, props)
+      return painting unless painting[:buttons]
+
+      painting.merge(buttons: painting[:buttons].select { |button| button[:set].keys.all? { props.include?(it.to_sym) } })
     end
 
     # What the node shows: a Scene, for one of an app's own painters to paint, like weather:'s valley, or else the area
@@ -75,7 +83,7 @@ module Raindown
     end
 
     # The node on the line, read with outdent blocks' lines without their <, as anywhere else, or in the grid cell at
-    # the column.
+    # the column, with the names of the props its directive has.
     def node_on(path, line, column)
       content = Utils.read_markdown(path)
       lines = Outdent.without_markers(content).lines
@@ -83,7 +91,8 @@ module Raindown
 
       bare = BareDirectives.enabled?(path:, content:)
       blocks = NodeBlocks.find(lines, front_matter: FrontMatter.parse(content).first, bare:)
-      blocks.find { it[:open] == line && it[:node].respond_to?(:rasterize) }&.dig(:node)
+      node = blocks.find { it[:open] == line && it[:node].respond_to?(:rasterize) }&.dig(:node)
+      [node, prop_names(lines[line], bare:)]
     end
 
     # The node whose directive starts the grid cell at the column of the line, up to the cell's next |.
@@ -92,7 +101,15 @@ module Raindown
       return unless GridDirectives.directive?(text)
 
       blocks = NodeBlocks.find(["#{text}\n"], bare: true)
-      blocks.find { it[:node].respond_to?(:rasterize) }&.dig(:node)
+      [blocks.find { it[:node].respond_to?(:rasterize) }&.dig(:node), prop_names(text, bare: true)]
+    end
+
+    # The names of the props the directive on the line has.
+    def prop_names(text, bare:)
+      match, = NodeBlocks.directive(text.to_s.chomp, bare:)
+      return [] unless match&.[](3)
+
+      NodeBlocks.args(match[3], {}).first.keys
     end
   end
 end

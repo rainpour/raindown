@@ -72,6 +72,11 @@ RSpec.describe Raindown::Rasters do
     let(:source) do
       <<~RUBY
         class SpecRubyDots < Raindown::Node
+          def initialize(dots: 1)
+            super()
+            @dots = dots
+          end
+
           def rewrite = ''
 
           def rasterize(area:, raindown:)
@@ -89,12 +94,22 @@ RSpec.describe Raindown::Rasters do
       Dir.mktmpdir do |dir|
         FileUtils.mkdir_p(File.join(dir, '.raindown'))
         File.write(File.join(dir, '.raindown', 'spec_ruby_dots.rb'), source)
-        path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\nSpecRubyDots:\n") }
+        path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\nSpecRubyDots: dots: 1\n") }
 
         expect(described_class.names(path)).to eq(%w[weather SpecRubyDots])
         expect(described_class.repaint(path:, line: 4, width: 2, height: 1)[:painting])
           .to eq(painter: 'pixels', width: 2, height: 1, pixels: [['0000000088c0d0ff'].pack('H*')].pack('m0'),
                  buttons: [{ x: 0, y: 0, width: 1, height: 1, set: { dots: 2 } }], again: 250)
+      end
+    end
+
+    it "leaves out a button for a prop its directive hasn't got, so the directive decides which buttons it has" do
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.raindown'))
+        File.write(File.join(dir, '.raindown', 'spec_ruby_dots.rb'), source)
+        path = File.join(dir, 'dashboard.md').tap { File.write(it, "---\nraindown: true\n---\n\nSpecRubyDots:\n") }
+
+        expect(described_class.repaint(path:, line: 4, width: 2, height: 1)[:painting]).to include(buttons: [])
       end
     end
   end

@@ -78,9 +78,10 @@ module Raindown
       end
     end
 
-    # Markdown in one of the project's files, as Raindown would write it back, with its nodes, as { output, warnings }.
-    def rewrite_markdown(markdown, path)
-      Editing.rewrite_markdown(markdown, path:, bare: @bare)
+    # Markdown in one of the project's files, as Raindown would write it back, with its nodes, as { output, warnings },
+    # after the actions inputs took, like a button's.
+    def rewrite_markdown(markdown, path, actions = [])
+      Editing.rewrite_markdown(markdown, path:, bare: @bare, actions:)
     end
 
     # The names of the nodes that rasterize, Raindown's own and the project's, for a file in it.
