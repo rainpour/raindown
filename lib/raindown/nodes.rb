@@ -2,10 +2,9 @@
 
 require_relative 'edition'
 require_relative 'fragments'
-require_relative 'js/js_nodes'
-require_relative 'markdown_nodes'
 require_relative 'node'
 require_relative 'problem'
+require_relative 'services'
 require_relative 'stat'
 
 module Raindown
@@ -38,8 +37,8 @@ module Raindown
 
     # Loads the .raindown folder beside the file or in the nearest directory above it, or the edition's own, like
     # Components', once per process, and gives why any of its files couldn't be loaded, like ".raindown/stars.rb:3:
-    # syntax errors found". Each file loads on its own, so one that can't be leaves the others loaded. An edition that
-    # isn't full only has Markdown Components.
+    # syntax errors found". Each file loads on its own, so one that can't be leaves the others loaded. Only the kinds of
+    # components the edition has load, like only Markdown Components in Components.
     def load(path)
       folder = find_folder(File.dirname(File.expand_path(path)))
       return [] if folder.nil?
@@ -49,39 +48,8 @@ module Raindown
       load_errors[folder] = load_folder(folder)
     end
 
-    # The folder's components loaded, with why any couldn't be: only its Markdown Components in an edition that isn't
-    # full.
     def load_folder(folder)
-      return MarkdownNodes.load(folder) unless Raindown.edition.full?
-
-      load_ruby(folder) + JSNodes.load(folder) + MarkdownNodes.load(folder)
-    end
-
-    # Dirload's steps, for the folder's Ruby files, as dirload(folder) takes them, a file that fails one being left out
-    # of the next, and why each failed.
-    def load_ruby(folder)
-      require 'lownode'
-      require 'dirload'
-      files = Dirload.file_paths(absolute_path: folder).map { [it, Dirload.find_adapter(file_path: it)] }
-      errors = {}
-      %i[mapload preload evaluate].each do |step|
-        files.each do |file, adapter|
-          next if adapter.nil? || errors.key?(file)
-
-          adapter.public_send(step, file_path: file)
-        rescue StandardError, ScriptError => e
-          errors[file] = e.message
-        end
-      end
-      errors.map { |file, message| load_error(folder, file, message) }
-    end
-
-    # Why a file couldn't be loaded, by its path from the project, with its line, when the error has it.
-    def load_error(folder, file, message)
-      listed = file.delete_prefix("#{File.dirname(folder)}/")
-      return "#{listed}#{message.delete_prefix(file)}" if message.start_with?("#{file}:")
-
-      "#{listed}: #{message}"
+      Raindown.edition.plugs(:components).flat_map { it.load(folder) }
     end
 
     def load_errors
@@ -104,19 +72,17 @@ module Raindown
       @loaded ||= []
     end
 
-    # The node class a block names, when it's loaded, and Raindown's own, in a full edition.
+    # The node class a block names, when it's loaded, and Raindown's own, when the edition has them.
     def node_class(name)
-      return loaded_class(name) unless BUILT_INS.key?(name) && Raindown.edition.full?
+      built_in = Raindown.edition.plugs(:built_ins).reduce({}, :merge)[name]
+      return loaded_class(name) unless built_in
 
-      loaded_class(BUILT_INS[name]) || Raindown.const_get(BUILT_INS[name])
+      loaded_class(built_in) || Raindown.const_get(built_in)
     end
 
-    # A Ruby node of the name, or else a JavaScript one, or else a Markdown one.
+    # The first of the edition's kinds of components, in order, with a node of the name: Ruby, JavaScript, then Markdown.
     def loaded_class(name)
-      klass = Object.const_get(name) if name.match?(/\A[A-Z]/) && Object.const_defined?(name)
-      return klass if node?(klass)
-
-      JSNodes.node_class(name) || MarkdownNodes.node_class(name)
+      Raindown.edition.plugs(:components).lazy.filter_map { it.node_class(name) }.first
     end
 
     # A LowNode, or one of Raindown's own nodes, that writes Markdown. In an app, LowNodes are also routes and pages,

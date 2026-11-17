@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'antlers'
-require_relative '../elements'
+require_relative 'edition'
 require_relative 'bare_directives'
 require_relative 'code'
 require_relative 'code_blocks'
@@ -55,9 +55,9 @@ module Raindown
       # Antlers strips the whitespace around a template, which can be Markdown, like an indented code block.
       leading = template[/\A\s*/]
       trailing = template[/\s*\z/]
-      # Write-in nodes and endpoints render here too, where loop variables are in scope, and keep their HTML as
-      # fragments.
-      elements = Antlers::Elements[:html, :var, :if, :for] + Elements[:write_in, :endpoint]
+      # Write-in nodes and endpoints, when the edition has them, render here too, where loop variables are in scope, and
+      # keep their HTML as fragments.
+      elements = Antlers::Elements[:html, :var, :if, :for] + Raindown.edition.elements
       rendered = Antlers.render(ast: Antlers.ast(template:, elements:), current_binding: variables.binding, context:)
 
       "#{leading}#{rendered}#{trailing}"

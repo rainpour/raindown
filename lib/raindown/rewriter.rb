@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'node_injector'
-require_relative 'endpoint/endpoint_runner'
-require_relative 'table/table_formatter'
 require_relative 'utils'
 
 module Raindown
@@ -22,14 +20,15 @@ module Raindown
     def rewrite(content:, path:, bare: false, execute: false, metadata: NoMetadata)
       injector = NodeInjector.new(content:, path:, bare:, metadata:)
       injected = injector.call
-      return Rewrite.new(original: content, content: injected, failures: [], problems: injector.problems) unless Raindown.edition.full?
-
       # Only a file naming an endpoint has one to run, so the rest aren't read again for one.
       if injected.include?('endpoint:')
-        endpoints = EndpointRunner.new(content: injected, path:, bare: BareDirectives.enabled?(path:, content: injected, bare:), execute:)
+        runner = Raindown.edition.plugs(:endpoint_runner).first
+        endpoints = runner&.new(content: injected, path:, bare: BareDirectives.enabled?(path:, content: injected, bare:), execute:)
       end
-      Rewrite.new(original: content, content: TableFormatter.rewrite(content: endpoints&.rewrite || injected),
-                  failures: Array(endpoints&.failures), problems: injector.problems)
+      lined_up = Raindown.edition.plugs(:table_formatter).reduce(endpoints&.rewrite || injected) do |text, formatter|
+        formatter.rewrite(content: text)
+      end
+      Rewrite.new(original: content, content: lined_up, failures: Array(endpoints&.failures), problems: injector.problems)
     end
 
     # Writes the file only when it changed.

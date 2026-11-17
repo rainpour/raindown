@@ -78,7 +78,9 @@ module Raindown
     # costs about as much as a node. So they see the document as it was before the blocks wrote, not what the nodes
     # below them just wrote. A host that can't be asked leaves each to be asked alone, to say why in its place.
     def written_ahead(lines, blocks)
-      ahead = blocks.select { it[:node].is_a?(JSNode) }
+      ahead = blocks.select { it[:node].respond_to?(:call_for) }
+      return {} if ahead.empty?
+
       calls = ahead.map { it[:node].call_for(:rewrite, context_of(lines, it)) }
       ahead.map { it[:open] }.zip(JSNodes.call(calls, metadata: @metadata)).to_h
     rescue JSNodes::Error

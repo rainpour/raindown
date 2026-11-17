@@ -2,7 +2,7 @@
 
 require_relative 'code_blocks'
 require_relative 'directives'
-require_relative 'endpoint/schema_block'
+require_relative 'edition'
 require_relative 'front_matter'
 
 module Raindown
@@ -68,8 +68,10 @@ module Raindown
     # Returns the index of the last line it handled. That's the directive itself, so the lines it holds
     # are expanded too, and a bare directive inside it closes before it does.
     def expand_line(lines, index)
-      schema = SchemaBlock.at(lines, index, bare: true)
-      return expand_schema(lines, index, schema) if schema
+      Raindown.edition.plugs(:schema_block).each do |schemas|
+        schema = schemas.at(lines, index, bare: true)
+        return expand_schema(lines, index, schema) if schema
+      end
 
       match = lines[index].match(LINE)
       return index unless match

@@ -11,8 +11,6 @@ module Raindown
   module Projects
     # Folders of dependencies, builds and tooling, which aren't searched for projects or watched, nor are hidden folders.
     IGNORED = %w[node_modules vendor tmp pkg build dist coverage].freeze
-    # Ruby nodes and JavaScript Components.
-    NODE_EXTENSIONS = ['.rb', '.rbx', *JSNodes::EXTENSIONS].freeze
     VAULT_FOLDER = '.obsidian'
 
     module_function
@@ -82,8 +80,10 @@ module Raindown
 
     # Whether a file is one of a project's own nodes, which load when its watcher starts.
     def node?(path, root:)
+      require_relative 'js/js_nodes'
+      require_relative 'markdown_nodes'
       File.expand_path(path).start_with?(File.join(root, Nodes::FOLDER, '')) &&
-        (NODE_EXTENSIONS.include?(File.extname(path)) || MarkdownNodes.file?(path))
+        (['.rb', '.rbx', *JSNodes::EXTENSIONS].include?(File.extname(path)) || MarkdownNodes.file?(path))
     end
 
     # The roots that aren't inside another of them, as a project's code includes the projects inside it.

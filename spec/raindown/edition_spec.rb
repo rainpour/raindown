@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown'
+require 'open3'
 require 'raindown/editing'
 require 'tmpdir'
 
@@ -43,5 +44,20 @@ RSpec.describe Raindown::Edition do
 
     expect(rewritten(dir, markdown)).to eq(markdown)
     expect(Object.const_defined?(:SpecEditionRuby)).to be(false)
+  end
+
+  it "loads none of the other features' files, like endpoints', JavaScript nodes' or lining up tables'" do
+    dir = components('SpecEditionCard.md' => "**{title}**\n")
+    script = <<~RUBY
+      require 'raindown/editing'
+      Raindown.edition = Raindown::Edition::COMPONENTS
+      Raindown::Editing.rewrite_markdown("SpecEditionCard: title: 'Dune'\n\n| a | b |\n|-|-|\n", path: '#{dir}/note.md')
+      Raindown::Editing.render_markdown("SpecEditionCard: title: 'Dune'\n", path: '#{dir}/note.md', commonmark: false)
+      puts $LOADED_FEATURES.grep(%r{endpoint_(runner|lexeme|node)|schema_block|/dirload\.rb|/projects\.rb|/curl|/js/|/table/|ruby_nodes})
+    RUBY
+    loaded, status = Open3.capture2('ruby', '-I', File.expand_path('../../lib', __dir__), '-e', script)
+
+    expect(status).to be_success
+    expect(loaded).to eq('')
   end
 end

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'js/js_nodes'
+require_relative 'markdown_nodes'
 require_relative 'nodes'
 
 module Raindown

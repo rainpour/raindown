@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown'
+require 'raindown/js/js_nodes'
 require 'raindown/node_injector'
 require 'tmpdir'
 
