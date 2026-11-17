@@ -35,8 +35,9 @@ RSpec.describe Raindown::NodeBlocks do
         .to eq([{ open: 0, first: 1, close: nil, last: 0, writes: true, node: SpecReleases }])
     end
 
-    it 'only reads bare blocks when asked' do
-      expect(find("SpecReleases:\n")).to eq([])
+    it "reads a component's bare block anywhere, and Raindown's own, like toc:, only where bare directives work" do
+      expect(find("SpecReleases:\n- a\n\nText.\n")).to eq([{ open: 0, first: 1, close: nil, last: 1, writes: true, node: SpecReleases }])
+      expect(find("toc:\n")).to eq([])
     end
 
     it 'leaves names that are not nodes alone' do

@@ -19,8 +19,11 @@ module Raindown
   # A bare :Changelog is write-in: it only renders, with its render, never its rewrite. In Antlers' delimiters, like
   # <{ Changelog }>, it's write-in too, and the template pass renders it, as a WriteInNode, so it's only found here
   # for a document's outline. toc: and list: are Raindown's own nodes. A name only starts a block when it's a loaded
-  # node, so other text like "Note:" is left alone. Where bare directives work, a bare grid, a block starting with a
-  # rule like +---+, is a grid: without its directive, which it writes from its first line, its rule.
+  # node, so other text like "Note:" is left alone. A component's directive, by its capitalized name, can be bare
+  # anywhere, as only a component the project has, like .raindown/BookCard.md, starts one, which it has on purpose, while
+  # Raindown's own, like toc:, list: and table:, which are common words, are bare only where bare directives work. There,
+  # a bare grid, a block starting with a rule like +---+, is a grid: without its directive, which it writes from its
+  # first line, its rule.
   module NodeBlocks
     class MissingEndTag < StandardError; end
     class BrokenText < StandardError; end
@@ -34,6 +37,12 @@ module Raindown
     BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
     BARE_GRID = /\A {0,3}\+-[-+]*\+[ \t]*$/
     DIRECTIVES = { open: OPEN, comment_open: COMMENT_OPEN, self_closing: SELF_CLOSING }.freeze
+    # A component's directive, by its capitalized name, bare, which works anywhere, as only one a project has starts one.
+    COMPONENT = '[A-Z]\\w*(?:::[A-Z]\\w*)*'
+    COMPONENT_DIRECTIVES = {
+      **DIRECTIVES, bare_open: /\A( {0,3})(#{COMPONENT}):(?:[ \t]+(.*?))?[ \t]*$/,
+                    bare_self_closing: /\A( {0,3}):(#{COMPONENT})(?:[ \t]+(.*?))?[ \t]*$/
+    }.freeze
     BARE_DIRECTIVES = { **DIRECTIVES, bare_open: BARE_OPEN, bare_self_closing: BARE_SELF_CLOSING }.freeze
     # Unquoted text after name:, like YAML's, runs up to the next prop, so title: Hello world limit: 3 has two. A comma
     # before the next prop, like data.csv, total: true, separates them like a space, while one in text, like Hello,
@@ -165,9 +174,9 @@ module Raindown
       end
     end
 
-    # The directive on the line and which kind it is, or nil.
+    # The directive on the line and which kind it is, or nil: bare only for a component, unless bare directives work.
     def directive(line, bare:)
-      patterns = DIRECTIVES
+      patterns = COMPONENT_DIRECTIVES
       patterns = BARE_DIRECTIVES if bare
       patterns.each do |pattern, regexp|
         match = line.match(regexp)

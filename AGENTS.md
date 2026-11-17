@@ -20,7 +20,7 @@ Raindown also lines up the columns of Markdown tables when it writes a file back
 
 Template directives, like `if:`, `for:` and variables like `{title}`, don't write anything. The Markdown around them is yours to edit.
 
-In `.rd` and `.raindown` files, and Markdown files with `raindown: true` in their front matter, content directives can be bare, on their own line, like `toc:`, writing up to the next blank line, and `:toc` only renders.
+In `.rd` and `.raindown` files, and Markdown files with `raindown: true` in their front matter, content directives can be bare, on their own line, like `toc:`, writing up to the next blank line, and `:toc` only renders. A component's directive, like `BookCard:`, can be bare in any file, as only a component the project has starts one.
 
 A content directive in `<{ }>`, like `<{ toc: }>` … `<{ :toc }>` or `<{ :toc }>`, is write-in: it only renders into the HTML, with its node's `render`, never `rewrite`, so it writes nothing. What's between its tags is yours, and it's the node's input, which `render` gets as `slot:`.
 

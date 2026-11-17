@@ -104,7 +104,7 @@ How a directive is written says what it does: bare and comment directives write 
 
 A colon after the name opens a block, like `toc:`, `<!-- toc: -->` or `<{ Card: }>`, and a colon before the name closes the block, which could be an end tag, like `<!-- :toc -->` or `<{ :Card }>`, or a self-closing tag, like a bare `:toc` or `<{ :toc }>`. A capitalized node can be self-closing without a colon, like `<{ Card }>`, while `<{ title }>` without one is a variable.
 
-1. Bare directives work in [Raindown files](#raindown-files) (`.rd`) and in Markdown files (`.md`) with `raindown: true` front matter or `--bare` via the CLI.
+1. Bare directives work in [Raindown files](#raindown-files) (`.rd`) and in Markdown files (`.md`) with `raindown: true` front matter or `--bare` via the CLI. A [component](#nodes)'s directive, like `BookCard:`, can be bare in any file, as only a component your project has starts one, so a line like `Note: call Sam` is left alone unless you made a `Note` component.
 2. All directive types can output HTML or Markdown that is rendered to HTML, it's up to you to enable it per component. See [Nodes](#nodes).
 
 #### Template directives

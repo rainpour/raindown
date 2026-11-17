@@ -47,6 +47,8 @@ RSpec.describe Raindown::Action do
        ["<{ :Card title='A' }>\n", { line: 0, set: { title: 'B' } }],
        ["chart: 'data.csv', total: true\n", { line: 0, set: { total: false } }, true],
        ["chart: 'data.csv', total: true\n", { line: 0, set: { total: false } }, false],
+       ["Card: title: 'A' size: 2\n", { line: 0, set: { size: 3 } }, false],
+       [":Card title='A'\n", { line: 0, set: { title: 'B' } }, false],
        [cell, { line: 0, column: cell.index('|', 1) + 1, set: { zoom: 7 } }]]
     end
 
