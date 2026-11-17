@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Changed
+
+- Needs Lowkey 0.7.3, which reads values like `true`, `4.5` and `:draft` without Prism, so reading a directive's props never loads it, and the Components plugin, which doesn't pack Prism, reads them
+
 ## 0.25.1
 
 ### Fixed
