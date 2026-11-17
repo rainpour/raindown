@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- `Raindown::Action`, what an input does, like a rasterize button setting props on its directive, which `Editing.rewrite_markdown(actions:)` takes before writing the note back, with the same in JavaScript, for an app to take at once
+- `lib/raindown/js/editing.js`, editing Markdown as it's typed, like lining up tables, and what Enter and Tab do in a table's cells, which the Obsidian plugin and the app share
+
+### Changed
+
+- Writing back a note of components takes about half as long, as directives' patterns are compiled once, whole numbers and plain quoted values are read without Prism, and a note without an endpoint or a table skips them
+- A note's JavaScript components are sent every file's front matter once between them, rather than with each one, so writing back ten in a vault of 5,000 notes takes 20 ms rather than 175. A host of an app's own gets it as `metadata`, beside `calls`, and gives it to each call's context
+- A rasterize button for a prop its directive hasn't got is left out by Raindown, rather than the app
+- Raindown needs Antlers 1.5.1, which renders templates about a third faster
+
 ## 0.22.0
 
 ### Changed
