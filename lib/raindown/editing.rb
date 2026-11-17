@@ -9,6 +9,10 @@ module Raindown
   # would be written back to the file, with its failed endpoint checks. "raindown FILE --stdin" and "raindown server"
   # both answer with it.
   module Editing
+    # What an editor does at once in JavaScript, as Markdown's typed, as raindownEditing, like lining up tables, the
+    # same as TableFormatter, and what Enter and Tab do in a table's cells, which the Obsidian plugin and the app share.
+    SCRIPT = File.join(__dir__, 'js', 'editing.js')
+
     module_function
 
     # Without commonmark, it's Markdown, for the editor to render itself.
