@@ -9,6 +9,10 @@ gemspec
 # there, where they can't run.
 gem 'quickjs', '~> 0.22', platforms: :ruby
 
+# The terminal app's curses, which the gem installs on first use rather than depending on, so Raindeer apps that only
+# render Markdown don't compile it. Developing Raindown runs the app through Bundler, so it's in the bundle here.
+gem 'curses', '~> 1.7'
+
 group :development do
   local_gems = {
     'dirload' => '../dirload',

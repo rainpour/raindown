@@ -32,7 +32,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'antlers', '>= 1.5.1'
   spec.add_dependency 'commonmarker'
   spec.add_dependency 'csv'
-  spec.add_dependency 'curses', '~> 1.7'
   spec.add_dependency 'dirload'
   spec.add_dependency 'listen'
   spec.add_dependency 'lowkey', '>= 0.7.3'

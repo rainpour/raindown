@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## 0.25.4
+
+### Changed
+
+- Raindown no longer depends on curses so apps that use it as a framework like Raindeer never compile it
+- The terminal app installs curses the first time it starts with a progress bar. It only asks for help when that fails such as when ncurses headers are missing
+
 ## 0.25.3
 
 ### Changed

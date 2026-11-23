@@ -2,6 +2,7 @@
 
 require_relative 'projects'
 require_relative 'tui/navigator/navigator'
+require_relative 'tui/curses_installer'
 
 module Raindown
   # The terminal UI, started with "raindown": a project's Markdown files beside the open file's outline,
@@ -15,11 +16,7 @@ module Raindown
     # watched instead, as curses' own error would be "Error opening terminal: unknown". Bare and execute, like --bare and
     # -x, allow bare directives in any file and run endpoints with no response as it writes back.
     def start(path, bare: false, execute: false)
-      require_relative 'tui/terminal/screen'
-      unless $stdin.tty? && $stdout.tty?
-        warn("raindown needs a terminal, so it's watching instead")
-        return false
-      end
+      return false unless ready?
 
       path = File.expand_path(path)
       root = Projects.root(path) || (File.directory?(path) ? path : File.dirname(path))
@@ -41,6 +38,18 @@ module Raindown
     ensure
       saves&.stop
       workers&.stop
+    end
+
+    # Curses is loaded, installing it first if need be, and there's a terminal to draw in. Without one, like in a
+    # script or a service, it says so once curses has loaded, as curses' own error would be "Error opening terminal".
+    def ready?
+      return false unless CursesInstaller.ensure_loaded
+
+      require_relative 'tui/terminal/screen'
+      return true if $stdin.tty? && $stdout.tty?
+
+      warn("raindown needs a terminal, so it's watching instead")
+      false
     end
   end
 end
